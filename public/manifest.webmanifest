@@ -1,0 +1,17 @@
+{
+  "name": "CLIPTIC — Clip. Post. Get Paid.",
+  "short_name": "CLIPTIC",
+  "description": "The UGC clipping network connecting brands with creators. Earn per verified view on TikTok, Instagram Reels and YouTube Shorts.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0a10",
+  "theme_color": "#0b0a10",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

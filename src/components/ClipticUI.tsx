@@ -1,0 +1,180 @@
+import type { AccountStatus, Platform, SubmissionStatus } from "@/lib/cliptic-data";
+import { PLATFORM_META } from "@/lib/cliptic-data";
+
+/** Inline brand glyphs so platform chips render identically everywhere. */
+export function PlatformIcon({
+  platform,
+  className = "h-4 w-4",
+}: {
+  platform: Platform;
+  className?: string;
+}) {
+  if (platform === "tiktok") {
+    return (
+      <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+        <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-1.85-2.48V9.75a5.76 5.76 0 1 0 4.03 5.49V9.01a7.35 7.35 0 0 0 4.29 1.37V7.3a4.28 4.28 0 0 1-2.32-1.48Z" />
+      </svg>
+    );
+  }
+  if (platform === "instagram") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        className={className}
+        aria-hidden="true"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="5.4" />
+        <circle cx="12" cy="12" r="4.1" />
+        <circle cx="17.3" cy="6.7" r="1.15" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  if (platform === "youtube") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+        <rect
+          x="2.4"
+          y="5.4"
+          width="19.2"
+          height="13.2"
+          rx="4.2"
+          stroke="currentColor"
+          strokeWidth="1.9"
+        />
+        <path d="M10.6 9.4v5.2l4.6-2.6-4.6-2.6Z" fill="currentColor" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644Z" />
+    </svg>
+  );
+}
+
+/** Icon inside a tinted rounded square, colored by platform. */
+export function PlatformChip({
+  platform,
+  size = "md",
+}: {
+  platform: Platform;
+  size?: "sm" | "md";
+}) {
+  const meta = PLATFORM_META[platform];
+  const box = size === "sm" ? "h-7 w-7" : "h-9 w-9";
+  const icon = size === "sm" ? "h-3.5 w-3.5" : "h-[18px] w-[18px]";
+  return (
+    <span
+      className={`inline-flex ${box} shrink-0 items-center justify-center rounded-lg border`}
+      style={{
+        borderColor: `${meta.color}33`,
+        backgroundColor: `${meta.color}18`,
+        color: meta.color,
+      }}
+      title={meta.label}
+    >
+      <PlatformIcon platform={platform} className={icon} />
+    </span>
+  );
+}
+
+const SUBMISSION_BADGES: Record<
+  SubmissionStatus,
+  { label: string; className: string }
+> = {
+  paid: { label: "Paid", className: "bg-neon/15 text-neon border-neon/25" },
+  active: {
+    label: "Active",
+    className: "bg-brand/15 text-[#b7a5ff] border-brand/30",
+  },
+  pending: {
+    label: "Pending",
+    className: "bg-amber-400/10 text-amber-300 border-amber-400/25",
+  },
+  rejected: {
+    label: "Rejected",
+    className: "bg-red-400/10 text-red-300 border-red-400/25",
+  },
+};
+
+export function StatusBadge({
+  status,
+}: {
+  status: SubmissionStatus | AccountStatus | "verified" | "active-campaign" | "paused";
+}) {
+  const map: Record<string, { label: string; className: string }> = {
+    ...SUBMISSION_BADGES,
+    connected: {
+      label: "Verified",
+      className: "bg-neon/15 text-neon border-neon/25",
+    },
+    verified: { label: "Verified", className: "bg-neon/15 text-neon border-neon/25" },
+    checking: {
+      label: "Checking…",
+      className: "bg-brand/15 text-[#b7a5ff] border-brand/30",
+    },
+    failed: {
+      label: "Failed",
+      className: "bg-red-400/10 text-red-300 border-red-400/25",
+    },
+    "active-campaign": {
+      label: "Active",
+      className: "bg-neon/15 text-neon border-neon/25",
+    },
+    paused: {
+      label: "Paused",
+      className: "bg-white/8 text-white/60 border-white/15",
+    },
+  };
+  const badge = map[status] ?? { label: status, className: "bg-white/8 text-white/60 border-white/15" };
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${badge.className}`}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+const BRAND_GRADIENTS = [
+  "from-violet-500 to-indigo-600",
+  "from-fuchsia-500 to-violet-600",
+  "from-indigo-500 to-blue-600",
+  "from-purple-500 to-pink-600",
+  "from-teal-500 to-cyan-600",
+  "from-amber-500 to-orange-600",
+  "from-rose-500 to-red-600",
+  "from-emerald-500 to-teal-600",
+];
+
+export function brandGradient(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return BRAND_GRADIENTS[hash % BRAND_GRADIENTS.length];
+}
+
+/** Initials tile used instead of brand logos. */
+export function BrandAvatar({
+  name,
+  className = "h-11 w-11 text-sm",
+}: {
+  name: string;
+  className?: string;
+}) {
+  const initials = name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white shadow-inner ring-1 ring-white/15 ${brandGradient(name)} ${className}`}
+    >
+      {initials}
+    </span>
+  );
+}
