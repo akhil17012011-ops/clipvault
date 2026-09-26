@@ -277,15 +277,15 @@ html.lenis body {
   z-index: 2;
 }
 
-/* Ambient light behind the content.
+/* Ambient light behind the whole app.
  *
-   Scoped to the content column rather than the whole viewport on purpose. When
-   this sat behind everything, the solid top bar and sidebar covered it while
-   the page behind them glowed — which made the chrome read as a separate
-   object sitting on top of the app rather than part of it. The glow now only
-   exists where the content is, so the chrome is continuous with the page. */
+   Covers the viewport rather than just the content column, because the top bar
+   and sidebar are translucent glass: they need light behind them to refract.
+   With the glow scoped to the content, the chrome had nothing to pick up and
+   read as a flat slab. The chrome sits above this (z-30/z-40) and the content
+   column after it in the DOM, so the ordering still holds. */
 .ambient-field {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
