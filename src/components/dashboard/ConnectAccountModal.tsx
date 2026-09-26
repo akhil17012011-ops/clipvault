@@ -290,7 +290,7 @@ export function ConnectAccountModal({
                           {attempt.bio}
                         </p>
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
-                          {attempt.bio.includes(account.code)
+                          {attempt.bio.toUpperCase().includes(account.code)
                             ? "Your code is in there — hit Verify again."
                             : `No ${account.code} in this text yet.`}
                         </p>

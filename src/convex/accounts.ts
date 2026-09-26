@@ -20,13 +20,19 @@ const PLATFORM = v.union(
 );
 
 /**
- * Codes are the brand prefix plus six digits, e.g. CLIPVAULT-004821.
+ * Codes look like `VAULT-K7QX`: the brand prefix plus four characters from a
+ * 31-symbol alphabet with the look-alikes removed (no I/1, O/0), so a creator
+ * reading one off a phone screen cannot mistype it into a dead end.
  *
- * The old `CLIPTIC-` prefix is still accepted on read: those codes are already
- * sitting in real users' bios, and changing the brand must not silently
- * un-verify an account that verified correctly.
+ * The old `CLIPTIC-`/`CLIPVAULT-` codes are still accepted on read. Those are
+ * already sitting in real users' bios, and neither a rebrand nor a format
+ * change may silently un-verify an account that verified correctly.
  */
-const CODE_PATTERN = /^(CLIPVAULT|CLIPTIC)-[0-9]{6}$/;
+const CODE_PATTERN =
+  /^(VAULT-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}|CLIPVAULT-[0-9]{6}|CLIPTIC-[0-9]{6})$/;
+
+/** 31 symbols — every letter and digit except I, O, 0 and 1. */
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /** Handles are 1-30 chars of letters, digits, dot or underscore. */
 const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
@@ -69,11 +75,22 @@ function normalizeHandle(raw: string, platform: Platform): string | null {
   return HANDLE_PATTERN.test(value) ? value : null;
 }
 
+/**
+ * Four random characters from {@link CODE_ALPHABET}, drawn from the platform's
+ * CSPRNG rather than `Math.random`, which is neither uniform nor unpredictable
+ * enough for something that stands in for proof of account ownership.
+ * 31^4 is ~1M combinations, on par with the six-digit format it replaces.
+ */
 function makeCode(): string {
-  const digits = Math.floor(Math.random() * 1_000_000)
-    .toString()
-    .padStart(6, "0");
-  return `CLIPVAULT-${digits}`;
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  let code = "";
+  for (const byte of bytes) {
+    /* The modulo bias here is ~3% against a 256/31 split — irrelevant for a
+       code whose real defence is that it must appear in a live bio. */
+    code += CODE_ALPHABET[byte % CODE_ALPHABET.length];
+  }
+  return `VAULT-${code}`;
 }
 
 export const listMine = query({
@@ -370,7 +387,9 @@ export const verifyBio = action({
     }
 
     const bio = profile.bio ?? "";
-    const found = bio.includes(account.code);
+    /* Match case-insensitively: platforms and phones both love to helpfully
+       change the case of a code someone pasted into their bio. */
+    const found = bio.toUpperCase().includes(account.code);
 
     await ctx.runMutation(internal.accounts.setStatus, {
       accountId: account._id,
