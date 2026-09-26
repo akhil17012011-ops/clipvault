@@ -77,8 +77,8 @@ export function Sidebar({
 }) {
   return (
     <>
-      {/* Desktop rail — fixed liquid-glass column */}
-      <aside className="liquid-glass fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col lg:flex">
+      {/* Desktop rail — fixed column */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-black/8 bg-white/70 dark:border-white/10 dark:bg-[#0C0A14]/70 backdrop-blur-2xl lg:flex">
         <SidebarBody layoutKey="nav-desktop" role={role} />
       </aside>
 

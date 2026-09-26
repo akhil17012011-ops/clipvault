@@ -41,7 +41,7 @@ export function UsersTable() {
       initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="panel-fx rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10"
+      className="rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -168,7 +168,7 @@ export function UsersTable() {
                               {user.accounts.map((account) => (
                                 <li
                                   key={account.id}
-                                  className="panel-fx flex flex-wrap items-center gap-3 rounded-lg border border-black/8 bg-card px-3 py-2 dark:border-white/10"
+                                  className="flex flex-wrap items-center gap-3 rounded-lg border border-black/8 bg-card px-3 py-2 dark:border-white/10"
                                 >
                                   <PlatformChip platform={account.platform} size="sm" />
                                   <span className="text-[13px] font-semibold">

@@ -100,7 +100,7 @@ export function AdminMessages({
       initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="panel-fx rounded-2xl border border-white/8 bg-card/60 p-5 backdrop-blur-2xl"
+      className="rounded-2xl border border-white/8 bg-card/60 p-5 backdrop-blur-2xl"
     >
       <div className="flex items-center gap-2.5">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">

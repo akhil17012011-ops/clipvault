@@ -301,7 +301,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -512,7 +512,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -569,7 +569,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -695,7 +695,7 @@ function AccountRow({
       ? `${fmtFull(stats.clips)} ${stats.clips === 1 ? "clip" : "clips"} · ${fmtViews(stats.views)} views`
       : null;
   return (
-    <li className="panel-fx flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3 py-2.5">
+    <li className="flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3 py-2.5">
       <PlatformChip platform={account.platform} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold">@{account.handle}</p>

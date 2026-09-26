@@ -66,7 +66,7 @@ export function TopBar({
   };
 
   return (
-    <header className="liquid-glass sticky top-0 z-40">
+    <header className="sticky top-0 z-40 border-b border-black/8 dark:border-white/10 bg-white/75 dark:bg-[#0C0A14]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2.5">
           <motion.button

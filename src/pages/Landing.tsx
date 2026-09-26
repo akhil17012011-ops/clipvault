@@ -61,8 +61,8 @@ function SiteNav() {
       <nav
         className={`relative mx-auto flex h-16 max-w-6xl items-center justify-between overflow-hidden rounded-2xl px-4 transition-all duration-300 sm:px-5 ${
           scrolled
-            ? "liquid-glass"
-            : "border border-white/10 bg-white/[0.05] backdrop-blur-xl"
+            ? "glass shadow-[0_20px_50px_-26px_rgb(76_29_149/0.45)]"
+            : "border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] backdrop-blur-xl"
         }`}
       >
         <Link to="/" className="shrink-0">

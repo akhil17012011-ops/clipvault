@@ -342,7 +342,7 @@ export function AdminView({
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+          className="rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -368,7 +368,7 @@ export function AdminView({
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="scroll-mt-24 panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+          className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
