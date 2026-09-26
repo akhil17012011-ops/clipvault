@@ -22,7 +22,7 @@ export function CampaignCard({
   );
 
   return (
-    <article className="group relative flex flex-col gap-4 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5 transition-all duration-300 hover:border-brand/40 hover:shadow-[0_18px_50px_-24px_rgb(109_74_255/0.65)]">
+    <article className="panel-fx group relative flex flex-col gap-4 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
       <div className="flex items-start gap-3.5">
         <BrandAvatar name={campaign.brand} />
         <div className="min-w-0 flex-1">
@@ -45,7 +45,7 @@ export function CampaignCard({
 
       <div className="flex items-end justify-between gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-background/50 px-4 py-3">
         <div>
-          <p className="text-2xl font-extrabold tracking-tight text-neon">
+          <p className="text-2xl font-extrabold tracking-tight text-brand">
             {fmtRate(campaign.ratePer1k)}
             <span className="ml-1 text-xs font-semibold text-muted-foreground">
               / 1K views
@@ -84,7 +84,7 @@ export function CampaignCard({
               key={rule}
               className="flex items-start gap-2 text-[12.5px] leading-snug text-muted-foreground"
             >
-              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neon" />
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
               {rule}
             </li>
           ))}

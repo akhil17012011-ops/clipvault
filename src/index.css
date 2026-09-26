@@ -340,6 +340,90 @@
   animation: cliptic-float 7.6s ease-in-out infinite 0.9s;
 }
 
+/* Hover-lift panels: rise + violet bloom + specular sheen sweep.
+   Used by campaign cards, stat cards, mock panels and CTA panels. */
+.panel-fx {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.45s ease;
+}
+.panel-fx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    120% 85% at 50% 0%,
+    rgb(124 92 255 / 0.16),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.panel-fx::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 42%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgb(255 255 255 / 0.55),
+    transparent
+  );
+  transform: skewX(-16deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel-fx:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 30px 60px -30px rgb(91 55 232 / 0.55),
+    0 0 0 1px rgb(91 55 232 / 0.16);
+  border-color: rgb(91 55 232 / 0.38);
+}
+.panel-fx:hover::before {
+  opacity: 1;
+}
+.panel-fx:hover::after {
+  animation: cliptic-panel-sweep 1.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes cliptic-panel-sweep {
+  0% {
+    left: -60%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    left: 130%;
+    opacity: 0;
+  }
+}
+.dark .panel-fx::after {
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgb(167 139 250 / 0.24),
+    transparent
+  );
+}
+.dark .panel-fx:hover {
+  box-shadow:
+    0 30px 60px -30px rgb(0 0 0 / 0.85),
+    0 0 0 1px rgb(139 92 246 / 0.4);
+  border-color: rgb(139 92 246 / 0.45);
+}
+
 @keyframes cliptic-shimmer {
   to {
     background-position: 200% 0;
@@ -365,8 +449,12 @@
   .float-b,
   .shimmer,
   .liquid::after,
+  .panel-fx::after,
   .live-dot::after {
     animation: none !important;
+  }
+  .panel-fx:hover {
+    transform: none;
   }
   .reveal {
     opacity: 1;

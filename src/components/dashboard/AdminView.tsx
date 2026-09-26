@@ -299,7 +299,7 @@ export function AdminView({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-[13px] font-bold text-neon">
+                      <span className="font-mono text-[13px] font-bold text-brand">
                         {fmtRate(campaign.ratePer1k)}
                       </span>
                       <span className="text-[11px] text-muted-foreground">
@@ -481,7 +481,7 @@ export function AdminView({
                     <TableCell>
                       <StatusBadge status={submission.status} />
                     </TableCell>
-                    <TableCell className="text-right font-mono text-[13px] font-bold text-neon">
+                    <TableCell className="text-right font-mono text-[13px] font-bold text-brand">
                       {submission.status === "rejected" ? (
                         <span className="text-muted-foreground">—</span>
                       ) : (

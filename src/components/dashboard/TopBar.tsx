@@ -81,7 +81,7 @@ export function TopBar({
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <span className="hidden items-center gap-2 rounded-full border border-neon/20 bg-neon/10 px-3 py-1.5 text-xs font-semibold text-neon md:inline-flex">
+          <span className="hidden items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand md:inline-flex">
             <Wallet className="h-3.5 w-3.5" />
             Payouts every Friday
           </span>

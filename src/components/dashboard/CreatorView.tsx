@@ -288,7 +288,7 @@ export function CreatorView({
                           <TableCell>
                             <StatusBadge status={submission.status} />
                           </TableCell>
-                          <TableCell className="text-right font-mono text-[13px] font-bold text-neon">
+                          <TableCell className="text-right font-mono text-[13px] font-bold text-brand">
                             {submission.status === "rejected" ? (
                               <span className="text-muted-foreground">—</span>
                             ) : qualifying ? (
@@ -367,7 +367,7 @@ export function CreatorView({
           <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neon/25 bg-neon/10 text-neon">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
                   <Wallet className="h-4 w-4" />
                 </span>
                 <h2 className="text-[15px] font-bold tracking-tight">
@@ -413,7 +413,7 @@ export function CreatorView({
                         <StatusBadge status="paid" />
                       </div>
                     </div>
-                    <span className="font-mono text-sm font-bold text-neon">
+                    <span className="font-mono text-sm font-bold text-brand">
                       {fmtMoney(cycle.amount, true)}
                     </span>
                   </li>
@@ -422,7 +422,7 @@ export function CreatorView({
             </ul>
 
             <p className="mt-4 flex items-start gap-2 text-[11.5px] leading-relaxed text-muted-foreground">
-              <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neon" />
+              <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
               Earnings land automatically in your payout method when a cycle
               closes.
             </p>
