@@ -1,6 +1,7 @@
 import '@vly-ai/integrations';
 import { Toaster } from "@/components/ui/sonner";
 import { RequireAuth } from "@/components/RequireAuth";
+import { RequireVerified } from "@/components/VerifyEmailGate";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ClipticProvider } from "@/lib/cliptic-store";
@@ -146,7 +147,9 @@ createRoot(document.getElementById("root")!).render(
                   path="/dashboard"
                   element={
                     <RequireAuth>
-                      <Dashboard />
+                      <RequireVerified>
+                        <Dashboard />
+                      </RequireVerified>
                     </RequireAuth>
                   }
                 />
@@ -154,7 +157,9 @@ createRoot(document.getElementById("root")!).render(
                   path="/dashboard/:section"
                   element={
                     <RequireAuth>
-                      <Dashboard />
+                      <RequireVerified>
+                        <Dashboard />
+                      </RequireVerified>
                     </RequireAuth>
                   }
                 />

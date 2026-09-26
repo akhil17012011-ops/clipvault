@@ -45,6 +45,7 @@ export function ConnectAccountModal({
   const [account, setAccount] = useState<LinkedAccount | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [seenBio, setSeenBio] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const generate = async () => {
@@ -75,6 +76,7 @@ export function ConnectAccountModal({
     if (!account) return;
     setStep("verifying");
     setError(null);
+    setSeenBio(null);
     try {
       /* The bio is fetched and checked server-side. */
       const result = await verifyAccount(account.id);
@@ -87,6 +89,7 @@ export function ConnectAccountModal({
       } else {
         setStep("code");
         setError(result.message);
+        setSeenBio(result.bio ?? null);
       }
     } catch (err) {
       setStep("code");
@@ -139,7 +142,8 @@ export function ConnectAccountModal({
                 </DialogTitle>
                 <DialogDescription>
                   Add the handle you post from. CLIPTIC generates a one-time
-                  code you drop into your bio so we can track your views.
+                  code you drop into your bio, then reads your public profile to
+                  confirm it's really there.
                 </DialogDescription>
               </DialogHeader>
 
@@ -147,7 +151,7 @@ export function ConnectAccountModal({
                 Platform
               </p>
               <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-                {PLATFORMS.filter((p) => p !== "x").map((p) => (
+                {PLATFORMS.map((p) => (
                   <button
                     key={p}
                     type="button"
@@ -266,6 +270,17 @@ export function ConnectAccountModal({
                 <p className="mt-3 text-center text-[12px] text-red-500 dark:text-red-400">
                   {error}
                 </p>
+              )}
+              {/* Show the bio we actually read, so a mismatch is obvious. */}
+              {seenBio !== null && (
+                <div className="mt-3 rounded-xl border border-black/8 bg-black/[0.03] px-3 py-2.5 text-left dark:border-white/10 dark:bg-white/[0.04]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    Bio we read
+                  </p>
+                  <p className="mt-1 line-clamp-3 text-[12px] text-foreground/80">
+                    {seenBio || <span className="text-muted-foreground">This profile has no bio text.</span>}
+                  </p>
+                </div>
               )}
               <p className="mt-3 text-center text-[11px] text-muted-foreground">
                 We load your public profile and look for the code above.

@@ -146,6 +146,16 @@ const schema = defineSchema(
       .index("by_user", ["userId"])
       .index("by_user_platform", ["userId", "platform"]),
 
+    // An outstanding email-verification challenge. Only the SHA-256 digest of
+    // the code is stored, never the code itself.
+    emailVerifications: defineTable({
+      userId: v.id("users"),
+      codeHash: v.string(),
+      sentAt: v.number(),
+      expiresAt: v.number(),
+      attempts: v.number(),
+    }).index("by_user", ["userId"]),
+
     // A clip a creator submitted to a campaign.
     submissions: defineTable({
       campaignId: v.id("campaigns"),

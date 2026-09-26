@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { action, internalMutation, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireAdmin, requireUser } from "./access";
+import { fetchProfile } from "./platforms";
 
 /**
  * Social accounts a creator has bio-verified.
@@ -151,21 +152,6 @@ export const setStatus = internalMutation({
  * Public profile URL for a platform + handle. Used to fetch the bio during
  * verification.
  */
-function profileUrl(platform: string, handle: string): string | null {
-  switch (platform) {
-    case "tiktok":
-      return `https://www.tiktok.com/@${handle}`;
-    case "instagram":
-      return `https://www.instagram.com/${handle}/`;
-    case "youtube":
-      return `https://www.youtube.com/@${handle}`;
-    case "x":
-      return `https://x.com/${handle}`;
-    default:
-      return null;
-  }
-}
-
 type CheckResult = {
   verified: boolean;
   /** The bio text we read, when we could read one. */
@@ -174,11 +160,9 @@ type CheckResult = {
 };
 
 /**
- * Fetches the creator's public profile and looks for the one-time code.
- *
- * Instagram and X render their bios client-side, so no code is found in the
- * raw HTML there; the creator is told to use a platform whose bio is
- * server-rendered. That is the honest outcome, not a fake success.
+ * Fetches the creator's public profile and looks for the one-time code in the
+ * bio. The profile is read on the server, and the code has to genuinely appear
+ * there — the client cannot assert that a verification happened.
  */
 export const verifyBio = action({
   args: {
@@ -192,91 +176,53 @@ export const verifyBio = action({
       return { verified: false, bio: null, message: "That code is not valid." };
     }
 
-    const url = profileUrl(args.platform, args.handle);
-    if (!url) {
-      return {
-        verified: false,
-        bio: null,
-        message: "That platform is not supported for verification.",
-      };
-    }
+    const profile = await fetchProfile(args.platform, args.handle);
 
-    let html: string | null = null;
-    try {
-      const response = await fetch(url, {
-        headers: {
-          // Ask for the server-rendered page; public desktop markup.
-          "user-agent":
-            "Mozilla/5.0 (compatible; CLIPTIC/1.0; +https://cliptic.app)",
-          accept: "text/html",
-        },
+    if (!profile.ok) {
+      await ctx.runMutation(internal.accounts.setStatus, {
+        accountId: args.accountId,
+        status: "failed",
       });
-      if (response.ok) html = await response.text();
-    } catch {
-      html = null;
+      return { verified: false, bio: null, message: profile.reason };
     }
 
-    if (html === null) {
+    /* A platform can resolve a different account than the one requested, so
+       the handle has to match what we looked for. */
+    if (profile.handle !== args.handle.toLowerCase()) {
       await ctx.runMutation(internal.accounts.setStatus, {
         accountId: args.accountId,
         status: "failed",
       });
       return {
         verified: false,
-        bio: null,
-        message:
-          "We couldn't reach that profile. Check the username and that the account is public.",
+        bio: profile.bio,
+        message: `That link points to @${profile.handle}, not @${args.handle}.`,
       };
     }
 
-    const found = html.includes(args.code);
-    const bio = extractBio(html);
-
-    if (found) {
-      await ctx.runMutation(internal.accounts.setStatus, {
-        accountId: args.accountId,
-        status: "connected",
-      });
-      return {
-        verified: true,
-        bio,
-        message: `We found ${args.code} on @${args.handle}.`,
-      };
-    }
+    const bio = profile.bio ?? "";
+    const found = bio.includes(args.code);
 
     await ctx.runMutation(internal.accounts.setStatus, {
       accountId: args.accountId,
-      status: "failed",
+      status: found ? "connected" : "failed",
     });
 
-    const serverRendered = args.platform !== "instagram" && args.platform !== "x";
+    if (found) {
+      return {
+        verified: true,
+        bio,
+        message: `We found ${args.code} in the bio on @${args.handle}.`,
+      };
+    }
+
     return {
       verified: false,
       bio,
-      message: serverRendered
-        ? `We loaded @${args.handle} but ${args.code} isn't in the bio yet. Paste the code, save, and try again.`
-        : `${args.platform === "instagram" ? "Instagram" : "X"} builds its bio in the browser, so we can't read it from here. Verify this account from a TikTok or YouTube profile instead.`,
+      message: bio
+        ? `We read @${args.handle}'s bio but ${args.code} isn't in it yet. Paste the code into the bio, save, then hit Verify again.`
+        : `We reached @${args.handle} but couldn't read a bio. Make sure the account is public and has the ${args.code} code in its bio.`,
     };
   },
 });
 
-/** Best-effort bio text out of a server-rendered profile page. */
-function extractBio(html: string): string | null {
-  const patterns = [
-    /<meta[^>]+name=["']description["'][^>]+content=["']([^"']{1,300})["']/i,
-    /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']{1,300})["']/i,
-  ];
-  for (const pattern of patterns) {
-    const match = html.match(pattern);
-    if (match?.[1]) {
-      return match[1]
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&#39;/g, "'")
-        .replace(/&quot;/g, '"')
-        .slice(0, 300);
-    }
-  }
-  return null;
-}
