@@ -12,27 +12,27 @@ import { motion } from "framer-motion";
  */
 export function AppLoading({ label = "Loading CLIPTIC" }: { label?: string }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-background px-6">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-background px-6">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       >
         <ClipticLogo className="h-9" />
       </motion.div>
 
-      <div className="h-1 w-44 overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
+      <div className="h-1 w-40 overflow-hidden rounded-full bg-white/[0.08]">
         <motion.div
           className="h-full w-1/3 rounded-full bg-gradient-to-r from-[#7C3AED] via-[#A855F7] to-[#4C1D95]"
           animate={{ x: ["-120%", "320%"] }}
-          transition={{ duration: 1.15, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
+        transition={{ delay: 0.05, duration: 0.25 }}
         className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground"
       >
         {label}

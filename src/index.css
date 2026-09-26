@@ -311,18 +311,26 @@ html.lenis body {
 .ambient-field::after {
   content: "";
   position: absolute;
-  width: 46rem;
-  height: 46rem;
+  width: 44rem;
+  height: 44rem;
   border-radius: 9999px;
-  filter: blur(110px);
+  /* No filter: blur() here on purpose. A 110px blur over a ~700px square, run
+     twice and animated continuously, is a per-frame convolution the compositor
+     has to redo every time it moves — it showed up as dropped frames and a
+     slower first paint across the whole dashboard. A radial gradient with soft
+     stops produces the same falloff for free, because it is painted once
+     rather than re-filtered on every frame. */
+  will-change: transform;
 }
 .ambient-field::before {
   top: -18rem;
   left: -10rem;
   background: radial-gradient(
-    circle,
-    rgb(139 63 226 / 0.28),
-    transparent 68%
+    circle closest-side,
+    rgb(139 63 226 / 0.3),
+    rgb(139 63 226 / 0.14) 45%,
+    rgb(139 63 226 / 0.05) 70%,
+    transparent 100%
   );
   animation: ambient-drift 26s ease-in-out infinite alternate;
 }
@@ -330,9 +338,11 @@ html.lenis body {
   right: -14rem;
   bottom: -20rem;
   background: radial-gradient(
-    circle,
-    rgb(76 29 149 / 0.3),
-    transparent 68%
+    circle closest-side,
+    rgb(76 29 149 / 0.34),
+    rgb(76 29 149 / 0.16) 45%,
+    rgb(76 29 149 / 0.06) 70%,
+    transparent 100%
   );
   animation: ambient-drift 32s ease-in-out infinite alternate-reverse;
 }
