@@ -10,7 +10,9 @@
  *  - TikTok   the bio is in the `signature` field of the embedded page JSON
  *  - X        the bio ships in the page's meta description
  *  - Instagram renders nothing server-side, so its public web profile API is
- *             used, which returns the `biography` field
+ *             used, which returns the `biography` field. Instagram throttles
+ *             datacentre IPs wholesale, so this one falls back to Apify, which
+ *             reads the same public profile from a residential IP.
  *
  * Nothing here guesses. If a profile cannot be read the caller is told so
  * rather than being handed a fabricated bio.
@@ -24,6 +26,9 @@ const BROWSER_UA =
 
 /** Instagram's web app identifies itself with this public constant header. */
 const INSTAGRAM_APP_ID = "936619743392459";
+
+/** Apify's official Instagram Profile Scraper. */
+const APIFY_ACTOR = "apify~instagram-profile-scraper";
 
 export type ProfileResult =
   | { ok: true; handle: string; bio: string }
@@ -132,69 +137,48 @@ async function fetchX(handle: string): Promise<ProfileResult> {
   return { ok: true, handle: handle.toLowerCase(), bio };
 }
 
-async function fetchInstagram(handle: string): Promise<ProfileResult> {
-  const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(handle)}`;
+/**
+ * Instagram's own public profile API.
+ *
+ * Returns a definitive result when the account can be told apart (it resolved,
+ * or Instagram answered 404 for a username that does not exist), and `null`
+ * when the request itself was refused. That distinction matters: a 429 here
+ * means Instagram throttled our IP, not that the handle is wrong, so it must
+ * be retried over a different route rather than reported to the creator.
+ */
+async function fetchInstagramDirect(
+  handle: string,
+): Promise<ProfileResult | null> {
   const headers: Record<string, string> = {
     "user-agent": BROWSER_UA,
     accept: "*/*",
     "x-ig-app-id": INSTAGRAM_APP_ID,
     referer: `https://www.instagram.com/${handle}/`,
   };
+  const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(handle)}`;
 
-  /* Instagram throttles aggressively per IP, so back off and retry once
-     before telling the creator anything is wrong. */
-  let response: Response | null = null;
-  let rateLimited = false;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1_200 * attempt));
-    }
-    try {
-      response = await fetch(url, { headers, redirect: "follow" });
-    } catch {
-      response = null;
-    }
-    if (response && response.status === 429) {
-      rateLimited = true;
-      continue;
-    }
-    break;
+  let response: Response;
+  try {
+    response = await fetch(url, { headers, redirect: "follow" });
+  } catch {
+    return null;
   }
 
-  if (!response) {
-    return {
-      ok: false,
-      reason: "We couldn't reach Instagram. Try again in a moment.",
-    };
-  }
-  if (response.status === 429) {
-    return {
-      ok: false,
-      reason:
-        "Instagram is rate-limiting us right now. Wait a minute and hit Verify again, or connect this handle from a TikTok or YouTube profile.",
-    };
-  }
   if (response.status === 404) {
     return {
       ok: false,
       reason: `We couldn't find an Instagram account called @${handle}.`,
     };
   }
-  if (!response.ok) {
-    return {
-      ok: false,
-      reason: `Instagram returned an error (${response.status}). Try again shortly.`,
-    };
-  }
+  // A 429, or the 400/5xx Instagram's own serializer returns when it trips
+  // over a malformed profile, says nothing either way about the handle.
+  if (!response.ok) return null;
 
   let payload: unknown;
   try {
     payload = await response.json();
   } catch {
-    return {
-      ok: false,
-      reason: "Instagram didn't return a profile we could read. Try again shortly.",
-    };
+    return null;
   }
 
   const user = (payload as { data?: { user?: Record<string, unknown> } })?.data
@@ -202,7 +186,7 @@ async function fetchInstagram(handle: string): Promise<ProfileResult> {
   if (!user || typeof user.username !== "string") {
     return {
       ok: false,
-      reason: `There's no public Instagram account called @${handle}.`,
+      reason: `We couldn't find an Instagram account called @${handle}.`,
     };
   }
 
@@ -210,6 +194,99 @@ async function fetchInstagram(handle: string): Promise<ProfileResult> {
     ok: true,
     handle: user.username.toLowerCase(),
     bio: typeof user.biography === "string" ? user.biography : "",
+  };
+}
+
+/**
+ * The same public profile, read through Apify.
+ *
+ * Instagram serves a blanket 429 to datacentre IP ranges — it does that even
+ * for usernames that do not exist — so our own servers are routinely refused.
+ * Apify fetches from residential IPs, which gets a normal answer.
+ *
+ * Apify charges per profile, so this runs only after the free direct lookup
+ * has already been refused. `null` means "could not ask Apify at all" (not
+ * configured, or the run failed), which is a different thing from Apify
+ * running fine and reporting that the account does not exist.
+ */
+async function fetchInstagramViaApify(
+  handle: string,
+): Promise<ProfileResult | null> {
+  const token = process.env.APIFY_TOKEN;
+  if (!token) {
+    // Operator-facing hint. Without this variable Instagram verification only
+    // works from networks Instagram happens not to be throttling.
+    console.log(
+      "APIFY_TOKEN is unset, so Instagram lookups are limited to the direct route",
+    );
+    return null;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://api.apify.com/v2/acts/${APIFY_ACTOR}/run-sync-get-dataset-items?format=json&timeout=120`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          // Sent as a header rather than a query string so the token never
+          // ends up in a URL that could be logged.
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ usernames: [handle] }),
+      },
+    );
+  } catch {
+    return null;
+  }
+
+  if (!response.ok) {
+    console.log("Apify Instagram lookup failed with status", response.status);
+    return null;
+  }
+
+  let items: unknown;
+  try {
+    items = await response.json();
+  } catch {
+    return null;
+  }
+
+  const first = (Array.isArray(items) ? items[0] : null) as {
+    username?: unknown;
+    biography?: unknown;
+  } | null;
+
+  // Apify ran successfully and matched nothing, so the handle really is not a
+  // public account rather than our request having been refused.
+  if (!first || typeof first.username !== "string") {
+    return {
+      ok: false,
+      reason: `We couldn't find an Instagram account called @${handle}.`,
+    };
+  }
+
+  return {
+    ok: true,
+    handle: first.username.toLowerCase(),
+    bio: typeof first.biography === "string" ? first.biography : "",
+  };
+}
+
+async function fetchInstagram(handle: string): Promise<ProfileResult> {
+  // Instagram directly first: free, fast, and it works from most networks.
+  const direct = await fetchInstagramDirect(handle);
+  if (direct) return direct;
+
+  // Refused, so read the identical public profile through Apify instead.
+  const viaApify = await fetchInstagramViaApify(handle);
+  if (viaApify) return viaApify;
+
+  return {
+    ok: false,
+    reason:
+      "Instagram isn't answering profile lookups from our servers right now. Try again in a few minutes.",
   };
 }
 
