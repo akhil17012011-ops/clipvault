@@ -28,6 +28,8 @@ import {
   type LinkedAccount,
 } from "@/lib/cliptic-data";
 import { useCliptic, useCreatorStats } from "@/lib/cliptic-store";
+import { MessagesInbox } from "@/components/dashboard/MessagesInbox";
+import { PayoutSettings } from "@/components/dashboard/PayoutSettings";
 import {
   Clock3,
   Eye,
@@ -49,7 +51,8 @@ export type CreatorSection =
   | "campaigns"
   | "clips"
   | "payments"
-  | "accounts";
+  | "accounts"
+  | "messages";
 
 export function CreatorView({
   section,
@@ -73,6 +76,11 @@ export function CreatorView({
   const openCampaign = campaigns.find((c) => c.id === openCampaignId);
   const { user } = useAuth();
   const stats = useCreatorStats();
+  /* Shown instead of a hardcoded payment method, so the header always matches
+     the wallet the creator actually entered. */
+  const payoutLabel = profile?.payoutAddress
+    ? `${profile.payoutCurrency === "ltc" ? "LTC" : "SOL"} ${profile.payoutAddress.slice(0, 6)}…${profile.payoutAddress.slice(-4)}`
+    : "No payout address yet";
   const name =
     profile?.name ?? user?.name ?? user?.email?.split("@")[0] ?? "Creator";
 
@@ -124,6 +132,12 @@ export function CreatorView({
       title: "Accounts",
       description:
         "Bio-verified handles that CLIPTIC tracks views back to you for.",
+    },
+    messages: {
+      kicker: "Inbox",
+      title: "Messages",
+      description:
+        "Approvals, declines and anything CLIPTIC has sent you directly.",
     },
   };
   const page = PAGES[section];
@@ -489,6 +503,8 @@ export function CreatorView({
           </motion.section>
       )}
 
+      {section === "messages" && <MessagesInbox />}
+
       {section === "accounts" && (
           <motion.section
             id="accounts"
@@ -565,7 +581,7 @@ export function CreatorView({
                 </h2>
               </div>
               <span className="text-[11px] text-muted-foreground">
-                PayPal ···· 4921
+                {payoutLabel}
               </span>
             </div>
 
@@ -586,8 +602,9 @@ export function CreatorView({
               </div>
             </div>
 
-            <ul className="mt-3 space-y-2">
-              {paidCycles.length === 0 ? (
+            <PayoutSettings />
+
+            <ul className="mt-3 space-y-2">              {paidCycles.length === 0 ? (
                 <li className="rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-4 py-4 text-center text-xs text-muted-foreground">
                   Paid cycles will show up here.
                 </li>

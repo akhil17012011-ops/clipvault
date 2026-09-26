@@ -58,6 +58,15 @@ const schema = defineSchema(
       isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
 
       role: v.optional(roleValidator), // role of the user. do not remove
+
+      /**
+       * Where this creator gets paid. Set by the creator, not by an admin, and
+       * only ever used to show them what they entered.
+       */
+      payoutCurrency: v.optional(
+        v.union(v.literal("sol"), v.literal("ltc")),
+      ),
+      payoutAddress: v.optional(v.string()),
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
     /* ------------------------------------------------------------------ */
@@ -163,6 +172,29 @@ const schema = defineSchema(
       attempts: v.number(),
     }).index("by_user", ["userId"]),
 
+    /**
+     * A message in a creator's inbox.
+     *
+     * Two kinds share one table so there is a single place to read: `notice`
+     * is written by the system when something happens to the creator's work,
+     * `admin` is a direct message a CLIPTIC operator sent them. Both are
+     * delivered to the same place, because from the creator's side they are
+     * the same thing — news about their account.
+     */
+    messages: defineTable({
+      userId: v.id("users"),
+      kind: v.union(v.literal("notice"), v.literal("admin")),
+      title: v.optional(v.string()),
+      body: v.string(),
+      /** Set once the creator has seen it; null means unread. */
+      readAt: v.optional(v.number()),
+      /** Link the creator back to the clip or campaign this is about. */
+      link: v.optional(v.string()),
+      createdAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_created", ["userId", "createdAt"]),
+
     // A clip a creator submitted to a campaign.
     submissions: defineTable({
       campaignId: v.id("campaigns"),
@@ -173,6 +205,12 @@ const schema = defineSchema(
       link: v.string(),
       /** Hashtags used in the caption. */
       tags: v.optional(v.array(v.string())),
+      /**
+       * True once a CLIPTIC operator has confirmed the view count. Until then
+       * the clip is carrying the number the creator's platform reported, which
+       * is a claim rather than a measurement.
+       */
+      viewsConfirmed: v.optional(v.boolean()),
       /** Handle the clip was published from, resolved from the link. */
       author: v.string(),
       /** The handle matched one of the creator's connected accounts. */

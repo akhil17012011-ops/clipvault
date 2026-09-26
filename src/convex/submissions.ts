@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { NotAllowedError, requireAdmin, requireUser } from "./access";
 
 /**
@@ -227,22 +228,83 @@ export const review = mutation({
       throw new Error("This clip has already been reviewed.");
     }
 
+    const campaign = await ctx.db.get(submission.campaignId);
+    const campaignName = campaign?.title ?? "your campaign";
+
     if (args.decision === "decline") {
+      const reason = args.note?.trim() || "Didn't meet the campaign brief.";
       await ctx.db.patch(args.submissionId, {
         status: "rejected",
-        reviewNote: args.note?.trim() || "Didn't meet the campaign brief.",
+        reviewNote: reason,
+      });
+      /* The creator is told why, in the same place they read everything else,
+         rather than the clip just quietly going red with no explanation. */
+      await ctx.runMutation(internal.messages.notify, {
+        userId: submission.userId,
+        title: `Clip declined for ${campaignName}`,
+        body: reason,
       });
       return;
     }
 
-    await ctx.db.patch(args.submissionId, { status: "active" });
+    await ctx.db.patch(args.submissionId, {
+      status: "active",
+      reviewNote: args.note?.trim() || undefined,
+    });
 
-    const campaign = await ctx.db.get(submission.campaignId);
+    await ctx.runMutation(internal.messages.notify, {
+      userId: submission.userId,
+      title: `Clip approved for ${campaignName}`,
+      body: args.note?.trim()
+        ? args.note.trim()
+        : "Your clip is approved and counting toward this campaign's payout.",
+    });
+
     if (campaign) {
       await ctx.db.patch(campaign._id, {
         clippers: campaign.clippers + 1,
       });
     }
+  },
+});
+
+/**
+ * Fixes the view count on a clip.
+ *
+ * The number a creator's platform reports is their claim, and it drifts. A
+ * CLIPTIC operator records the count they actually measured at review time and
+ * marks it confirmed, so the number driving a payout has a human behind it
+ * rather than coming straight off a link the creator pasted.
+ */
+export const confirmViews = mutation({
+  args: {
+    submissionId: v.id("submissions"),
+    views: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const submission = await ctx.db.get(args.submissionId);
+    if (!submission) throw new Error("That clip no longer exists.");
+    if (!Number.isFinite(args.views) || args.views < 0) {
+      throw new Error("Enter a view count of zero or more.");
+    }
+    await ctx.db.patch(args.submissionId, {
+      views: Math.round(args.views),
+      viewsConfirmed: true,
+      /* Confirming a count is a measurement, so the metrics snapshot is
+         refreshed to match instead of contradicting the stored total. */
+      metrics: submission.metrics
+        ? { ...submission.metrics, views: Math.round(args.views) }
+        : submission.metrics,
+    });
+
+    const campaign = await ctx.db.get(submission.campaignId);
+    await ctx.runMutation(internal.messages.notify, {
+      userId: submission.userId,
+      title: `View count updated for ${campaign?.title ?? "your clip"}`,
+      body: `Your clip is now recorded at ${Math.round(args.views).toLocaleString("en-US")} views.`,
+    });
+    return true;
   },
 });
 

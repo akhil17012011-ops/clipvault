@@ -72,6 +72,21 @@ export interface LinkedAccount {
   posts?: number | null;
 }
 
+/** A message in a creator's inbox. */
+export type MessageKind = "notice" | "admin";
+
+export interface CreatorMessage {
+  id: string;
+  kind: MessageKind;
+  title: string | null;
+  body: string;
+  link: string | null;
+  createdAt: number;
+  read: boolean;
+}
+
+export type PayoutCurrency = "sol" | "ltc";
+
 /** How much a single connected account has actually produced. */
 export interface AccountStats {
   accountId: string;

@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   UserRound,
   Users,
+  MessageSquare,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -47,6 +48,7 @@ const NAV: Record<DashboardView, NavItem[]> = {
     { to: "/dashboard/clips", label: "Clips", icon: Clapperboard },
     { to: "/dashboard/payments", label: "Payments", icon: Wallet },
     { to: "/dashboard/accounts", label: "Accounts", icon: UserRound },
+    { to: "/dashboard/messages", label: "Messages", icon: MessageSquare },
   ],
   admin: [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },

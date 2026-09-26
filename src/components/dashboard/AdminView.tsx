@@ -1,6 +1,7 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { CreatorsView } from "@/components/dashboard/CreatorsView";
 import { UsersTable } from "@/components/dashboard/UsersTable";
+import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ import {
 } from "@/lib/cliptic-data";
 import { useAdminStats, useCliptic } from "@/lib/cliptic-store";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   BarChart3,
   ClipboardList,
@@ -38,6 +40,7 @@ import {
   Play,
   Plus,
   Rocket,
+  Clapperboard,
   ScanSearch,
   ShieldCheck,
   Trash2,
@@ -210,6 +213,9 @@ export function AdminView({
     },
   };
   const page = PAGES[section];
+  /* Which campaign's clip list is open. One at a time, so the review queue
+     stays readable instead of turning into a wall of rows. */
+  const [openReviewId, setReviewing] = useState<string | null>(null);
 
   const shortcuts = [
     {
@@ -428,6 +434,7 @@ export function AdminView({
                 <TableHead className="hidden md:table-cell">Budget</TableHead>
                 <TableHead className="hidden lg:table-cell">Platforms</TableHead>
                 <TableHead>Invoice</TableHead>
+                <TableHead className="text-right">Clips</TableHead>
                 <TableHead className="text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -507,6 +514,21 @@ export function AdminView({
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 border-black/12 bg-black/[0.03] text-[12px] hover:bg-black/[0.05] dark:border-white/15 dark:bg-white/[0.05] dark:hover:bg-white/[0.08]"
+                        onClick={() =>
+                          setReviewing(
+                            openReviewId === campaign.id ? null : campaign.id,
+                          )
+                        }
+                      >
+                        <Clapperboard className="h-3 w-3" />
+                        Review
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <Button
                           variant="outline"
@@ -562,6 +584,20 @@ export function AdminView({
                   </TableRow>
                 );
               })}
+              {/* The review panel lives inside its own campaign's row, so each
+                  campaign carries its own pending/approved/rejected list. */}
+              {campaigns.map((campaign) =>
+                openReviewId === campaign.id ? (
+                  <TableRow key={`${campaign.id}-review`}>
+                    <TableCell
+                      colSpan={7}
+                      className="bg-black/[0.02] dark:bg-white/[0.02]"
+                    >
+                      <CampaignModeration campaign={campaign} />
+                    </TableCell>
+                  </TableRow>
+                ) : null,
+              )}
             </TableBody>
           </Table>
         </div>

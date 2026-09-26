@@ -19,6 +19,7 @@ const CREATOR_SECTIONS: CreatorSection[] = [
   "clips",
   "payments",
   "accounts",
+  "messages",
 ];
 const ADMIN_SECTIONS: AdminSection[] = [
   "overview",

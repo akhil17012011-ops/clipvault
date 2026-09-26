@@ -1,5 +1,6 @@
 import { ClipticLogo } from "@/components/ClipticMark";
 import { ProfileEditor } from "@/components/dashboard/ProfileEditor";
+import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   DropdownMenu,
@@ -103,6 +104,7 @@ export function TopBar({
         </div>
 
         <div className="flex items-center gap-3">
+          <NotificationBell />
           <ThemeToggle />
           <span className="hidden items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand md:inline-flex">
             <Wallet className="h-3.5 w-3.5" />

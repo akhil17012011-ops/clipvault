@@ -12,6 +12,8 @@ import {
   earnedOf,
   type AccountStats,
   type AdminUser,
+  type CreatorMessage,
+  type PayoutCurrency,
   type Campaign,
   type CampaignAsset,
   type ClipMetrics,
@@ -35,6 +37,9 @@ import {
  */
 
 export interface Profile {
+  /** Where the creator asked to be paid, if they have set it. */
+  payoutCurrency?: PayoutCurrency;
+  payoutAddress?: string;
   name: string;
   email: string;
   avatarUrl?: string;
@@ -49,6 +54,18 @@ interface ClipticContextValue {
   allAccounts: LinkedAccount[];
   /** Clips, views and earnings for each of my own connected accounts. */
   accountStats: AccountStats[];
+  /** My inbox: system notices and direct messages from CLIPTIC. */
+  messages: CreatorMessage[];
+  /** Unread messages, for the bell badge. */
+  unreadCount: number;
+  markAllRead: () => Promise<void>;
+  /** Save where I want to be paid. */
+  updatePayout: (patch: {
+    currency?: PayoutCurrency;
+    address?: string;
+  }) => Promise<void>;
+  /** Admin: overwrite a clip's view count with the measured figure. */
+  confirmViews: (id: string, views: number) => Promise<void>;
   /** Admin-only: every user with their accounts and totals. */
   adminUsers: AdminUser[];
   /** Change the display name and picture shown across CLIPTIC. */
@@ -270,6 +287,17 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
     isAuthenticated ? {} : SKIP,
   );
   const rawAdminUsers = useQuery(api.admin.users, isAdmin ? {} : SKIP);
+  const rawMessages = useQuery(
+    api.messages.listMine,
+    isAuthenticated ? {} : SKIP,
+  );
+  const rawUnread = useQuery(
+    api.messages.unreadCount,
+    isAuthenticated ? {} : SKIP,
+  );
+  const markAllReadMutation = useMutation(api.messages.markAllRead);
+  const updatePayoutMutation = useMutation(api.users.updatePayout);
+  const confirmViewsMutation = useMutation(api.submissions.confirmViews);
 
   const requestAccount = useMutation(api.accounts.request);
   const removeAccountMutation = useMutation(api.accounts.remove);
@@ -292,6 +320,8 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       name: user.name ?? user.email?.split("@")[0] ?? "Creator",
       email: user.email ?? "",
       avatarUrl: user.image,
+      payoutCurrency: user.payoutCurrency,
+      payoutAddress: user.payoutAddress,
     };
   }, [user]);
 
@@ -313,6 +343,29 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
   const adminUsers = useMemo(
     () => (rawAdminUsers ?? []) as AdminUser[],
     [rawAdminUsers],
+  );
+
+  const messages = useMemo(
+    () => (rawMessages ?? []) as CreatorMessage[],
+    [rawMessages],
+  );
+
+  const markAllRead = useCallback(async () => {
+    await markAllReadMutation();
+  }, [markAllReadMutation]);
+
+  const updatePayout = useCallback(
+    async (patch: { currency?: PayoutCurrency; address?: string }) => {
+      await updatePayoutMutation(patch);
+    },
+    [updatePayoutMutation],
+  );
+
+  const confirmViews = useCallback(
+    async (id: string, views: number) => {
+      await confirmViewsMutation({ submissionId: submissionId(id), views });
+    },
+    [confirmViewsMutation],
   );
 
   const updateProfile = useCallback(
@@ -500,6 +553,11 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       accountStats,
       adminUsers,
       updateProfile,
+      messages,
+      unreadCount: rawUnread ?? 0,
+      markAllRead,
+      updatePayout,
+      confirmViews,
       campaigns,
       submissions,
       allSubmissions,
@@ -524,6 +582,11 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       accountStats,
       adminUsers,
       updateProfile,
+      messages,
+      rawUnread,
+      markAllRead,
+      updatePayout,
+      confirmViews,
       campaigns,
       submissions,
       allSubmissions,
