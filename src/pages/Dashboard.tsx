@@ -8,7 +8,6 @@ import { TopBar, type DashboardView } from "@/components/dashboard/TopBar";
 import type { AdminSection } from "@/components/dashboard/AdminView";
 import type { CreatorSection } from "@/components/dashboard/CreatorView";
 import { useAuth } from "@/hooks/use-auth";
-import { roleForEmail } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -33,10 +32,10 @@ const ADMIN_SECTIONS: AdminSection[] = [
 type ModalKind = "connect" | "submit" | "create" | null;
 
 export default function Dashboard() {
-  const { accounts, profile, resetDemo } = useCliptic();
-  const { user } = useAuth();
-  /* The email you signed in with decides the dashboard — no manual switch. */
-  const view: DashboardView = roleForEmail(profile?.email ?? user?.email);
+  const { accounts } = useCliptic();
+  /* The role is read from the server's user record, not from the email. */
+  const { role } = useAuth();
+  const view: DashboardView = role;
   const [modal, setModal] = useState<ModalKind>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [onboardingSkipped, setOnboardingSkipped] = useState(false);
@@ -82,9 +81,7 @@ export default function Dashboard() {
   };
 
   const handleReset = () => {
-    resetDemo();
-    setOnboardingSkipped(false);
-    onboardedOnce.current = false;
+    /* Nothing to reset — the dashboard reads straight from the database. */
   };
 
   return (
@@ -96,7 +93,6 @@ export default function Dashboard() {
         role={view}
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        onReset={handleReset}
       />
 
       <div className="relative lg:pl-[264px]">
@@ -132,8 +128,8 @@ export default function Dashboard() {
         </div>
 
         <footer className="relative border-t border-black/8 dark:border-white/10 py-6 text-center text-xs text-muted-foreground">
-          CLIPTIC demo console · views, earnings and payouts update live from
-          simulated data.
+          CLIPTIC console · campaigns, clips and payouts are read live from
+          your account.
         </footer>
       </div>
 

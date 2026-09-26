@@ -1,11 +1,4 @@
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   InputOTP,
@@ -14,11 +7,11 @@ import {
 } from "@/components/ui/input-otp";
 import { ClipticLogo, ClipticMark } from "@/components/ClipticMark";
 import { useAuth } from "@/hooks/use-auth";
-import { useCliptic } from "@/lib/cliptic-store";
 import {
   ArrowRight,
   BadgeCheck,
   CheckCircle2,
+  KeyRound,
   Loader2,
   Mail,
   ShieldCheck,
@@ -30,6 +23,9 @@ import { useNavigate, useSearchParams } from "react-router";
 interface AuthProps {
   redirectAfterAuth?: string;
 }
+
+type Mode = "password" | "code";
+type PasswordFlow = "signIn" | "signUp";
 
 function resolveRedirectAfterAuth(
   returnTo: string | null,
@@ -64,98 +60,123 @@ function GoogleG({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
-const GOOGLE_ACCOUNTS = [
-  { name: "Ava Rivera", email: "ava.rivera@gmail.com", tint: "from-[#C084FC] to-[#5B0FA6]" },
-  { name: "Marcus Lee", email: "marcus.clips@gmail.com", tint: "from-[#A855F7] to-[#5B0FA6]" },
-  { name: "CLIPTIC Admin", email: "admin@cliptic.com", tint: "from-zinc-900 to-zinc-600" },
-];
+/** Turns a Convex Auth failure into something a person can act on. */
+function readableError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error ?? "");
+  if (/already exists|already been registered|is taken/i.test(raw)) {
+    return "An account already uses that email. Try signing in instead.";
+  }
+  if (/invalid credentials|incorrect password/i.test(raw)) {
+    return "That email and password don't match an account.";
+  }
+  if (/password/i.test(raw) && /short|invalid|8/i.test(raw)) {
+    return "Passwords need to be at least 8 characters.";
+  }
+  if (/rate limit|too many/i.test(raw)) {
+    return "Too many attempts. Wait a moment and try again.";
+  }
+  if (/provider|not configured|clientId|oauth/i.test(raw)) {
+    return "That sign-in method isn't available right now. Try another option.";
+  }
+  return raw.slice(0, 180) || "Something went wrong. Please try again.";
+}
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
-  const { setProfile } = useCliptic();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = resolveRedirectAfterAuth(
     searchParams.get("returnTo"),
     redirectAfterAuth,
   );
-  const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
+
+  const [mode, setMode] = useState<Mode>("password");
+  const [flow, setFlow] = useState<PasswordFlow>("signUp");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [codeEmail, setCodeEmail] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [googleOpen, setGoogleOpen] = useState(false);
-  const [pickingEmail, setPickingEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate(redirect);
+      navigate(redirect, { replace: true });
     }
   }, [authLoading, isAuthenticated, navigate, redirect]);
 
-  /** Simulated Google account picker → real session via anonymous auth. */
-  const handleGoogleAccount = async (account: {
-    name: string;
-    email: string;
-  }) => {
-    setPickingEmail(account.email);
+  /* Real Google OAuth: the browser is handed to Google and comes back. */
+  const handleGoogle = async () => {
+    setBusy(true);
     setError(null);
     try {
-      await signIn("anonymous");
-      setProfile({ name: account.name, email: account.email });
-      navigate(redirect);
+      await signIn("google", { redirectTo: window.location.href });
     } catch (err) {
       console.error("Google sign-in error:", err);
-      setError("Sign-in failed. Try again or continue with email.");
-      setPickingEmail(null);
-      setGoogleOpen(false);
+      setError(readableError(err));
+      setBusy(false);
     }
   };
 
-  const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
-    setIsLoading(true);
+    setBusy(true);
     setError(null);
     try {
-      const formData = new FormData(event.currentTarget);
-      await signIn("email-otp", formData);
-      setStep({ email: formData.get("email") as string });
-      setIsLoading(false);
+      await signIn("password", {
+        email: email.trim().toLowerCase(),
+        password,
+        flow,
+      });
+      /* On success the auth effect above redirects. */
+    } catch (err) {
+      console.error("Password sign-in error:", err);
+      setError(readableError(err));
+      setBusy(false);
+    }
+  };
+
+  const handleCodeRequest = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await signIn("email-otp", { email: email.trim().toLowerCase() } as never);
+      setCodeEmail(email.trim().toLowerCase());
+      setBusy(false);
     } catch (err) {
       console.error("Email sign-in error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to send verification code. Please try again.",
-      );
-      setIsLoading(false);
+      setError(readableError(err));
+      setBusy(false);
     }
   };
 
   const handleOtpSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
+    if (!codeEmail) return;
+    setBusy(true);
     setError(null);
     try {
-      const formData = new FormData(event.currentTarget);
-      const email = String(formData.get("email") ?? "");
-      await signIn("email-otp", formData);
-      setProfile({
-        name: email.split("@")[0] || "Creator",
-        email,
-      });
-      navigate(redirect);
+      await signIn("email-otp", {
+        email: codeEmail,
+        code: otp,
+      } as never);
     } catch (err) {
       console.error("OTP verification error:", err);
       setError("The verification code you entered is incorrect.");
-      setIsLoading(false);
       setOtp("");
+      setBusy(false);
     }
   };
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       {/* ---------------- brand panel ---------------- */}
-      <aside className="relative hidden overflow-hidden border-r border-black/8 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] p-10 lg:flex lg:flex-col lg:justify-between">
+      <aside className="relative hidden overflow-hidden border-r border-black/8 bg-white/60 p-10 dark:border-white/10 dark:bg-white/[0.06] lg:flex lg:flex-col lg:justify-between">
         <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-[#8B3FE2]/35 blur-[130px]" />
         <div className="pointer-events-none absolute -bottom-40 -right-24 h-[420px] w-[420px] rounded-full bg-[#7C3AED]/25 blur-[130px]" />
         <div className="grid-fade pointer-events-none absolute inset-0" />
@@ -167,7 +188,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         <div className="relative max-w-md">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand/35 bg-brand/10 px-3.5 py-1.5 text-[12px] font-semibold text-brand">
             <BadgeCheck className="h-3.5 w-3.5" />
-            For creators & brands
+            For creators &amp; brands
           </span>
           <h1 className="mt-6 text-balance text-4xl font-extrabold leading-[1.05] tracking-[-0.04em] xl:text-5xl">
             Turn views into <span className="text-grad">real income</span>.
@@ -196,7 +217,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </ul>
         </div>
 
-        <div className="relative grid max-w-md grid-cols-3 gap-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] p-5 backdrop-blur">
+        <div className="relative grid max-w-md grid-cols-3 gap-4 rounded-2xl border border-black/10 bg-black/[0.02] p-5 backdrop-blur dark:border-white/10 dark:bg-white/[0.04]">
           {[
             { v: "Free", l: "to join" },
             { v: "3", l: "platforms tracked" },
@@ -221,105 +242,28 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             <ClipticLogo textClassName="text-xl" />
           </div>
 
-          <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06] p-7 shadow-[0_40px_100px_-60px_rgb(139_63_226/0.5)] backdrop-blur-xl sm:p-8">
+          <div className="rounded-3xl border border-black/10 bg-white/70 p-7 shadow-[0_40px_100px_-60px_rgb(139_63_226/0.5)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06] sm:p-8">
             <div className="flex justify-center">
               <ClipticMark className="mb-5 h-14 w-14" />
             </div>
 
-            {step === "signIn" ? (
-              <>
-                <h2 className="text-center text-2xl font-extrabold tracking-tight">
-                  Welcome to CLIPTIC
-                </h2>
-                <p className="mt-2 text-center text-sm text-muted-foreground">
-                  Sign in or create an account — it takes less than a minute.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => setGoogleOpen(true)}
-                  disabled={isLoading}
-                  className="mt-7 flex w-full items-center justify-center gap-3 rounded-xl border border-black/10 dark:border-white/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 hover:shadow-md disabled:opacity-60"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <GoogleG />
-                  )}
-                  Continue with Google
-                </button>
-
-                <div className="my-5 flex items-center gap-3">
-                  <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    or
-                  </span>
-                  <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
-                </div>
-
-                <form onSubmit={handleEmailSubmit}>
-                  <div className="relative flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        name="email"
-                        placeholder="name@example.com"
-                        type="email"
-                        className="h-11 pl-9"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      size="icon"
-                      className="h-11 w-11 shrink-0 glow-primary"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ArrowRight className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                  {error && (
-                    <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>
-                  )}
-                </form>
-
-                <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted-foreground">
-                  By continuing you agree to CLIPTIC&apos;s{" "}
-                  <span className="text-foreground/70 underline decoration-black/25 dark:decoration-white/25 underline-offset-2">
-                    Terms
-                  </span>{" "}
-                  and{" "}
-                  <span className="text-foreground/70 underline decoration-black/25 dark:decoration-white/25 underline-offset-2">
-                    Privacy Policy
-                  </span>
-                  .
-                </p>
-              </>
-            ) : (
+            {codeEmail ? (
               <>
                 <h2 className="text-center text-2xl font-extrabold tracking-tight">
                   Check your email
                 </h2>
                 <p className="mt-2 text-center text-sm text-muted-foreground">
-                  We&apos;ve sent a code to {step.email}
+                  We&apos;ve sent a code to {codeEmail}
                 </p>
                 <form onSubmit={handleOtpSubmit} className="mt-7">
-                  <input type="hidden" name="email" value={step.email} />
-                  <input type="hidden" name="code" value={otp} />
-
                   <div className="flex justify-center">
                     <InputOTP
                       value={otp}
                       onChange={setOtp}
                       maxLength={6}
-                      disabled={isLoading}
+                      disabled={busy}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && otp.length === 6 && !isLoading) {
+                        if (e.key === "Enter" && otp.length === 6 && !busy) {
                           const form = (e.target as HTMLElement).closest("form");
                           if (form) form.requestSubmit();
                         }
@@ -337,25 +281,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       {error}
                     </p>
                   )}
-                  <p className="mt-4 text-center text-sm text-muted-foreground">
-                    Didn&apos;t receive a code?{" "}
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="h-auto p-0 text-brand"
-                      onClick={() => setStep("signIn")}
-                    >
-                      Try again
-                    </Button>
-                  </p>
-
                   <div className="mt-6 flex flex-col gap-2">
                     <Button
                       type="submit"
                       className="h-11 w-full glow-primary"
-                      disabled={isLoading || otp.length !== 6}
+                      disabled={busy || otp.length !== 6}
                     >
-                      {isLoading ? (
+                      {busy ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Verifying…
@@ -370,8 +302,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={() => setStep("signIn")}
-                      disabled={isLoading}
+                      onClick={() => {
+                        setCodeEmail(null);
+                        setOtp("");
+                        setError(null);
+                      }}
+                      disabled={busy}
                       className="w-full text-muted-foreground"
                     >
                       Use a different email
@@ -379,96 +315,190 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                 </form>
               </>
+            ) : (
+              <>
+                <h2 className="text-center text-2xl font-extrabold tracking-tight">
+                  Welcome to CLIPTIC
+                </h2>
+                <p className="mt-2 text-center text-sm text-muted-foreground">
+                  Sign in or create an account — it takes less than a minute.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleGoogle}
+                  disabled={busy}
+                  className="mt-7 flex w-full items-center justify-center gap-3 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 hover:shadow-md disabled:opacity-60 dark:border-white/10"
+                >
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <GoogleG />
+                  )}
+                  Continue with Google
+                </button>
+
+                <div className="my-5 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    or
+                  </span>
+                  <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
+                </div>
+
+                {/* mode switch */}
+                <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl border border-black/10 bg-black/[0.02] p-1 dark:border-white/10 dark:bg-white/[0.04]">
+                  {(
+                    [
+                      { id: "password" as const, label: "Password", icon: KeyRound },
+                      { id: "code" as const, label: "Email code", icon: Mail },
+                    ]
+                  ).map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setMode(tab.id);
+                        setError(null);
+                      }}
+                      className={`flex h-9 items-center justify-center gap-1.5 rounded-lg text-[13px] font-semibold transition-colors ${
+                        mode === tab.id
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <tab.icon className="h-3.5 w-3.5" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {mode === "password" ? (
+                  <form onSubmit={handlePasswordSubmit}>
+                    <Input
+                      type="email"
+                      autoComplete="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-11"
+                      disabled={busy}
+                      required
+                    />
+                    <Input
+                      type="password"
+                      autoComplete={
+                        flow === "signUp" ? "new-password" : "current-password"
+                      }
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="mt-2.5 h-11"
+                      disabled={busy}
+                      minLength={8}
+                      required
+                    />
+                    {error && (
+                      <p className="mt-3 text-sm text-red-500 dark:text-red-400">
+                        {error}
+                      </p>
+                    )}
+                    <Button
+                      type="submit"
+                      className="mt-4 h-11 w-full glow-primary"
+                      disabled={busy}
+                    >
+                      {busy ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {flow === "signUp" ? "Creating…" : "Signing in…"}
+                        </>
+                      ) : flow === "signUp" ? (
+                        <>
+                          Create account
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          Sign in
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                    <p className="mt-4 text-center text-[12px] text-muted-foreground">
+                      {flow === "signUp"
+                        ? "Already have an account?"
+                        : "New to CLIPTIC?"}{" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFlow(flow === "signUp" ? "signIn" : "signUp");
+                          setError(null);
+                        }}
+                        className="font-semibold text-brand underline-offset-2 hover:underline"
+                      >
+                        {flow === "signUp" ? "Sign in" : "Create an account"}
+                      </button>
+                    </p>
+                  </form>
+                ) : (
+                  <form onSubmit={handleCodeRequest}>
+                    <div className="relative flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          autoComplete="email"
+                          placeholder="name@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-11 pl-9"
+                          disabled={busy}
+                          required
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        size="icon"
+                        className="h-11 w-11 shrink-0 glow-primary"
+                        disabled={busy}
+                        aria-label="Send verification code"
+                      >
+                        {busy ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ArrowRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    {error && (
+                      <p className="mt-3 text-sm text-red-500 dark:text-red-400">
+                        {error}
+                      </p>
+                    )}
+                  </form>
+                )}
+
+                <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted-foreground">
+                  By continuing you agree to CLIPTIC&apos;s{" "}
+                  <span className="text-foreground/70 underline decoration-black/25 underline-offset-2 dark:decoration-white/25">
+                    Terms
+                  </span>{" "}
+                  and{" "}
+                  <span className="text-foreground/70 underline decoration-black/25 underline-offset-2 dark:decoration-white/25">
+                    Privacy Policy
+                  </span>
+                  .
+                </p>
+              </>
             )}
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Demo access · sign in with an{" "}
-            <span className="font-semibold text-foreground">admin@…</span> email
-            for the brand console — any other email is a creator account.
-          </p>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
             Free to join · No following required
           </p>
         </div>
       </main>
-
-      {/* ---------------- Google account picker ---------------- */}
-      <Dialog open={googleOpen} onOpenChange={setGoogleOpen}>
-        <DialogContent className="max-w-[380px] overflow-hidden rounded-2xl border-black/10 dark:border-white/10 bg-white p-0 sm:max-w-[380px] [&>button]:text-zinc-500">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Choose an account</DialogTitle>
-            <DialogDescription>
-              Sign in to CLIPTIC with Google
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="bg-white p-6 text-zinc-900">
-            <GoogleG className="h-6 w-6" />
-            <h3 className="mt-4 text-xl font-medium text-zinc-900">
-              Choose an account
-            </h3>
-            <p className="mt-1 text-sm text-zinc-600">
-              to continue to{" "}
-              <span className="font-semibold text-zinc-900">CLIPTIC</span>
-            </p>
-
-            <ul className="mt-5 divide-y divide-zinc-100 border-y border-zinc-100">
-              {GOOGLE_ACCOUNTS.map((account) => {
-                const busy = pickingEmail === account.email;
-                return (
-                  <li key={account.email}>
-                    <button
-                      type="button"
-                      disabled={pickingEmail !== null}
-                      onClick={() => handleGoogleAccount(account)}
-                      className="flex w-full items-center gap-3 px-1 py-3 text-left transition-colors hover:bg-zinc-50 disabled:opacity-70"
-                    >
-                      <span
-                        className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br text-sm font-bold text-white ${account.tint}`}
-                      >
-                        {account.name[0]}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-zinc-900">
-                          {account.name}
-                        </span>
-                        <span className="block truncate text-xs text-zinc-500">
-                          {account.email}
-                        </span>
-                      </span>
-                      {busy && (
-                        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-zinc-400" />
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-              <li>
-                <button
-                  type="button"
-                  disabled={pickingEmail !== null}
-                  onClick={() => {
-                    setGoogleOpen(false);
-                    setStep("signIn");
-                  }}
-                  className="flex w-full items-center gap-3 px-1 py-3 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-70"
-                >
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500">
-                    <Mail className="h-4 w-4" />
-                  </span>
-                  Use another account
-                </button>
-              </li>
-            </ul>
-
-            <p className="mt-5 text-[11px] leading-relaxed text-zinc-500">
-              To continue, Google will share your name and email address with
-              CLIPTIC. This demo simulates the picker and opens a real session.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -13,7 +13,6 @@ import {
   PLATFORM_META,
   authorFromLink,
   extractTags,
-  fetchClipMetrics,
   fmtFull,
   fmtRate,
   platformFromLink,
@@ -21,6 +20,8 @@ import {
   type ClipMetrics,
   type Platform,
 } from "@/lib/cliptic-data";
+import { api } from "@/convex/_generated/api";
+import { useConvex } from "convex/react";
 import { useCliptic } from "@/lib/cliptic-store";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
@@ -65,17 +66,16 @@ interface ScanCheck {
 interface ScanPlan {
   checks: ScanCheck[];
   allOk: boolean;
-  metrics: ClipMetrics;
   payload: {
     campaignId: string;
     platform: Platform;
     link: string;
-    tags: string[];
+    caption: string;
     author: string;
-    verifiedOwner: boolean;
-    platformOk: boolean;
-    metrics: ClipMetrics;
   };
+  /** Real numbers read from the platform, or null when unavailable. */
+  metrics: ClipMetrics | null;
+  metricsNote: string | null;
 }
 
 function Metric({
@@ -106,6 +106,7 @@ export function SubmitClipModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const { accounts, campaigns, submitClip } = useCliptic();
+  const convex = useConvex();
   const joined = campaigns.filter((c) => c.joined && c.status === "active");
   const connected = accounts.filter((a) => a.status === "connected");
 
@@ -204,20 +205,18 @@ export function SubmitClipModal({
         ok: allowed && tagsOk && verifiedOwner,
       },
     ];
-    const metrics = fetchClipMetrics(detectedPlatform);
+    const metrics = null;
     return {
       checks,
       allOk: allowed && tagsOk && verifiedOwner,
-      metrics,
+      metrics: null,
+      metricsNote: null,
       payload: {
         campaignId: selected.id,
         platform: detectedPlatform,
         link: trimmed,
-        tags: captionTags,
+        caption,
         author: author ?? "unknown",
-        verifiedOwner,
-        platformOk: allowed,
-        metrics,
       },
     };
   };
@@ -256,20 +255,54 @@ export function SubmitClipModal({
     return () => window.clearTimeout(timer);
   }, [phase, revealed, scan]);
 
-  /* ---- pull views/likes from the platform, then queue for review ---- */
+  /* ---- read the real post off the platform, then queue for review ---- */
   useEffect(() => {
     if (phase !== "fetching" || !scan) return;
-    const timer = window.setTimeout(() => {
-      submitClip(scan.payload);
-      setFetched(true);
-      toast.success("Clip sent to review", {
-        description:
-          "An admin checks it by hand — it goes live on the campaign once accepted.",
-      });
-      setPhase("passed");
-    }, 1_600);
-    return () => window.clearTimeout(timer);
-  }, [phase, scan, submitClip]);
+    let cancelled = false;
+
+    (async () => {
+      /* Ask the server to resolve the link and read whatever the platform
+         exposes. Nothing here is invented. */
+      let metrics: ClipMetrics | null = null;
+      let metricsNote: string | null = null;
+      try {
+        const result = await convex.action(api.social.inspectClip, {
+          link: scan.payload.link,
+          platform: scan.payload.platform,
+        });
+        metrics = result.metrics;
+        metricsNote = result.metricsNote;
+      } catch (err) {
+        console.error("Could not read the post:", err);
+        metricsNote =
+          "We couldn't read this post's numbers right now — the clip is still queued for review.";
+      }
+
+      if (cancelled) return;
+
+      try {
+        await submitClip({ ...scan.payload, metrics: metrics ?? undefined });
+        setScan({ ...scan, metrics, metricsNote });
+        setFetched(true);
+        toast.success("Clip sent to review", {
+          description:
+            "A CLIPTIC operator checks it by hand — it goes live on the campaign once accepted.",
+        });
+        setPhase("passed");
+      } catch (err) {
+        console.error("Submit failed:", err);
+        toast.error("Couldn't submit that clip", {
+          description:
+            err instanceof Error ? err.message : "Please try again.",
+        });
+        setPhase("form");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, scan, submitClip, convex]);
 
   useEffect(() => {
     if (phase !== "passed") return;
@@ -575,10 +608,10 @@ export function SubmitClipModal({
                 <Database className="h-6 w-6 animate-pulse text-brand" />
               </div>
               <h3 className="mt-5 text-lg font-extrabold tracking-tight">
-                Grabbing data from {PLATFORM_META[scan.payload.platform].label}…
+                Reading your post on {PLATFORM_META[scan.payload.platform].label}…
               </h3>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                Reading views and engagement off your post
+                Confirming the link and pulling any numbers the platform exposes
               </p>
               <div className="mx-auto mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
                 <motion.div
@@ -605,17 +638,24 @@ export function SubmitClipModal({
                 campaign and starts earning views right away.
               </p>
 
-              {/* what we pulled off the platform */}
-              <div className="mx-auto mt-6 max-w-sm rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] p-4 text-left">
+              {/* what we actually read off the platform */}
+              <div className="mx-auto mt-6 max-w-sm rounded-2xl border border-black/8 bg-black/[0.03] p-4 text-left dark:border-white/10 dark:bg-white/[0.04]">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                  Pulled from the post
+                  Read from the post
                 </p>
-                <div className="mt-3 grid grid-cols-2 gap-2.5">
-                  <Metric icon={Eye} label="Views" value={fmtFull(scan.metrics.views)} />
-                  <Metric icon={Heart} label="Likes" value={fmtFull(scan.metrics.likes)} />
-                  <Metric icon={MessageCircle} label="Comments" value={fmtFull(scan.metrics.comments)} />
-                  <Metric icon={Share2} label="Shares" value={fmtFull(scan.metrics.shares)} />
-                </div>
+                {scan.metrics ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2.5">
+                    <Metric icon={Eye} label="Views" value={fmtFull(scan.metrics.views)} />
+                    <Metric icon={Heart} label="Likes" value={fmtFull(scan.metrics.likes)} />
+                    <Metric icon={MessageCircle} label="Comments" value={fmtFull(scan.metrics.comments)} />
+                    <Metric icon={Share2} label="Shares" value={fmtFull(scan.metrics.shares)} />
+                  </div>
+                ) : (
+                  <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                    {scan.metricsNote ??
+                      "This platform doesn't expose view counts to CLIPTIC, so earnings will start once the platform API is connected."}
+                  </p>
+                )}
                 <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <ShieldCheck className="h-3.5 w-3.5 text-neon" />
                   Posted by @{scan.payload.author} · verified account

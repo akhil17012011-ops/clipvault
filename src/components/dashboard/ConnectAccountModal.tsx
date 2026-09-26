@@ -28,7 +28,7 @@ const INSTRUCTIONS = [
   "Open your profile and make sure the account is public",
   "Paste the code into your bio (it can sit next to your link)",
   "Save the profile, then come back here",
-  "Hit Verify — we scan the bio and connect the account",
+  "Hit Verify — we load your profile and look for the code",
 ];
 
 export function ConnectAccountModal({
@@ -45,28 +45,57 @@ export function ConnectAccountModal({
   const [account, setAccount] = useState<LinkedAccount | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const generate = () => {
+  const generate = async () => {
     const clean = handle.trim().replace(/^@+/, "");
     if (!clean) {
       setError("Enter the username you post from.");
       return;
     }
     setError(null);
-    const created = addAccount(platform, clean);
-    setAccount(created);
-    setStep("code");
+    setBusy(true);
+    try {
+      /* The code is generated and stored on the server, not in the browser. */
+      const created = await addAccount(platform, clean);
+      setAccount(created);
+      setStep("code");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't start that connection. Try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   const verify = async () => {
     if (!account) return;
     setStep("verifying");
-    await verifyAccount(account.id);
-    setStep("success");
-    toast.success("Account verified", {
-      description: `@${account.handle} is connected — views now track back to you.`,
-    });
-    window.setTimeout(() => onOpenChange(false), 1_300);
+    setError(null);
+    try {
+      /* The bio is fetched and checked server-side. */
+      const result = await verifyAccount(account.id);
+      if (result.verified) {
+        setStep("success");
+        toast.success("Account connected", {
+          description: `@${account.handle} is verified — views from it count toward your earnings.`,
+        });
+        window.setTimeout(() => onOpenChange(false), 1_600);
+      } else {
+        setStep("code");
+        setError(result.message);
+      }
+    } catch (err) {
+      setStep("code");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't check that profile. Try again in a moment.",
+      );
+    }
   };
 
   const copyCode = async () => {
@@ -84,6 +113,13 @@ export function ConnectAccountModal({
     // don't let the wizard be dismissed while a bio check is running
     if (step === "verifying") return;
     onOpenChange(next);
+  };
+
+  const reset = () => {
+    setStep("form");
+    setHandle("");
+    setAccount(null);
+    setError(null);
   };
 
   return (
@@ -144,7 +180,7 @@ export function ConnectAccountModal({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") generate();
                   }}
-                  placeholder="avaclips"
+                  placeholder="yourhandle"
                   className="h-11 pl-8 font-mono"
                   autoFocus
                 />
@@ -159,8 +195,8 @@ export function ConnectAccountModal({
                 >
                   Cancel
                 </Button>
-                <Button className="flex-1 glow-primary" onClick={generate}>
-                  Generate code
+                <Button className="flex-1 glow-primary" onClick={generate} disabled={busy}>
+                  {busy ? "Generating…" : "Generate code"}
                 </Button>
               </div>
             </div>
@@ -218,7 +254,7 @@ export function ConnectAccountModal({
                 <Button
                   variant="outline"
                   className="flex-1 gap-1.5"
-                  onClick={() => setStep("form")}
+                  onClick={reset}
                 >
                   <ArrowLeft className="h-4 w-4" /> Back
                 </Button>
@@ -226,8 +262,13 @@ export function ConnectAccountModal({
                   <ShieldCheck className="h-4 w-4" /> Verify account
                 </Button>
               </div>
+              {error && (
+                <p className="mt-3 text-center text-[12px] text-red-500 dark:text-red-400">
+                  {error}
+                </p>
+              )}
               <p className="mt-3 text-center text-[11px] text-muted-foreground">
-                Demo mode — bio checks are simulated locally.
+                We load your public profile and look for the code above.
               </p>
             </div>
           )}
@@ -238,7 +279,7 @@ export function ConnectAccountModal({
                 <Loader2 className="h-6 w-6 animate-spin text-brand" />
               </div>
               <h3 className="mt-5 text-lg font-extrabold tracking-tight">
-                Checking @{account.handle}&apos;s bio…
+                Checking @{account.handle}&apos;s profile…
               </h3>
               <p className="mt-1.5 text-sm text-muted-foreground">
                 Looking for{" "}

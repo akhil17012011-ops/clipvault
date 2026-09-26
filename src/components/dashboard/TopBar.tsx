@@ -58,10 +58,8 @@ export function TopBar({
   };
 
   const handleReset = () => {
-    onReset();
-    toast.success("Demo data reset", {
-      description: "Campaigns, clips and accounts are back to their defaults.",
-    });
+    /* Nothing to reset: the console reads live from the database. */
+    toast("This console shows your live data — nothing to reset.");
   };
 
   return (
@@ -138,7 +136,7 @@ export function TopBar({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleReset}>
                 <RotateCcw className="mr-2 h-4 w-4" />
-                Reset demo data
+                Refresh data
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

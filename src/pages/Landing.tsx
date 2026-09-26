@@ -1011,6 +1011,24 @@ function CampaignsSection() {
               />
             </motion.div>
           ))}
+          {preview.length === 0 && (
+            <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-black/12 px-6 py-14 text-center dark:border-white/15">
+              <Sparkles className="h-6 w-6 text-brand" />
+              <p className="mt-3 text-sm font-semibold">
+                Campaigns appear here the moment a brand launches one
+              </p>
+              <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+                Every campaign shows its reward rate, qualifying threshold and
+                rules before you join — there is nothing to apply for.
+              </p>
+              <Button asChild className="mt-5 gap-1.5 glow-primary">
+                <Link to="/auth?returnTo=/dashboard">
+                  Create your free account
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         <motion.div {...fadeUp} className="mt-10 text-center">

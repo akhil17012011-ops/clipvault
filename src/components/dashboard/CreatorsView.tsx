@@ -13,13 +13,12 @@ import {
   fmtFull,
   fmtMoney,
   fmtViews,
-  seedCreators,
   type Campaign,
   type CreatorProfile,
   type Platform,
   type SubmissionStatus,
 } from "@/lib/cliptic-data";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useCliptic, useCreatorDirectory } from "@/lib/cliptic-store";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import {
@@ -45,9 +44,10 @@ function clipEarnings(clip: CreatorProfile["clips"][number], campaigns: Campaign
  * views and earnings.
  */
 export function CreatorsView() {
-  const { campaigns, submissions } = useCliptic();
+  const { campaigns } = useCliptic();
   const [query, setQuery] = useState("");
-  const creators = useMemo(() => seedCreators(), []);
+  /* Built from the accounts and clips that actually exist. */
+  const creators = useCreatorDirectory();
 
   const rows = creators
     .map((creator) => {
@@ -56,8 +56,6 @@ export function CreatorsView() {
         (sum, clip) => sum + clipEarnings(clip, campaigns),
         0,
       );
-      /* The signed-in creator's own clips count toward the directory too. */
-      const own = submissions.filter((s) => s.mine);
       return {
         creator,
         totals,
@@ -123,14 +121,14 @@ export function CreatorsView() {
         <SummaryCard
           icon={Film}
           label="Clips submitted"
-          value={`${totalClips + submissions.filter((s) => s.mine).length}`}
+          value={`${totalClips}`}
           sub="Across every campaign"
         />
         <SummaryCard
           icon={Eye}
           label="Views tracked"
-          value={fmtViews(totalViews + submissions.filter((s) => s.mine).reduce((n, s) => n + s.views, 0))}
-          sub="Pulled from the source platforms"
+          value={fmtViews(totalViews)}
+          sub="Read from the source platforms"
         />
         <SummaryCard
           icon={CircleDollarSign}

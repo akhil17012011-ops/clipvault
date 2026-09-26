@@ -21,7 +21,6 @@ import {
   LogOut,
   Megaphone,
   ReceiptText,
-  RotateCcw,
   Search,
   ShieldCheck,
   UserRound,
@@ -58,23 +57,24 @@ const NAV: Record<DashboardView, NavItem[]> = {
   ],
 };
 
+/** Where feedback and bug reports are sent. */
+const SUPPORT_EMAIL = "support@cliptic.app";
+
 export function Sidebar({
   role,
   open,
   onClose,
-  onReset,
 }: {
   role: DashboardView;
   /** Mobile drawer visibility (desktop rail is always rendered). */
   open: boolean;
   onClose: () => void;
-  onReset: () => void;
 }) {
   return (
     <>
       {/* Desktop rail — fixed liquid-glass column */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-black/8 bg-white/70 dark:border-white/10 dark:bg-[#0C0A14]/70 backdrop-blur-2xl lg:flex">
-        <SidebarBody layoutKey="nav-desktop" role={role} onReset={onReset} />
+        <SidebarBody layoutKey="nav-desktop" role={role} />
       </aside>
 
       {/* Mobile drawer */}
@@ -100,7 +100,6 @@ export function Sidebar({
               <SidebarBody
                 layoutKey="nav-mobile"
                 role={role}
-                onReset={onReset}
                 onNavigate={onClose}
               />
             </motion.aside>
@@ -114,13 +113,11 @@ export function Sidebar({
 function SidebarBody({
   role,
   layoutKey,
-  onReset,
   onNavigate,
 }: {
   role: DashboardView;
   /** Unique layoutId per instance so the active pill animates per rail. */
   layoutKey: string;
-  onReset: () => void;
   onNavigate?: () => void;
 }) {
   const items = NAV[role];
@@ -155,11 +152,12 @@ function SidebarBody({
     }
   };
 
-  const handleReset = () => {
-    onReset();
-    toast.success("Demo data reset", {
-      description: "Campaigns, clips and accounts are back to their defaults.",
-    });
+  /* Opens the visitor's mail client with the report details prefilled. */
+  const openFeedback = (subject: string) => {
+    const to = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+      `[CLIPTIC] ${subject} — ${email || "signed-in user"}`,
+    )}`;
+    window.location.href = to;
   };
 
   const filtered = items.filter((item) =>
@@ -270,12 +268,7 @@ function SidebarBody({
         </p>
         <button
           type="button"
-          onClick={() =>
-            toast("Report a bug", {
-              description:
-                "Demo build — nothing is sent. Production opens your mail client.",
-            })
-          }
+          onClick={() => openFeedback("Bug report")}
           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06] lg:py-2"
         >
           <Bug className="h-4 w-4 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
@@ -283,12 +276,7 @@ function SidebarBody({
         </button>
         <button
           type="button"
-          onClick={() =>
-            toast("Request a feature", {
-              description:
-                "Demo build — nothing is sent. Production opens the roadmap form.",
-            })
-          }
+          onClick={() => openFeedback("Feature request")}
           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06] lg:py-2"
         >
           <Lightbulb className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
@@ -330,10 +318,6 @@ function SidebarBody({
           <DropdownMenuItem onClick={() => navigate("/")}>
             <Home className="mr-2 h-4 w-4" />
             Landing page
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleReset}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset demo data
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

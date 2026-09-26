@@ -29,5 +29,13 @@ export default {
       applicationID: "vly-convex",
       algorithm: "RS256",
     },
+    // Real Google sign-in over OIDC. Convex Auth reads the client
+    // credentials from the deployment env as AUTH_GOOGLE_ID and
+    // AUTH_GOOGLE_SECRET; the authorized redirect URI registered in the
+    // Google console is <CONVEX_SITE_URL>/api/auth/callback/google.
+    {
+      domain: "https://accounts.google.com",
+      applicationID: "google",
+    },
   ],
 } satisfies AuthConfig;

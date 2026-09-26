@@ -11,7 +11,10 @@ import {
   requiredTags,
   validateClip,
   type Campaign,
+  type ClipMetrics,
 } from "@/lib/cliptic-data";
+import { api } from "@/convex/_generated/api";
+import { useConvex } from "convex/react";
 import { useCliptic } from "@/lib/cliptic-store";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -42,6 +45,7 @@ export function CampaignDetail({
   onBack: () => void;
 }) {
   const { accounts, submitClip } = useCliptic();
+  const convex = useConvex();
   const [link, setLink] = useState("");
   const [caption, setCaption] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -59,39 +63,55 @@ export function CampaignDetail({
     Math.round((campaign.spent / Math.max(campaign.budget, 1)) * 100),
   );
 
-  const handleSubmit = () => {
-    const result = validateClip({ campaign, link, caption, connectedHandles: connected });
-    if (!result.ok || !result.platform || !result.metrics) {
+  const handleSubmit = async () => {
+    const result = validateClip({
+      campaign,
+      link,
+      caption,
+      connectedHandles: connected,
+    });
+    if (!result.ok || !result.platform) {
       setError(result.error);
       setSent(null);
       return;
     }
     setError(null);
     setBusy(true);
-    /* Brief pause while the numbers are pulled, then it goes to review. */
-    window.setTimeout(() => {
-      submitClip({
+    try {
+      /* Read the real post, then hand it to the server for review. */
+      let metrics: ClipMetrics | undefined;
+      try {
+        const inspected = await convex.action(api.social.inspectClip, {
+          link: result.link,
+          platform: result.platform,
+        });
+        if (inspected.metrics) metrics = inspected.metrics;
+      } catch (err) {
+        console.error("Could not read the post:", err);
+      }
+
+      await submitClip({
         campaignId: campaign.id,
-        platform: result.platform!,
         link: result.link,
-        tags: result.tags,
+        caption,
         author: result.author,
-        verifiedOwner: result.verifiedOwner,
-        platformOk: result.platformOk,
-        metrics: result.metrics!,
+        metrics,
       });
-      setBusy(false);
-      setSent({
-        views: result.metrics!.views,
-        likes: result.metrics!.likes,
-      });
+
+      setSent({ views: metrics?.views ?? 0, likes: metrics?.likes ?? 0 });
       setLink("");
       setCaption("");
       toast.success("Clip sent to review", {
         description:
-          "An admin checks it by hand before it goes live on the campaign.",
+          "A CLIPTIC operator checks it by hand before it goes live on the campaign.",
       });
-    }, 900);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "We couldn't submit that clip.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

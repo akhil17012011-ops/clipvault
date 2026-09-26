@@ -308,6 +308,19 @@ export function CreatorView({
                   }
                 />
               ))}
+              {feed.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-black/12 px-6 py-12 text-center dark:border-white/15">
+                  <Megaphone className="h-6 w-6 text-muted-foreground" />
+                  <p className="mt-3 text-sm font-semibold">
+                    No campaigns are live yet
+                  </p>
+                  <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+                    Brands publish campaigns here as they launch them. Connect
+                    an account in the meantime and you&apos;ll be ready to clip
+                    the moment one goes live.
+                  </p>
+                </div>
+              )}
             </div>
           </motion.section>
       )}

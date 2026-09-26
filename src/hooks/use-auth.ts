@@ -14,6 +14,14 @@ export function useAuth() {
     isLoading,
     isAuthenticated,
     user,
+    /**
+     * The role comes from the user's row in the database, so it is decided by
+     * the server and cannot be influenced by anything the browser sends.
+     */
+    role: user?.role === "admin" ? ("admin" as const) : ("creator" as const),
+    /** Display name, preferring the real auth record over anything guessed. */
+    name:
+      user?.name ?? user?.email?.split("@")[0] ?? "Creator",
     signIn,
     signOut,
   };

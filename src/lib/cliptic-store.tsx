@@ -1,88 +1,70 @@
+import { api } from "@/convex/_generated/api";
+import type { GenericId } from "convex/values";
+import { useConvex, useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react";
 import {
   earnedOf,
-  makeCode,
-  seedCampaigns,
-  uid,
   type Campaign,
   type CampaignAsset,
   type ClipMetrics,
-  type DemoProfile,
+  type CreatorProfile,
   type LinkedAccount,
   type Platform,
   type Submission,
 } from "@/lib/cliptic-data";
 
 /**
- * Client-side demo store for CLIPTIC. It powers the whole product journey
- * (bio verification, campaign joins, clip submissions, admin moderation) with
- * live view-count simulation, persisted to localStorage so a refresh keeps the
- * story intact.
+ * CLIPTIC's data layer.
+ *
+ * Everything here is reactive Convex data — there is no local cache and no
+ * invented numbers. The context exists so the dashboard components have one
+ * place to reach for campaigns, connected accounts and clips, and so writes
+ * are expressed as intent ("join this campaign") rather than local state
+ * juggling.
+ *
+ * Record ids arrive as Convex ids; they are surfaced as plain strings because
+ * that is all the UI needs.
  */
 
-const STORAGE_KEY = "cliptic.demo.v3";
-const TICK_MS = 2_800;
-/** A fresh submission stays "in review" for a couple of ticks. */
-const REVIEW_MS = 11_000;
+export interface Profile {
+  name: string;
+  email: string;
+  avatarUrl?: string;
+}
 
-interface ClipticState {
-  profile: DemoProfile | null;
+interface ClipticContextValue {
+  profile: Profile | null;
+  /** True when the signed-in user is a CLIPTIC operator. */
+  isAdmin: boolean;
   accounts: LinkedAccount[];
+  /** Admin-only: every connected account on the platform. */
+  allAccounts: LinkedAccount[];
   campaigns: Campaign[];
+  /** Clips belonging to the signed-in creator. */
   submissions: Submission[];
-}
+  /** Admin-only: every clip on the platform. */
+  allSubmissions: Submission[];
 
-const initialState = (): ClipticState => ({
-  profile: null,
-  accounts: [],
-  campaigns: seedCampaigns(),
-  submissions: [],
-});
+  addAccount: (platform: Platform, handle: string) => Promise<LinkedAccount>;
+  verifyAccount: (id: string) => Promise<{ verified: boolean; message: string }>;
+  removeAccount: (id: string) => Promise<void>;
 
-function loadState(): ClipticState {
-  if (typeof window === "undefined") return initialState();
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return initialState();
-    const parsed = JSON.parse(raw) as Partial<ClipticState>;
-    if (!parsed || !Array.isArray(parsed.campaigns) || !Array.isArray(parsed.submissions)) {
-      return initialState();
-    }
-    return {
-      profile: parsed.profile ?? null,
-      accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
-      campaigns: parsed.campaigns,
-      submissions: parsed.submissions,
-    };
-  } catch {
-    return initialState();
-  }
-}
+  toggleJoinCampaign: (id: string) => Promise<void>;
 
-interface ClipticContextValue extends ClipticState {
-  setProfile: (profile: DemoProfile | null) => void;
-  addAccount: (platform: Platform, handle: string) => LinkedAccount;
-  verifyAccount: (id: string) => Promise<boolean>;
-  removeAccount: (id: string) => void;
-  toggleJoinCampaign: (id: string) => void;
   submitClip: (input: {
     campaignId: string;
-    platform: Platform;
     link: string;
-    tags: string[];
+    caption: string;
     author: string;
-    verifiedOwner: boolean;
-    platformOk: boolean;
-    metrics: ClipMetrics;
-  }) => void;
+    metrics?: ClipMetrics;
+  }) => Promise<void>;
+
   createCampaign: (input: {
     brand: string;
     title: string;
@@ -96,176 +78,297 @@ interface ClipticContextValue extends ClipticState {
     daysLeft: number;
     platforms: Platform[];
     guidelines: string[];
-  }) => void;
-  updateCampaign: (id: string, patch: Partial<Campaign>) => void;
-  setCampaignStatus: (id: string, status: Campaign["status"]) => void;
-  cycleInvoice: (id: string) => void;
-  settleSubmission: (id: string, status: "paid" | "rejected") => void;
-  /**
-   * Admin moderation: accepting sends the clip to the campaign (it goes live
-   * and starts earning), declining removes it and tells the creator why.
-   */
+  }) => Promise<void>;
+  updateCampaign: (id: string, patch: Partial<Campaign>) => Promise<void>;
+  setCampaignStatus: (
+    id: string,
+    status: Campaign["status"],
+  ) => Promise<void>;
+  cycleInvoice: (id: string) => Promise<void>;
+  deleteCampaign: (id: string) => Promise<void>;
+
   reviewSubmission: (
     id: string,
     decision: "accept" | "decline",
     note?: string,
-  ) => void;
-  resetDemo: () => void;
+  ) => Promise<void>;
+  settleSubmission: (id: string, status: "paid" | "rejected") => Promise<void>;
 }
 
 const ClipticContext = createContext<ClipticContextValue | null>(null);
 
+/* ------------------------------------------------------------------ */
+/* Id helpers                                                          */
+/*                                                                     */
+/* The UI works with plain strings for record ids, but the Convex        */
+/* mutations insist on branded ids. These ids all come from Convex       */
+/* queries in the first place, so narrowing them back is safe.          */
+/* ------------------------------------------------------------------ */
+
+const campaignId = (id: string) => id as GenericId<"campaigns">;
+const accountId = (id: string) => id as GenericId<"connectedAccounts">;
+const submissionId = (id: string) => id as GenericId<"submissions">;
+
+/** Tells `useQuery` not to run a query at all. */
+const SKIP = "skip" as const;
+
+/* ---------------- mapping between Convex rows and UI shapes ---------------- */
+
+type AccountRow = {
+  _id: string;
+  platform: Platform;
+  handle: string;
+  code: string;
+  status: LinkedAccount["status"];
+  connectedAt?: number;
+  ownerName?: string;
+};
+
+const toAccount = (row: AccountRow, mine: boolean): LinkedAccount => ({
+  id: row._id,
+  platform: row.platform,
+  handle: row.handle,
+  code: row.code,
+  status: row.status,
+  connectedAt: row.connectedAt,
+  mine,
+  /* Only the brand console's directory rows carry the account's owner. */
+  ownerName: row.ownerName,
+});
+
+const toCampaign = (row: {
+  _id: string;
+  brand: string;
+  title: string;
+  logo?: string;
+  brief?: string;
+  referenceLinks: CampaignAsset[];
+  sourceFiles: CampaignAsset[];
+  ratePer1k: number;
+  minViews: number;
+  platforms: Platform[];
+  daysLeft: number;
+  budget: number;
+  spent: number;
+  clippers: number;
+  guidelines: string[];
+  status: Campaign["status"];
+  invoice: Campaign["invoice"];
+  joined: boolean;
+  createdAt: number;
+}): Campaign => ({
+  id: row._id,
+  brand: row.brand,
+  title: row.title,
+  logo: row.logo,
+  brief: row.brief,
+  referenceLinks: row.referenceLinks ?? [],
+  sourceFiles: row.sourceFiles ?? [],
+  ratePer1k: row.ratePer1k,
+  minViews: row.minViews,
+  platforms: row.platforms,
+  daysLeft: row.daysLeft,
+  budget: row.budget,
+  spent: row.spent,
+  clippers: row.clippers,
+  guidelines: row.guidelines,
+  status: row.status,
+  invoice: row.invoice,
+  joined: row.joined,
+  createdAt: row.createdAt,
+});
+
+type SubmissionRow = {
+  _id: string;
+  campaignId: string;
+  creator: string;
+  platform: Platform;
+  link: string;
+  tags?: string[];
+  author: string;
+  verifiedOwner: boolean;
+  platformOk: boolean;
+  metrics?: ClipMetrics;
+  views: number;
+  status: Submission["status"];
+  submittedAt: number;
+  reviewNote?: string;
+};
+
+const toSubmission = (row: SubmissionRow, mine: boolean): Submission => ({
+  id: row._id,
+  campaignId: row.campaignId,
+  creator: row.creator,
+  mine,
+  platform: row.platform,
+  link: row.link,
+  tags: row.tags,
+  author: row.author,
+  verifiedOwner: row.verifiedOwner,
+  platformOk: row.platformOk,
+  metrics: row.metrics,
+  views: row.views,
+  status: row.status,
+  submittedAt: row.submittedAt,
+  reviewNote: row.reviewNote,
+});
+
+/* ------------------------------------------------------------------ */
+
 export function ClipticProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ClipticState>(loadState);
+  const convex = useConvex();
+  const { isAuthenticated } = useConvexAuth();
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      /* storage full or unavailable — demo still works in-memory */
-    }
-  }, [state]);
+  const user = useQuery(api.users.currentUser);
+  const isAdmin = user?.role === "admin";
 
-  /* Live simulation: view counts climb, earnings accrue, reviews clear. */
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setState((prev) => {
-        const now = Date.now();
-        let changed = false;
-        const submissions = prev.submissions.map((sub) => {
-          if (sub.status === "paid" || sub.status === "rejected") return sub;
-          changed = true;
-          /* Only clips an admin has accepted go live and start earning. */
-          if (sub.status === "active") {
-            const growth =
-              Math.floor(Math.random() * 3_600) + 400 +
-              Math.floor(sub.views * 0.004);
-            return {
-              ...sub,
-              views: sub.views + growth,
-              metrics: sub.metrics
-                ? { ...sub.metrics, views: sub.metrics.views + growth }
-                : undefined,
-            };
-          }
-          return sub;
-        });
-        return changed ? { ...prev, submissions } : prev;
-      });
-    }, TICK_MS);
-    return () => window.clearInterval(timer);
-  }, []);
+  /* Signed-out visitors still see the campaign catalog on the landing page, so
+     the public list is used until there is a session to read joins from. */
+  const rawPublicCampaigns = useQuery(
+    api.campaigns.publicList,
+    isAuthenticated ? SKIP : {},
+  );
+  const rawCampaigns = useQuery(
+    api.campaigns.list,
+    isAuthenticated ? {} : SKIP,
+  );
 
-  const setProfile = useCallback((profile: DemoProfile | null) => {
-    setState((prev) => ({ ...prev, profile }));
-  }, []);
+  /* Admin-only reads are skipped entirely for creators, so the server never
+     sees a request it would have to reject. */
+  const rawAccounts = useQuery(api.accounts.listMine, isAuthenticated ? {} : SKIP);
+  const rawAllAccounts = useQuery(
+    api.accounts.listAll,
+    isAdmin ? {} : SKIP,
+  );
+  const rawMine = useQuery(api.submissions.listMine, isAuthenticated ? {} : SKIP);
+  const rawAll = useQuery(
+    api.submissions.listAll,
+    isAdmin ? {} : SKIP,
+  );
 
-  const addAccount = useCallback((platform: Platform, handle: string) => {
-    const account: LinkedAccount = {
-      id: uid(),
-      platform,
-      handle: handle.replace(/^@+/, ""),
-      code: makeCode(),
-      status: "pending",
+  const requestAccount = useMutation(api.accounts.request);
+  const removeAccountMutation = useMutation(api.accounts.remove);
+  const joinCampaign = useMutation(api.campaigns.join);
+  const leaveCampaign = useMutation(api.campaigns.leave);
+  const submitClipMutation = useMutation(api.submissions.submit);
+  const createCampaignMutation = useMutation(api.campaigns.create);
+  const updateCampaignMutation = useMutation(api.campaigns.update);
+  const setStatusMutation = useMutation(api.campaigns.setStatus);
+  const setInvoiceMutation = useMutation(api.campaigns.setInvoice);
+  const removeCampaignMutation = useMutation(api.campaigns.remove);
+  const reviewMutation = useMutation(api.submissions.review);
+  const settleMutation = useMutation(api.submissions.settle);
+
+  /* The profile is the real auth record, not anything the browser can set. */
+  const profile: Profile | null = useMemo(() => {
+    if (!user) return null;
+    return {
+      name: user.name ?? user.email?.split("@")[0] ?? "Creator",
+      email: user.email ?? "",
+      avatarUrl: user.image,
     };
-    setState((prev) => ({ ...prev, accounts: [...prev.accounts, account] }));
-    return account;
-  }, []);
+  }, [user]);
 
-  const verifyAccount = useCallback((id: string) => {
-    return new Promise<boolean>((resolve) => {
-      setState((prev) => ({
-        ...prev,
-        accounts: prev.accounts.map((a) =>
-          a.id === id ? { ...a, status: "checking" } : a,
-        ),
-      }));
-      window.setTimeout(() => {
-        setState((prev) => ({
-          ...prev,
-          accounts: prev.accounts.map((a) =>
-            a.id === id
-              ? { ...a, status: "connected", connectedAt: Date.now() }
-              : a,
-          ),
-        }));
-        resolve(true);
-      }, 1_900);
-    });
-  }, []);
+  const accounts = useMemo(
+    () => (rawAccounts ?? []).map((row) => toAccount(row, true)),
+    [rawAccounts],
+  );
 
-  const removeAccount = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      accounts: prev.accounts.filter((a) => a.id !== id),
-    }));
-  }, []);
+  const allAccounts = useMemo(
+    () => (rawAllAccounts ?? []).map((row) => toAccount(row, false)),
+    [rawAllAccounts],
+  );
 
-  const toggleJoinCampaign = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      campaigns: prev.campaigns.map((c) =>
-        c.id === id
-          ? {
-              ...c,
-              joined: !c.joined,
-              clippers: c.clippers + (c.joined ? -1 : 1),
-            }
-          : c,
-      ),
-    }));
-  }, []);
+  const campaigns = useMemo(
+    () => (rawCampaigns ?? rawPublicCampaigns ?? []).map((row) => toCampaign(row)),
+    [rawCampaigns, rawPublicCampaigns],
+  );
+
+  const submissions = useMemo(
+    () => (rawMine ?? []).map((row) => toSubmission(row, true)),
+    [rawMine],
+  );
+
+  const allSubmissions = useMemo(
+    () => (rawAll ?? []).map((row) => toSubmission(row, false)),
+    [rawAll],
+  );
+
+  /* ---------------- writes ---------------- */
+
+  const addAccount = useCallback(
+    async (platform: Platform, handle: string) => {
+      const created = await requestAccount({ platform, handle });
+      if (!created) throw new Error("We couldn't start that connection.");
+      return toAccount(created, true);
+    },
+    [requestAccount],
+  );
+
+  const verifyAccount = useCallback(
+    async (id: string) => {
+      const account = (rawAccounts ?? []).find((row) => row._id === id);
+      if (!account) {
+        return {
+          verified: false,
+          message: "That connection request no longer exists.",
+        };
+      }
+      const result = await convex.action(api.accounts.verifyBio, {
+        accountId: account._id,
+        platform: account.platform,
+        handle: account.handle,
+        code: account.code,
+      });
+      return { verified: result.verified, message: result.message };
+    },
+    [convex, rawAccounts],
+  );
+
+  const removeAccount = useCallback(
+    async (id: string) => {
+      await removeAccountMutation({ accountId: accountId(id) });
+    },
+    [removeAccountMutation],
+  );
+
+  const toggleJoinCampaign = useCallback(
+    async (id: string) => {
+      /* The landing page is public. Its Join button sends signed-out visitors
+         to sign in first, so there is nothing to do here without a session. */
+      if (!isAuthenticated) return;
+      const campaign = (rawCampaigns ?? []).find((row) => row._id === id);
+      if (!campaign) return;
+      if (campaign.joined) {
+        await leaveCampaign({ campaignId: campaignId(id) });
+      } else {
+        await joinCampaign({ campaignId: campaignId(id) });
+      }
+    },
+    [isAuthenticated, rawCampaigns, joinCampaign, leaveCampaign],
+  );
 
   const submitClip = useCallback(
-    (input: {
+    async (input: {
       campaignId: string;
-      platform: Platform;
       link: string;
-      tags: string[];
+      caption: string;
       author: string;
-      verifiedOwner: boolean;
-      platformOk: boolean;
-      metrics: ClipMetrics;
+      metrics?: ClipMetrics;
     }) => {
-      setState((prev) => {
-        const campaign = prev.campaigns.find(
-          (c) => c.id === input.campaignId,
-        );
-        /* The platform must be one the campaign actually accepts, and the
-           clip must come from one of the creator's verified accounts. */
-        if (
-          !campaign ||
-          !input.platformOk ||
-          !campaign.platforms.includes(input.platform) ||
-          !input.verifiedOwner
-        ) {
-          return prev;
-        }
-        const submission: Submission = {
-          id: uid(),
-          campaignId: input.campaignId,
-          creator: "you",
-          mine: true,
-          platform: input.platform,
-          link: input.link,
-          tags: input.tags,
-          author: input.author,
-          verifiedOwner: input.verifiedOwner,
-          platformOk: input.platformOk,
-          metrics: input.metrics,
-          views: input.metrics.views,
-          /* Queued for a human — it only goes live once an admin accepts. */
-          status: "pending",
-          submittedAt: Date.now(),
-        };
-        return { ...prev, submissions: [submission, ...prev.submissions] };
+      await submitClipMutation({
+        campaignId: campaignId(input.campaignId),
+        link: input.link,
+        caption: input.caption,
+        author: input.author,
+        metrics: input.metrics,
       });
     },
-    [],
+    [submitClipMutation],
   );
 
   const createCampaign = useCallback(
-    (input: {
+    async (input: {
       brand: string;
       title: string;
       logo?: string;
@@ -279,114 +382,74 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       platforms: Platform[];
       guidelines: string[];
     }) => {
-      const campaign: Campaign = {
-        id: uid(),
-        ...input,
-        spent: 0,
-        clippers: 0,
-        status: "active",
-        invoice: "draft",
-        joined: false,
-        createdAt: Date.now(),
-      };
-      setState((prev) => ({ ...prev, campaigns: [campaign, ...prev.campaigns] }));
+      await createCampaignMutation(input);
     },
-    [],
+    [createCampaignMutation],
   );
 
-  /** Edit a live campaign — rate, rules, assets and budget. */
   const updateCampaign = useCallback(
-    (id: string, patch: Partial<Campaign>) => {
-      setState((prev) => ({
-        ...prev,
-        campaigns: prev.campaigns.map((c) =>
-          c.id === id ? { ...c, ...patch } : c,
-        ),
-      }));
+    async (id: string, patch: Partial<Campaign>) => {
+      /* `id` and `joined` are client-only fields the server does not own. */
+      const { id: _id, joined: _joined, ...rest } = patch;
+      void _id;
+      void _joined;
+      await updateCampaignMutation({ campaignId: campaignId(id), patch: rest });
     },
-    [],
+    [updateCampaignMutation],
   );
 
   const setCampaignStatus = useCallback(
-    (id: string, status: Campaign["status"]) => {
-      setState((prev) => ({
-        ...prev,
-        campaigns: prev.campaigns.map((c) =>
-          c.id === id ? { ...c, status } : c,
-        ),
-      }));
+    async (id: string, status: Campaign["status"]) => {
+      await setStatusMutation({ campaignId: campaignId(id), status });
     },
-    [],
+    [setStatusMutation],
   );
 
-  const cycleInvoice = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      campaigns: prev.campaigns.map((c) => {
-        if (c.id !== id) return c;
-        const next =
-          c.invoice === "draft" ? "sent" : c.invoice === "sent" ? "paid" : "draft";
-        return { ...c, invoice: next };
-      }),
-    }));
-  }, []);
+  const cycleInvoice = useCallback(
+    async (id: string) => {
+      const campaign = (rawCampaigns ?? []).find((row) => row._id === id);
+      if (!campaign) return;
+      const next =
+        campaign.invoice === "draft"
+          ? "sent"
+          : campaign.invoice === "sent"
+            ? "paid"
+            : "draft";
+      await setInvoiceMutation({ campaignId: campaignId(id), invoice: next });
+    },
+    [rawCampaigns, setInvoiceMutation],
+  );
+
+  const deleteCampaign = useCallback(
+    async (id: string) => {
+      await removeCampaignMutation({ campaignId: campaignId(id) });
+    },
+    [removeCampaignMutation],
+  );
 
   const reviewSubmission = useCallback(
-    (id: string, decision: "accept" | "decline", note?: string) => {
-      setState((prev) => {
-        const target = prev.submissions.find((s) => s.id === id);
-        if (!target || target.status !== "pending") return prev;
-        const accepted = decision === "accept";
-        return {
-          ...prev,
-          submissions: prev.submissions.map((s) =>
-            s.id === id
-              ? {
-                  ...s,
-                  status: accepted ? ("active" as const) : ("rejected" as const),
-                  reviewNote: accepted ? undefined : (note ?? "Didn't meet the campaign brief."),
-                }
-              : s,
-          ),
-          /* An accepted clip joins the campaign it was sent to. */
-          campaigns: accepted
-            ? prev.campaigns.map((c) =>
-                c.id === target.campaignId
-                  ? { ...c, clippers: c.clippers + 1 }
-                  : c,
-              )
-            : prev.campaigns,
-        };
-      });
+    async (id: string, decision: "accept" | "decline", note?: string) => {
+      await reviewMutation({ submissionId: submissionId(id), decision, note });
     },
-    [],
+    [reviewMutation],
   );
 
   const settleSubmission = useCallback(
-    (id: string, status: "paid" | "rejected") => {
-      setState((prev) => ({
-        ...prev,
-        submissions: prev.submissions.map((s) =>
-          s.id === id ? { ...s, status } : s,
-        ),
-      }));
+    async (id: string, status: "paid" | "rejected") => {
+      await settleMutation({ submissionId: submissionId(id), status });
     },
-    [],
+    [settleMutation],
   );
-
-  const resetDemo = useCallback(() => {
-    try {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-    setState((prev) => ({ ...initialState(), profile: prev.profile }));
-  }, []);
 
   const value = useMemo<ClipticContextValue>(
     () => ({
-      ...state,
-      setProfile,
+      profile,
+      isAdmin,
+      accounts,
+      allAccounts,
+      campaigns,
+      submissions,
+      allSubmissions,
       addAccount,
       verifyAccount,
       removeAccount,
@@ -396,13 +459,18 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       updateCampaign,
       setCampaignStatus,
       cycleInvoice,
+      deleteCampaign,
       settleSubmission,
       reviewSubmission,
-      resetDemo,
     }),
     [
-      state,
-      setProfile,
+      profile,
+      isAdmin,
+      accounts,
+      allAccounts,
+      campaigns,
+      submissions,
+      allSubmissions,
       addAccount,
       verifyAccount,
       removeAccount,
@@ -412,13 +480,15 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       updateCampaign,
       setCampaignStatus,
       cycleInvoice,
+      deleteCampaign,
       settleSubmission,
       reviewSubmission,
-      resetDemo,
     ],
   );
 
-  return <ClipticContext.Provider value={value}>{children}</ClipticContext.Provider>;
+  return (
+    <ClipticContext.Provider value={value}>{children}</ClipticContext.Provider>
+  );
 }
 
 export function useCliptic() {
@@ -456,7 +526,7 @@ export function useCreatorStats() {
 }
 
 export function useAdminStats() {
-  const { submissions, campaigns } = useCliptic();
+  const { allSubmissions: submissions, campaigns } = useCliptic();
   return useMemo(() => {
     const settled = submissions.filter((s) => s.status !== "rejected");
     const paidOut = settled
@@ -471,4 +541,38 @@ export function useAdminStats() {
     const budget = campaigns.reduce((sum, c) => sum + c.budget, 0);
     return { paidOut, pending, volume, reviewQueue, live, budget };
   }, [submissions, campaigns]);
+}
+
+/**
+ * Clippers the brand console knows about, built from the accounts and clips
+ * that actually exist. Nothing in this list is generated.
+ */
+export function useCreatorDirectory(): CreatorProfile[] {
+  const { allAccounts, allSubmissions } = useCliptic();
+  return useMemo(() => {
+    return allAccounts
+      .filter((account) => account.status === "connected")
+      .map((account) => ({
+        name: account.ownerName ?? account.handle,
+        handle: account.handle,
+        platform: account.platform,
+        connectedAt: account.connectedAt ?? 0,
+        clips: allSubmissions
+          .filter(
+            (submission) =>
+              submission.author.toLowerCase() === account.handle.toLowerCase(),
+          )
+          .map((submission) => ({
+            campaignId: submission.campaignId,
+            platform: submission.platform,
+            views: submission.views,
+            status: submission.status,
+            daysAgo: Math.max(
+              0,
+              Math.floor((Date.now() - submission.submittedAt) / 86_400_000),
+            ),
+          })),
+      }))
+      .sort((a, b) => b.connectedAt - a.connectedAt);
+  }, [allAccounts, allSubmissions]);
 }

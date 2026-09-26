@@ -39,6 +39,7 @@ import {
   Rocket,
   ScanSearch,
   ShieldCheck,
+  Trash2,
   Wallet,
   XCircle,
 } from "lucide-react";
@@ -89,6 +90,7 @@ export function AdminView({
     cycleInvoice,
     settleSubmission,
     reviewSubmission,
+    deleteCampaign,
   } = useCliptic();
   const stats = useAdminStats();
 
@@ -495,27 +497,57 @@ export function AdminView({
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] text-[12px] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
-                        onClick={() =>
-                          setCampaignStatus(
-                            campaign.id,
-                            campaign.status === "active" ? "paused" : "active",
-                          )
-                        }
-                      >
-                        {campaign.status === "active" ? (
-                          <>
-                            <Pause className="h-3 w-3" /> Pause
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-3 w-3" /> Resume
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 border-black/12 bg-black/[0.03] text-[12px] hover:bg-black/[0.05] dark:border-white/15 dark:bg-white/[0.05] dark:hover:bg-white/[0.08]"
+                          onClick={() =>
+                            setCampaignStatus(
+                              campaign.id,
+                              campaign.status === "active" ? "paused" : "active",
+                            )
+                          }
+                        >
+                          {campaign.status === "active" ? (
+                            <>
+                              <Pause className="h-3 w-3" /> Pause
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-3 w-3" /> Resume
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete ${campaign.brand}`}
+                          className="h-8 w-8 text-muted-foreground hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300"
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                `Delete “${campaign.brand} — ${campaign.title}”? Its clips and joins are removed too. This can't be undone.`,
+                              )
+                            ) {
+                              return;
+                            }
+                            deleteCampaign(campaign.id).catch((err) => {
+                              toast.error("Couldn't delete that campaign", {
+                                description:
+                                  err instanceof Error
+                                    ? err.message
+                                    : "Please try again.",
+                              });
+                            });
+                            toast.success("Campaign deleted", {
+                              description: `${campaign.brand} and its clips were removed.`,
+                            });
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -594,9 +626,7 @@ export function AdminView({
                           submission.mine ? "text-brand" : "text-foreground"
                         }`}
                       >
-                        {submission.creator === "you"
-                          ? "you"
-                          : submission.creator}
+                        {submission.creator}
                       </span>
                       <span className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
                         @{submission.author}
