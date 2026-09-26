@@ -1,10 +1,36 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 
 /**
- * The Clip Vault app mark: a violet rounded square with three slanted bars over a
- * glossy play tile — the identity used across nav, auth, dashboard and footer.
+ * The supplied brand artwork, used exactly as given. It lives in `public/` so
+ * the browser fetches and caches the real file — nothing here redraws it.
+ */
+const MARK_SRC = "/clip-vault-logo.png";
+
+/**
+ * The Clip Vault mark, used across nav, auth, the dashboard and the footer.
+ *
+ * The vector mark below is only a stand-in for the case where the artwork file
+ * has not been added yet, so a build that predates it still renders something
+ * rather than a broken image box.
  */
 export function ClipVaultMark({ className = "h-9 w-9" }: { className?: string }) {
+  const [artworkMissing, setArtworkMissing] = useState(false);
+
+  if (artworkMissing) return <FallbackMark className={className} />;
+
+  return (
+    <img
+      src={MARK_SRC}
+      alt=""
+      aria-hidden="true"
+      onError={() => setArtworkMissing(true)}
+      className={`${className} shrink-0 rounded-[22%] object-cover`}
+    />
+  );
+}
+
+/** The previous vector mark — fallback only, see {@link ClipVaultMark}. */
+function FallbackMark({ className = "h-9 w-9" }: { className?: string }) {
   const uid = useId().replace(/:/g, "");
   const id = (name: string) => `ct-${name}-${uid}`;
 
