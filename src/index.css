@@ -277,33 +277,6 @@ html.lenis body {
   z-index: 2;
 }
 
-/* Specular sweep, only while hovered, so an idle page stays still. */
-.liquid-glass::after {
-  content: "";
-  position: absolute;
-  top: -60%;
-  bottom: -60%;
-  left: -75%;
-  width: 45%;
-  background: linear-gradient(
-    100deg,
-    transparent,
-    rgb(255 255 255 / 0.13),
-    transparent
-  );
-  transform: skewX(-18deg);
-  opacity: 0;
-  transition:
-    left 0.85s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 3;
-}
-.liquid-glass:hover::after {
-  left: 130%;
-  opacity: 1;
-}
-
 /* Ambient light behind the glass, so there is something to refract. */
 .ambient-field {
   position: fixed;
@@ -363,10 +336,8 @@ html.lenis body {
 /* Respect a stated preference for less motion. */
 @media (prefers-reduced-motion: reduce) {
   .ambient-field::before,
-  .ambient-field::after,
-  .liquid-glass::after {
+  .ambient-field::after {
     animation: none;
-    transition: none;
   }
 }
 
@@ -559,57 +530,18 @@ html.lenis body {
   pointer-events: none;
   z-index: 0;
 }
-.panel-fx::after {
-  content: "";
-  position: absolute;
-  top: -20%;
-  bottom: -20%;
-  left: -60%;
-  width: 42%;
-  background: linear-gradient(
-    100deg,
-    transparent,
-    rgb(255 255 255 / 0.38),
-    transparent
-  );
-  transform: skewX(-16deg);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1;
-}
+/* The specular sweep that used to live here is gone. It read as a shine
+   chasing the cursor across every card rather than as depth, so the hover
+   affordance is now just the soft lift and the violet edge. */
 .panel-fx:hover {
-  transform: translateY(-6px);
+  transform: translateY(-4px);
   box-shadow:
-    0 30px 60px -30px rgb(139 63 226 / 0.55),
+    0 26px 54px -30px rgb(139 63 226 / 0.5),
     0 0 0 1px rgb(139 63 226 / 0.16);
   border-color: rgb(139 63 226 / 0.38);
 }
 .panel-fx:hover::before {
   opacity: 1;
-}
-.panel-fx:hover::after {
-  animation: cliptic-panel-sweep 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-@keyframes cliptic-panel-sweep {
-  0% {
-    left: -60%;
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  100% {
-    left: 130%;
-    opacity: 0;
-  }
-}
-.dark .panel-fx::after {
-  background: linear-gradient(
-    100deg,
-    transparent,
-    rgb(192 132 252 / 0.26),
-    transparent
-  );
 }
 .dark .panel-fx:hover {
   box-shadow:
@@ -649,9 +581,7 @@ html.lenis body {
   .dark .glass-soft {
     background: var(--card);
     border-color: var(--border);
-  }
-  .panel-fx::before,
-  .panel-fx::after {
+  }  .panel-fx::before {
     display: none;
   }
 }
@@ -668,9 +598,6 @@ html.lenis body {
   .panel-fx {
     border-color: var(--foreground);
   }
-  .panel-fx::after {
-    display: none;
-  }
   .text-muted-foreground {
     color: var(--foreground);
   }
@@ -683,14 +610,7 @@ html.lenis body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-  .marquee,
-  .float-a,
-  .float-b,
-  .shimmer,
-  .liquid::after,
-  .panel-fx::after,
-  .live-dot::after {
+  }  .marquee, .float-a, .float-b, .shimmer, .liquid::after, .live-dot::after {
     animation: none !important;
   }
   .panel-fx:hover {
