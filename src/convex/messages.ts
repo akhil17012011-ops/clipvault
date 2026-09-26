@@ -3,7 +3,7 @@ import { internalMutation, mutation, query } from "./_generated/server";
 import { requireAdmin, requireUser } from "./access";
 
 /**
- * A creator's inbox: system notices and direct messages from CLIPTIC.
+ * A creator's inbox: system notices and direct messages from Clip Vault.
  *
  * Everything a creator needs to be told lands here in one chronological list.
  * That matters because the alternative — scattering a notification into the
@@ -91,7 +91,7 @@ export const sendToCreator = mutation({
     await ctx.db.insert("messages", {
       userId: args.userId,
       kind: KINDS.ADMIN,
-      title: args.title?.trim() || "Message from CLIPTIC",
+      title: args.title?.trim() || "Message from Clip Vault",
       body,
       createdAt: Date.now(),
     });
@@ -127,7 +127,7 @@ export const broadcast = mutation({
     if (users.length === 0) throw new Error("There is nobody to send it to.");
 
     const now = Date.now();
-    const title = args.title?.trim() || "News from CLIPTIC";
+    const title = args.title?.trim() || "News from Clip Vault";
     for (const user of users) {
       await ctx.db.insert("messages", {
         userId: user._id,

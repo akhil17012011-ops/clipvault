@@ -5,7 +5,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { ClipticLogo, ClipticMark } from "@/components/ClipticMark";
+import { ClipVaultLogo, ClipVaultMark } from "@/components/ClipVaultMark";
 import { useAuth } from "@/hooks/use-auth";
 import {
   ArrowRight,
@@ -192,7 +192,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         <div className="grid-page pointer-events-none absolute inset-0" />
 
         <div className="relative">
-          <ClipticLogo textClassName="text-xl" />
+          <ClipVaultLogo textClassName="text-xl" />
         </div>
 
         <div className="relative max-w-md">
@@ -249,12 +249,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
         <div className="relative w-full max-w-[404px]">
           <div className="mb-8 flex justify-center lg:hidden">
-            <ClipticLogo textClassName="text-xl" />
+            <ClipVaultLogo textClassName="text-xl" />
           </div>
 
           <div className="rounded-3xl border border-black/10 bg-white/70 p-7 shadow-[0_40px_100px_-60px_rgb(139_63_226/0.5)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06] sm:p-8">
             <div className="flex justify-center">
-              <ClipticMark className="mb-5 h-14 w-14" />
+              <ClipVaultMark className="mb-5 h-14 w-14" />
             </div>
 
             {codeEmail ? (
@@ -328,7 +328,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             ) : (
               <>
                 <h2 className="text-center text-2xl font-extrabold tracking-tight">
-                  Welcome to CLIPTIC
+                  Welcome to Clip Vault
                 </h2>
                 <p className="mt-2 text-center text-sm text-muted-foreground">
                   Sign in or create an account — it takes less than a minute.
@@ -438,7 +438,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <p className="mt-4 text-center text-[12px] text-muted-foreground">
                       {flow === "signUp"
                         ? "Already have an account?"
-                        : "New to CLIPTIC?"}{" "}
+                        : "New to Clip Vault?"}{" "}
                       <button
                         type="button"
                         onClick={() => {
@@ -490,7 +490,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 )}
 
                 <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted-foreground">
-                  By continuing you agree to CLIPTIC&apos;s{" "}
+                  By continuing you agree to Clip Vault&apos;s{" "}
                   <span className="text-foreground/70 underline decoration-black/25 underline-offset-2 dark:decoration-white/25">
                     Terms
                   </span>{" "}

@@ -1,5 +1,5 @@
 /**
- * Shared types and pure helpers for CLIPTIC.
+ * Shared types and pure helpers for Clip Vault.
  *
  * There is no catalog data and no simulated telemetry in this file any more.
  * Campaigns, connected accounts and submissions all come from the database;
@@ -175,7 +175,7 @@ export type SubmissionStatus = "pending" | "active" | "paid" | "rejected";
 
 /**
  * Numbers read back from the source platform. These are only ever set from a
- * real platform response — CLIPTIC does not invent them.
+ * real platform response — Clip Vault does not invent them.
  */
 export interface ClipMetrics {
   views: number;

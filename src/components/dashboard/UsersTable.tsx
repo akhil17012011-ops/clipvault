@@ -1,4 +1,4 @@
-import { PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -11,8 +11,8 @@ import {
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { ChevronDown, Users as UsersIcon } from "lucide-react";
-import { fmtFull, fmtMoney, fmtViews, type AdminUser } from "@/lib/cliptic-data";
-import { useCliptic } from "@/lib/cliptic-store";
+import { fmtFull, fmtMoney, fmtViews, type AdminUser } from "@/lib/clip-vault-data";
+import { useClipVault } from "@/lib/clip-vault-store";
 
 function joinedLabel(ts: number): string {
   return new Date(ts).toLocaleDateString("en-US", {
@@ -29,7 +29,7 @@ function joinedLabel(ts: number): string {
  * how much reach each one brings.
  */
 export function UsersTable() {
-  const { adminUsers } = useCliptic();
+  const { adminUsers } = useClipVault();
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const totalViews = adminUsers.reduce((sum, u) => sum + u.views, 0);

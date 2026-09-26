@@ -1,4 +1,4 @@
-import { ClipticLogo } from "@/components/ClipticMark";
+import { ClipVaultLogo } from "@/components/ClipVaultMark";
 import { ProfileEditor } from "@/components/dashboard/ProfileEditor";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import {
@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
 import { Clapperboard, Home, LogOut, Megaphone, Menu, RotateCcw, Settings2, Wallet } from "lucide-react";
 import { Link, useNavigate } from "react-router";
@@ -31,7 +31,7 @@ export function TopBar({
   onMenu: () => void;
 }) {
   const { user, signOut } = useAuth();
-  const { profile } = useCliptic();
+  const { profile } = useClipVault();
   const navigate = useNavigate();
   const [editingProfile, setEditingProfile] = useState(false);
 
@@ -75,7 +75,7 @@ export function TopBar({
           </motion.button>
 
           <Link to="/" className="flex shrink-0 items-center gap-2.5">
-            <ClipticLogo markClassName="h-8 w-8" textClassName="text-base" />
+            <ClipVaultLogo markClassName="h-8 w-8" textClassName="text-base" />
             <span className="glass-chip hidden rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#C9AEFF] sm:inline-block">
               Beta
             </span>

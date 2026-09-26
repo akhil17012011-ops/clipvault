@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlatformChip, StatusBadge } from "@/components/ClipticUI";
-import { fmtFull, fmtMoney, fmtViews, type Campaign } from "@/lib/cliptic-data";
-import { useCliptic } from "@/lib/cliptic-store";
+import { PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
+import { fmtFull, fmtMoney, fmtViews, type Campaign } from "@/lib/clip-vault-data";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { Check, Eye, Loader2, X } from "lucide-react";
@@ -25,7 +25,7 @@ const BUCKETS: Array<{ id: Bucket; label: string; hint: string }> = [
  * an operator actually looked at.
  */
 export function CampaignModeration({ campaign }: { campaign: Campaign }) {
-  const { allSubmissions, reviewSubmission, confirmViews } = useCliptic();
+  const { allSubmissions, reviewSubmission, confirmViews } = useClipVault();
   const [tab, setTab] = useState<Bucket>("pending");
   const [reasonFor, setReasonFor] = useState<string | null>(null);
   const [reason, setReason] = useState("");

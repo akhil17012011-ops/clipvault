@@ -70,7 +70,7 @@ const schema = defineSchema(
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
     /* ------------------------------------------------------------------ */
-    /* CLIPTIC product data                                                */
+    /* Clip Vault product data                                                */
     /* ------------------------------------------------------------------ */
 
     // A brand campaign that creators can clip.
@@ -135,7 +135,7 @@ const schema = defineSchema(
       .index("by_campaign", ["campaignId"])
       .index("by_user", ["userId"]),
 
-    // A social account a creator has bio-verified on CLIPTIC.
+    // A social account a creator has bio-verified on Clip Vault.
     connectedAccounts: defineTable({
       userId: v.id("users"),
       platform: platformValidator,
@@ -177,7 +177,7 @@ const schema = defineSchema(
      *
      * Two kinds share one table so there is a single place to read: `notice`
      * is written by the system when something happens to the creator's work,
-     * `admin` is a direct message a CLIPTIC operator sent them. Both are
+     * `admin` is a direct message a Clip Vault operator sent them. Both are
      * delivered to the same place, because from the creator's side they are
      * the same thing — news about their account.
      */
@@ -206,7 +206,7 @@ const schema = defineSchema(
       /** Hashtags used in the caption. */
       tags: v.optional(v.array(v.string())),
       /**
-       * True once a CLIPTIC operator has confirmed the view count. Until then
+       * True once a Clip Vault operator has confirmed the view count. Until then
        * the clip is carrying the number the creator's platform reported, which
        * is a claim rather than a measurement.
        */

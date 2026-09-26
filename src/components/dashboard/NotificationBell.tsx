@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
 import { Link } from "react-router";
 import { Bell, MessageSquare } from "lucide-react";
@@ -12,7 +12,7 @@ import { Bell, MessageSquare } from "lucide-react";
  * number that never goes away.
  */
 export function NotificationBell() {
-  const { messages, unreadCount, markAllRead } = useCliptic();
+  const { messages, unreadCount, markAllRead } = useClipVault();
   const recent = messages.slice(0, 4);
 
   return (

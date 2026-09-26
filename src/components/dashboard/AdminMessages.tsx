@@ -10,7 +10,7 @@ import {
   Send,
   Sparkles,
 } from "lucide-react";
-import { fmtFull, type AdminMessage, type AdminUser } from "@/lib/cliptic-data";
+import { fmtFull, type AdminMessage, type AdminUser } from "@/lib/clip-vault-data";
 
 function when(ts: number): string {
   const diff = Date.now() - ts;

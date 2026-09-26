@@ -41,7 +41,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* CLIPTIC brand tokens */
+  /* Clip Vault brand tokens */
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
@@ -91,7 +91,7 @@
   --sidebar-border: oklch(0.14 0.012 300 / 0.09);
   --sidebar-ring: oklch(0.478 0.272 300);
 
-  /* Brand palette (shared across themes) — taken from the CLIPTIC logo */
+  /* Brand palette (shared across themes) — taken from the Clip Vault logo */
   --brand: oklch(0.478 0.272 300);
   --brand-strong: oklch(0.418 0.285 300);
   --brand-foreground: oklch(0.985 0.005 300);
@@ -103,7 +103,7 @@
 }
 
 /**
- * CLIPTIC is dark-only. The dark palette is applied to `:root` as well as
+ * Clip Vault is dark-only. The dark palette is applied to `:root` as well as
  * `.dark` so there is no light theme left to fall back into, and the light
  * values above are simply overridden by source order.
  */
@@ -225,7 +225,7 @@ html.lenis body {
   overflow: hidden;
 }
 
-/* ---------- CLIPTIC custom utilities ---------- */
+/* ---------- Clip Vault custom utilities ---------- */
 
 .text-grad {
   background-image: linear-gradient(
@@ -282,10 +282,10 @@ html.lenis body {
     transparent
   );
   transform: skewX(-18deg);
-  animation: cliptic-sweep 4.6s ease-in-out infinite;
+  animation: clipvault-sweep 4.6s ease-in-out infinite;
   pointer-events: none;
 }
-@keyframes cliptic-sweep {
+@keyframes clipvault-sweep {
   0%,
   62% {
     left: -45%;
@@ -311,7 +311,7 @@ html.lenis body {
     0 0 0 1px rgb(255 255 255 / 0.35) inset;
 }
 
-/* Electric violet aura — the rim glow from the CLIPTIC mark. */
+/* Electric violet aura — the rim glow from the Clip Vault mark. */
 .aurora {
   box-shadow:
     0 0 38px -10px rgb(139 92 246 / 0.55),
@@ -357,13 +357,13 @@ html.lenis body {
 .marquee {
   display: flex;
   width: max-content;
-  animation: cliptic-marquee 42s linear infinite;
+  animation: clipvault-marquee 42s linear infinite;
 }
 .marquee:hover {
   animation-play-state: paused;
 }
 
-@keyframes cliptic-marquee {
+@keyframes clipvault-marquee {
   to {
     transform: translateX(-50%);
   }
@@ -379,9 +379,9 @@ html.lenis body {
   border-radius: 9999px;
   background: currentColor;
   opacity: 0.55;
-  animation: cliptic-ping 1.9s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation: clipvault-ping 1.9s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
-@keyframes cliptic-ping {
+@keyframes clipvault-ping {
   75%,
   100% {
     transform: scale(2.4);
@@ -389,7 +389,7 @@ html.lenis body {
   }
 }
 
-@keyframes cliptic-float {
+@keyframes clipvault-float {
   0%,
   100% {
     transform: translateY(0);
@@ -399,10 +399,10 @@ html.lenis body {
   }
 }
 .float-a {
-  animation: cliptic-float 6s ease-in-out infinite;
+  animation: clipvault-float 6s ease-in-out infinite;
 }
 .float-b {
-  animation: cliptic-float 7.6s ease-in-out infinite 0.9s;
+  animation: clipvault-float 7.6s ease-in-out infinite 0.9s;
 }
 
 /* Hover-lift panels: rise + violet bloom + specular sheen sweep.
@@ -639,7 +639,7 @@ html.lenis body {
     );
 }
 
-@keyframes cliptic-shimmer {
+@keyframes clipvault-shimmer {
   to {
     background-position: 200% 0;
   }
@@ -652,7 +652,7 @@ html.lenis body {
     transparent 80%
   );
   background-size: 200% 100%;
-  animation: cliptic-shimmer 2.4s linear infinite;
+  animation: clipvault-shimmer 2.4s linear infinite;
 }
 
 /* ---------- Accessibility fallbacks (HIG: glass must still read) ---------- */

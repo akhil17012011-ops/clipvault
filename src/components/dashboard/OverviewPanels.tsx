@@ -1,4 +1,4 @@
-import { PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import {
   campaignById,
@@ -8,7 +8,7 @@ import {
   fmtViews,
   type Campaign,
   type Submission,
-} from "@/lib/cliptic-data";
+} from "@/lib/clip-vault-data";
 import {
   ArrowUpRight,
   Clapperboard,

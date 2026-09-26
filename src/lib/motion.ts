@@ -1,5 +1,5 @@
 /**
- * Shared motion language for the CLIPTIC console.
+ * Shared motion language for the Clip Vault console.
  *
  * Every transition in the app pulls its easing from here, so the whole product
  * accelerates and settles the same way: a long, soft expo-out that reads as

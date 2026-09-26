@@ -45,7 +45,7 @@ export async function requireUser(ctx: Ctx): Promise<CurrentUser> {
 export async function requireAdmin(ctx: Ctx): Promise<CurrentUser> {
   const user = await requireUser(ctx);
   if (user.role !== "admin") {
-    throw new NotAllowedError("This action is restricted to CLIPTIC staff.");
+    throw new NotAllowedError("This action is restricted to Clip Vault staff.");
   }
   return user;
 }

@@ -3,11 +3,11 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { CampaignCard } from "@/components/CampaignCard";
-import { ClipticLogo, ClipticMark } from "@/components/ClipticMark";
-import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI";
+import { ClipVaultLogo, ClipVaultMark } from "@/components/ClipVaultMark";
+import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
-import { fmtRate, type Platform } from "@/lib/cliptic-data";
-import { useCliptic } from "@/lib/cliptic-store";
+import { fmtRate, type Platform } from "@/lib/clip-vault-data";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { EASE } from "@/lib/motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useTilt } from "@/hooks/use-tilt";
@@ -67,7 +67,7 @@ function SiteNav() {
         }`}
       >
         <Link to="/" className="shrink-0">
-          <ClipticLogo />
+          <ClipVaultLogo />
         </Link>
         <div className="hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex">
           <a href="#how" className="transition-colors hover:text-foreground">
@@ -299,7 +299,7 @@ function ClipCluster() {
 
 function Hero() {
   const { isAuthenticated } = useAuth();
-  const { campaigns } = useCliptic();
+  const { campaigns } = useClipVault();
   const ctaTarget = isAuthenticated ? "/dashboard" : "/auth";
   const activeCampaigns = campaigns.filter(
     (c) => c.status === "active",
@@ -359,7 +359,7 @@ function Hero() {
           transition={{ duration: 0.75, delay: 0.08, ease: EASE }}
           className="mt-7 max-w-4xl text-balance text-5xl font-extrabold leading-[1.03] tracking-[-0.045em] sm:text-6xl lg:mx-0 lg:text-7xl"
         >
-          Grow, Earn, and Go Viral with <span className="text-grad">CLIPTIC</span>
+          Grow, Earn, and Go Viral with <span className="text-grad">Clip Vault</span>
         </motion.h1>
 
         <motion.p
@@ -685,7 +685,7 @@ const STEPS = [
     n: "02",
     kicker: "Connect",
     title: "Verify your accounts",
-    body: "Add the TikTok, Reels, or Shorts accounts you post from. CLIPTIC generates a one-time code for your bio — verify once and every view is tracked back to you.",
+    body: "Add the TikTok, Reels, or Shorts accounts you post from. Clip Vault generates a one-time code for your bio — verify once and every view is tracked back to you.",
     mock: <MockAccounts />,
   },
   {
@@ -894,7 +894,7 @@ function HowItWorks() {
               >
                 {audience === audienceOption && (
                   <motion.span
-                    layoutId="cliptic-audience-pill"
+                    layoutId="clipvault-audience-pill"
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     className="absolute inset-0 rounded-xl bg-foreground"
                   />
@@ -955,7 +955,7 @@ function HowItWorks() {
 /* ------------------------------------------------------------------ */
 
 function CampaignsSection() {
-  const { campaigns, toggleJoinCampaign } = useCliptic();
+  const { campaigns, toggleJoinCampaign } = useClipVault();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -1171,7 +1171,7 @@ function FinalCTA() {
       >
         <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[560px] -translate-x-1/2 rounded-full bg-[#6D28D9]/45 blur-[110px]" />
         <div className="relative">
-          <ClipticMark className="mx-auto h-14 w-14" />
+          <ClipVaultMark className="mx-auto h-14 w-14" />
           <h2 className="mx-auto mt-6 max-w-2xl text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
             Your next clip could be worth{" "}
             <span className="text-grad">real money</span>.
@@ -1228,7 +1228,7 @@ function SiteFooter() {
     <footer className="border-t border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04]">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-5">
         <div className="lg:col-span-1">
-          <ClipticLogo />
+          <ClipVaultLogo />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
             The UGC clipping platform connecting brands with creators. Clip ·
             Post · Get Paid.
@@ -1260,7 +1260,7 @@ function SiteFooter() {
       </div>
       <div className="border-t border-black/8 dark:border-white/10 py-5">
         <p className="mx-auto max-w-6xl px-5 text-center text-xs text-muted-foreground">
-          © 2026 CLIPTIC · Clip. Post. Get Paid. · Demo interface, simulated
+          © 2026 Clip Vault · Clip. Post. Get Paid. · Demo interface, simulated
           data.
         </p>
       </div>

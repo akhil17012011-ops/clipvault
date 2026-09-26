@@ -1,4 +1,4 @@
-import { ClipticMark } from "@/components/ClipticMark";
+import { ClipVaultMark } from "@/components/ClipVaultMark";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
@@ -136,7 +136,7 @@ const NAV: Record<DashboardView, NavItem[]> = {
 };
 
 /** Where feedback and bug reports are sent. */
-const SUPPORT_EMAIL = "support@cliptic.app";
+const SUPPORT_EMAIL = "support@clipvault.app";
 
 export function Sidebar({
   role,
@@ -200,7 +200,7 @@ function SidebarBody({
 }) {
   const items = NAV[role];
   const { user, signOut } = useAuth();
-  const { profile } = useCliptic();
+  const { profile } = useClipVault();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const location = useLocation();
@@ -233,7 +233,7 @@ function SidebarBody({
   /* Opens the visitor's mail client with the report details prefilled. */
   const openFeedback = (subject: string) => {
     const to = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-      `[CLIPTIC] ${subject} — ${email || "signed-in user"}`,
+      `[Clip Vault] ${subject} — ${email || "signed-in user"}`,
     )}`;
     window.location.href = to;
   };
@@ -247,13 +247,13 @@ function SidebarBody({
       {/* Brand + notifications */}
       <div className="flex items-center justify-between gap-2">
         <Link to="/" className="flex items-center gap-2.5">
-          <ClipticMark className="h-9 w-9" />
+          <ClipVaultMark className="h-9 w-9" />
           <span className="leading-none">
             <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
               Beta
             </span>
             <span className="block text-[15px] font-extrabold tracking-tight">
-              CLIPTIC
+              Clip Vault
             </span>
           </span>
         </Link>

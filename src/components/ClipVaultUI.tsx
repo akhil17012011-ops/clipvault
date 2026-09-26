@@ -1,5 +1,5 @@
-import type { AccountStatus, Platform, SubmissionStatus } from "@/lib/cliptic-data";
-import { PLATFORM_META } from "@/lib/cliptic-data";
+import type { AccountStatus, Platform, SubmissionStatus } from "@/lib/clip-vault-data";
+import { PLATFORM_META } from "@/lib/clip-vault-data";
 
 /** Inline brand glyphs so platform chips render identically everywhere. */
 export function PlatformIcon({

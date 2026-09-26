@@ -1,4 +1,4 @@
-import { PlatformChip } from "@/components/ClipticUI";
+import { PlatformChip } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,8 +14,8 @@ import {
   looksLikeProfileLink,
   type LinkedAccount,
   type Platform,
-} from "@/lib/cliptic-data";
-import { useCliptic } from "@/lib/cliptic-store";
+} from "@/lib/clip-vault-data";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { toast } from "sonner";
 import { useState } from "react";
 import {
@@ -44,7 +44,7 @@ export function ConnectAccountModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { addAccount, verifyAccount } = useCliptic();
+  const { addAccount, verifyAccount } = useClipVault();
   const [step, setStep] = useState<Step>("form");
   const [platform, setPlatform] = useState<Platform>("tiktok");
   const [handle, setHandle] = useState("");
@@ -159,7 +159,7 @@ export function ConnectAccountModal({
                 </DialogTitle>
                 <DialogDescription>
                   Add the handle you post from — or paste your profile link and
-                  we'll read the username out of it. CLIPTIC generates a
+                  we'll read the username out of it. Clip Vault generates a
                   one-time code you drop into your bio, then reads your public
                   profile to confirm it's really there.
                 </DialogDescription>

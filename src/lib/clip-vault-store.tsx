@@ -22,10 +22,10 @@ import {
   type LinkedAccount,
   type Platform,
   type Submission,
-} from "@/lib/cliptic-data";
+} from "@/lib/clip-vault-data";
 
 /**
- * CLIPTIC's data layer.
+ * Clip Vault's data layer.
  *
  * Everything here is reactive Convex data — there is no local cache and no
  * invented numbers. The context exists so the dashboard components have one
@@ -46,16 +46,16 @@ export interface Profile {
   avatarUrl?: string;
 }
 
-interface ClipticContextValue {
+interface ClipVaultContextValue {
   profile: Profile | null;
-  /** True when the signed-in user is a CLIPTIC operator. */
+  /** True when the signed-in user is a Clip Vault operator. */
   isAdmin: boolean;
   accounts: LinkedAccount[];
   /** Admin-only: every connected account on the platform. */
   allAccounts: LinkedAccount[];
   /** Clips, views and earnings for each of my own connected accounts. */
   accountStats: AccountStats[];
-  /** My inbox: system notices and direct messages from CLIPTIC. */
+  /** My inbox: system notices and direct messages from Clip Vault. */
   messages: CreatorMessage[];
   /** Unread messages, for the bell badge. */
   unreadCount: number;
@@ -75,7 +75,7 @@ interface ClipticContextValue {
   sendToCreator: (userId: string, title: string, body: string) => Promise<void>;
   /** Admin-only: message every creator. Returns how many inboxes it wrote. */
   broadcast: (title: string, body: string) => Promise<number>;
-  /** Change the display name and picture shown across CLIPTIC. */
+  /** Change the display name and picture shown across Clip Vault. */
   updateProfile: (patch: { name?: string; image?: string }) => Promise<void>;
   campaigns: Campaign[];
   /** Clips belonging to the signed-in creator. */
@@ -135,7 +135,7 @@ interface ClipticContextValue {
   settleSubmission: (id: string, status: "paid" | "rejected") => Promise<void>;
 }
 
-const ClipticContext = createContext<ClipticContextValue | null>(null);
+const ClipVaultContext = createContext<ClipVaultContextValue | null>(null);
 
 /* ------------------------------------------------------------------ */
 /* Id helpers                                                          */
@@ -260,7 +260,7 @@ const toSubmission = (row: SubmissionRow, mine: boolean): Submission => ({
 
 /* ------------------------------------------------------------------ */
 
-export function ClipticProvider({ children }: { children: ReactNode }) {
+export function ClipVaultProvider({ children }: { children: ReactNode }) {
   const convex = useConvex();
   const { isAuthenticated } = useConvexAuth();
 
@@ -573,7 +573,7 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
     [settleMutation],
   );
 
-  const value = useMemo<ClipticContextValue>(
+  const value = useMemo<ClipVaultContextValue>(
     () => ({
       profile,
       isAdmin,
@@ -641,20 +641,20 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ClipticContext.Provider value={value}>{children}</ClipticContext.Provider>
+    <ClipVaultContext.Provider value={value}>{children}</ClipVaultContext.Provider>
   );
 }
 
-export function useCliptic() {
-  const ctx = useContext(ClipticContext);
-  if (!ctx) throw new Error("useCliptic must be used within ClipticProvider");
+export function useClipVault() {
+  const ctx = useContext(ClipVaultContext);
+  if (!ctx) throw new Error("useClipVault must be used within ClipVaultProvider");
   return ctx;
 }
 
 /* ---------------- derived selectors ---------------- */
 
 export function useCreatorStats() {
-  const { submissions, campaigns } = useCliptic();
+  const { submissions, campaigns } = useClipVault();
   return useMemo(() => {
     const mine = submissions.filter((s) => s.mine && s.status !== "rejected");
     const totalViews = mine.reduce((sum, s) => sum + s.views, 0);
@@ -680,7 +680,7 @@ export function useCreatorStats() {
 }
 
 export function useAdminStats() {
-  const { allSubmissions: submissions, campaigns } = useCliptic();
+  const { allSubmissions: submissions, campaigns } = useClipVault();
   return useMemo(() => {
     const settled = submissions.filter((s) => s.status !== "rejected");
     const paidOut = settled
@@ -702,7 +702,7 @@ export function useAdminStats() {
  * that actually exist. Nothing in this list is generated.
  */
 export function useCreatorDirectory(): CreatorProfile[] {
-  const { allAccounts, allSubmissions } = useCliptic();
+  const { allAccounts, allSubmissions } = useClipVault();
   return useMemo(() => {
     return allAccounts
       .filter((account) => account.status === "connected")

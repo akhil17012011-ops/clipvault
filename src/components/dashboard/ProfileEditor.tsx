@@ -8,13 +8,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 
 /**
- * Lets a creator set the name and picture shown across CLIPTIC.
+ * Lets a creator set the name and picture shown across Clip Vault.
  *
  * The picture is a link rather than an upload so the profile works without
  * giving this app a file store: paste any https image address and it shows up
@@ -27,7 +27,7 @@ export function ProfileEditor({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { profile, updateProfile } = useCliptic();
+  const { profile, updateProfile } = useClipVault();
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,7 +48,7 @@ export function ProfileEditor({
     try {
       await updateProfile({ name, image });
       toast.success("Profile updated", {
-        description: "Your name and picture now show across CLIPTIC.",
+        description: "Your name and picture now show across Clip Vault.",
       });
       onOpenChange(false);
     } catch (err) {

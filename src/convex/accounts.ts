@@ -19,8 +19,14 @@ const PLATFORM = v.union(
   v.literal("x"),
 );
 
-/** Codes are uppercase alphanumerics, e.g. CLIPTIC-4821. */
-const CODE_PATTERN = /^CLIPTIC-[0-9]{6}$/;
+/**
+ * Codes are the brand prefix plus six digits, e.g. CLIPVAULT-004821.
+ *
+ * The old `CLIPTIC-` prefix is still accepted on read: those codes are already
+ * sitting in real users' bios, and changing the brand must not silently
+ * un-verify an account that verified correctly.
+ */
+const CODE_PATTERN = /^(CLIPVAULT|CLIPTIC)-[0-9]{6}$/;
 
 /** Handles are 1-30 chars of letters, digits, dot or underscore. */
 const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
@@ -67,7 +73,7 @@ function makeCode(): string {
   const digits = Math.floor(Math.random() * 1_000_000)
     .toString()
     .padStart(6, "0");
-  return `CLIPTIC-${digits}`;
+  return `CLIPVAULT-${digits}`;
 }
 
 export const listMine = query({

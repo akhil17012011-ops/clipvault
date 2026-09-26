@@ -1,8 +1,8 @@
-import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import { Check, Users } from "lucide-react";
-import type { Campaign } from "@/lib/cliptic-data";
-import { fmtRate, fmtViews } from "@/lib/cliptic-data";
+import type { Campaign } from "@/lib/clip-vault-data";
+import { fmtRate, fmtViews } from "@/lib/clip-vault-data";
 
 /**
  * The campaign card shared by the landing page preview and the creator

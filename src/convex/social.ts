@@ -184,7 +184,7 @@ export const inspectClip = action({
         metricsNote: null,
         error:
           args.platform === "instagram" || args.platform === "x"
-            ? `${args.platform === "instagram" ? "Instagram" : "X"} does not expose a public embed endpoint, so CLIPTIC cannot confirm this link automatically. Paste the exact post link and make sure the account is public.`
+            ? `${args.platform === "instagram" ? "Instagram" : "X"} does not expose a public embed endpoint, so Clip Vault cannot confirm this link automatically. Paste the exact post link and make sure the account is public.`
             : "We couldn't load that post. Check the link and make sure it is public.",
       };
     }

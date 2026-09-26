@@ -1,7 +1,7 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { CampaignDetail } from "@/components/dashboard/CampaignDetail";
 import { CampaignCard } from "@/components/CampaignCard";
-import { PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,8 +26,8 @@ import {
   shortMonth,
   type AccountStats,
   type LinkedAccount,
-} from "@/lib/cliptic-data";
-import { useCliptic, useCreatorStats } from "@/lib/cliptic-store";
+} from "@/lib/clip-vault-data";
+import { useClipVault, useCreatorStats } from "@/lib/clip-vault-store";
 import { EASE } from "@/lib/motion";
 import { MessagesInbox } from "@/components/dashboard/MessagesInbox";
 import { PayoutSettings } from "@/components/dashboard/PayoutSettings";
@@ -75,7 +75,7 @@ export function CreatorView({
     campaigns,
     toggleJoinCampaign,
     removeAccount,
-  } = useCliptic();
+  } = useClipVault();
   /* Clicking a joined campaign takes you inside it. */
   const [openCampaignId, setOpenCampaignId] = useState<string | null>(null);
   const openCampaign = campaigns.find((c) => c.id === openCampaignId);
@@ -130,19 +130,19 @@ export function CreatorView({
       kicker: "Get paid",
       title: "Payments",
       description:
-        "Your current cycle and every payout CLIPTIC has settled to you.",
+        "Your current cycle and every payout Clip Vault has settled to you.",
     },
     accounts: {
       kicker: "Verification",
       title: "Accounts",
       description:
-        "Bio-verified handles that CLIPTIC tracks views back to you for.",
+        "Bio-verified handles that Clip Vault tracks views back to you for.",
     },
     messages: {
       kicker: "Inbox",
       title: "Messages",
       description:
-        "Approvals, declines and anything CLIPTIC has sent you directly.",
+        "Approvals, declines and anything Clip Vault has sent you directly.",
     },
   };
   const page = PAGES[section];
@@ -165,7 +165,7 @@ export function CreatorView({
       icon: Megaphone,
       value: `${joined} joined`,
       label: "Campaigns",
-      hint: `${stats.activeCampaigns} live on CLIPTIC right now`,
+      hint: `${stats.activeCampaigns} live on Clip Vault right now`,
     },
     {
       to: "/dashboard/clips",
@@ -281,7 +281,7 @@ export function CreatorView({
           icon={Zap}
           label="Active campaigns"
           value={`${stats.activeCampaigns}`}
-          sub={`${campaigns.filter((c) => c.status === "active").length} live on CLIPTIC right now`}
+          sub={`${campaigns.filter((c) => c.status === "active").length} live on Clip Vault right now`}
           meter={{
             value: campaigns.length
               ? stats.activeCampaigns / campaigns.length

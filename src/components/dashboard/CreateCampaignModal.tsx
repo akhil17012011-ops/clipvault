@@ -1,4 +1,4 @@
-import { PlatformChip } from "@/components/ClipticUI";
+import { PlatformChip } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { PLATFORMS, PLATFORM_META, type Platform } from "@/lib/cliptic-data";
-import { useCliptic } from "@/lib/cliptic-store";
+import { PLATFORMS, PLATFORM_META, type Platform } from "@/lib/clip-vault-data";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { toast } from "sonner";
 import { useState } from "react";
 import { HardDriveDownload, Link2, Plus, Trash2, DollarSign, Rocket } from "lucide-react";
@@ -23,7 +23,7 @@ export function CreateCampaignModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { createCampaign } = useCliptic();
+  const { createCampaign } = useClipVault();
   const [brand, setBrand] = useState("");
   const [title, setTitle] = useState("");
   const [logo, setLogo] = useState("");
@@ -122,7 +122,7 @@ export function CreateCampaignModal({
         .filter(Boolean),
     });
     toast.success("Campaign live", {
-      description: `${brand.trim()} is now visible to every clipper on CLIPTIC.`,
+      description: `${brand.trim()} is now visible to every clipper on Clip Vault.`,
     });
     onOpenChange(false);
   };

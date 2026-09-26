@@ -4,7 +4,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { RequireVerified } from "@/components/VerifyEmailGate";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
-import { ClipticProvider } from "@/lib/cliptic-store";
+import { ClipVaultProvider } from "@/lib/clip-vault-store";
 import {
   ensureSmoothScroll,
   resetScroll,
@@ -130,7 +130,7 @@ createRoot(document.getElementById("root")!).render(
         <VlyToolbar />
       </ToolbarErrorBoundary>
       <ConvexAuthProvider client={convex}>
-        <ClipticProvider>
+        <ClipVaultProvider>
           <BrowserRouter>
             <RouteSyncer />
             <Suspense fallback={<RouteLoading />}>
@@ -165,7 +165,7 @@ createRoot(document.getElementById("root")!).render(
             </Suspense>
           </BrowserRouter>
           <Toaster />
-        </ClipticProvider>
+        </ClipVaultProvider>
       </ConvexAuthProvider>
     </RootErrorBoundary>
   </StrictMode>,

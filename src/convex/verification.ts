@@ -231,7 +231,7 @@ export const sendCode = internalAction({
       await sendOtpEmail({
         to: user.email,
         otp: code,
-        subject: "Confirm your CLIPTIC email",
+        subject: "Confirm your Clip Vault email",
       });
     } catch (error) {
       /* Do not leave a live code behind that was never delivered. */
@@ -311,6 +311,6 @@ export const checkCode = mutation({
     await ctx.db.patch(user._id, { emailVerificationTime: Date.now() });
     await ctx.db.delete(record._id);
 
-    return { verified: true, message: "Email verified — welcome to CLIPTIC." };
+    return { verified: true, message: "Email verified — welcome to Clip Vault." };
   },
 });

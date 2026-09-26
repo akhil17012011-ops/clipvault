@@ -8,7 +8,7 @@ import { TopBar, type DashboardView } from "@/components/dashboard/TopBar";
 import type { AdminSection } from "@/components/dashboard/AdminView";
 import type { CreatorSection } from "@/components/dashboard/CreatorView";
 import { useAuth } from "@/hooks/use-auth";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { SECTION_TRANSITION } from "@/lib/motion";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -36,7 +36,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
 type ModalKind = "connect" | "submit" | "create" | null;
 
 export default function Dashboard() {
-  const { accounts } = useCliptic();
+  const { accounts } = useClipVault();
   /* The role is read from the server's user record, not from the email. */
   const { role } = useAuth();
   const view: DashboardView = role;
@@ -134,7 +134,7 @@ export default function Dashboard() {
         </div>
 
         <footer className="relative border-t border-white/[0.06] py-6 text-center text-xs text-muted-foreground">
-          CLIPTIC console · campaigns, clips and payouts are read live from
+          Clip Vault console · campaigns, clips and payouts are read live from
           your account.
         </footer>
       </div>

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "cliptic.theme";
+const STORAGE_KEY = "clipvault.theme";
 
 /** Current theme, read from the DOM (set pre-paint by the inline head script). */
 function readTheme(): "light" | "dark" {

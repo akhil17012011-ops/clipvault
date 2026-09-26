@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Check, Copy, Loader2, TriangleAlert, Wallet } from "lucide-react";
-import type { PayoutCurrency } from "@/lib/cliptic-data";
+import type { PayoutCurrency } from "@/lib/clip-vault-data";
 
 const COINS: Array<{ id: PayoutCurrency; label: string; hint: string }> = [
   { id: "sol", label: "Solana", hint: "Starts with 1, 3 or 4" },
@@ -20,7 +20,7 @@ const COINS: Array<{ id: PayoutCurrency; label: string; hint: string }> = [
  * rather than implying we confirmed the wallet belongs to them.
  */
 export function PayoutSettings() {
-  const { profile, updatePayout } = useCliptic();
+  const { profile, updatePayout } = useClipVault();
   const [currency, setCurrency] = useState<PayoutCurrency>("sol");
   const [address, setAddress] = useState("");
   const [busy, setBusy] = useState(false);

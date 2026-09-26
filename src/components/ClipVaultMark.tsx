@@ -1,10 +1,10 @@
 import { useId } from "react";
 
 /**
- * The CLIPTIC app mark: a violet rounded square with three slanted bars over a
+ * The Clip Vault app mark: a violet rounded square with three slanted bars over a
  * glossy play tile — the identity used across nav, auth, dashboard and footer.
  */
-export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
+export function ClipVaultMark({ className = "h-9 w-9" }: { className?: string }) {
   const uid = useId().replace(/:/g, "");
   const id = (name: string) => `ct-${name}-${uid}`;
 
@@ -103,7 +103,7 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
 }
 
 /** Mark + wordmark lockup used in navigation bars. */
-export function ClipticLogo({
+export function ClipVaultLogo({
   className = "",
   markClassName = "h-8 w-8",
   textClassName = "text-lg",
@@ -114,11 +114,11 @@ export function ClipticLogo({
 }) {
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <ClipticMark className={markClassName} />
+      <ClipVaultMark className={markClassName} />
       <span
-        className={`font-extrabold tracking-[-0.03em] text-foreground ${textClassName}`}
+        className={`font-extrabold tracking-[-0.01em] text-foreground ${textClassName}`}
       >
-        CLIPTIC
+        Clip Vault
       </span>
     </span>
   );

@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { MailOpen, MessageSquare, Sparkles } from "lucide-react";
-import { fmtFull, type CreatorMessage } from "@/lib/cliptic-data";
-import { useCliptic } from "@/lib/cliptic-store";
+import { fmtFull, type CreatorMessage } from "@/lib/clip-vault-data";
+import { useClipVault } from "@/lib/clip-vault-store";
 
 function when(ts: number): string {
   const diff = Date.now() - ts;
@@ -21,11 +21,11 @@ function when(ts: number): string {
 
 /**
  * The creator's inbox: system notices about their clips and direct messages
- * from CLIPTIC, newest first. Approval and rejection reasons arrive here, which
+ * from Clip Vault, newest first. Approval and rejection reasons arrive here, which
  * is why a declined clip always has something to read above it.
  */
 export function MessagesInbox() {
-  const { messages, markAllRead } = useCliptic();
+  const { messages, markAllRead } = useClipVault();
   const unread = messages.filter((m) => !m.read).length;
 
   return (
@@ -57,7 +57,7 @@ export function MessagesInbox() {
 
       {messages.length === 0 ? (
         <p className="mt-4 rounded-xl border border-dashed border-black/12 px-4 py-8 text-center text-sm text-muted-foreground dark:border-white/15">
-          Nothing here yet. Approvals, declines and anything CLIPTIC sends you
+          Nothing here yet. Approvals, declines and anything Clip Vault sends you
           will show up in this list.
         </p>
       ) : (

@@ -5,7 +5,7 @@ import { internal } from "./_generated/api";
 import { requireAdmin } from "./access";
 
 /**
- * One-time provisioning of the CLIPTIC operator account.
+ * One-time provisioning of the Clip Vault operator account.
  *
  * The password is supplied by the operator at call time and is never written
  * into the repo or the browser bundle. It is handed straight to Convex Auth's

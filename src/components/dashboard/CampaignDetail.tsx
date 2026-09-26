@@ -1,4 +1,4 @@
-import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,10 +12,10 @@ import {
   validateClip,
   type Campaign,
   type ClipMetrics,
-} from "@/lib/cliptic-data";
+} from "@/lib/clip-vault-data";
 import { api } from "@/convex/_generated/api";
 import { useConvex } from "convex/react";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -44,7 +44,7 @@ export function CampaignDetail({
   campaign: Campaign;
   onBack: () => void;
 }) {
-  const { accounts, submitClip } = useCliptic();
+  const { accounts, submitClip } = useClipVault();
   const convex = useConvex();
   const [link, setLink] = useState("");
   const [caption, setCaption] = useState("");
@@ -103,7 +103,7 @@ export function CampaignDetail({
       setCaption("");
       toast.success("Clip sent to review", {
         description:
-          "A CLIPTIC operator checks it by hand before it goes live on the campaign.",
+          "A Clip Vault operator checks it by hand before it goes live on the campaign.",
       });
     } catch (err) {
       setError(

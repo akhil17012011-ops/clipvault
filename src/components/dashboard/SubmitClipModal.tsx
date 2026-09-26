@@ -1,4 +1,4 @@
-import { BrandAvatar, PlatformChip } from "@/components/ClipticUI";
+import { BrandAvatar, PlatformChip } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,10 +19,10 @@ import {
   requiredTags,
   type ClipMetrics,
   type Platform,
-} from "@/lib/cliptic-data";
+} from "@/lib/clip-vault-data";
 import { api } from "@/convex/_generated/api";
 import { useConvex } from "convex/react";
-import { useCliptic } from "@/lib/cliptic-store";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -45,7 +45,7 @@ import {
 } from "lucide-react";
 
 /**
- * Submit a clip through the real CLIPTIC pipeline:
+ * Submit a clip through the real Clip Vault pipeline:
  *  1. the platform is detected from the pasted link (never trusted from input)
  *  2. the post must come from one of the creator's bio-verified accounts, so
  *     nobody can submit someone else's video
@@ -105,7 +105,7 @@ export function SubmitClipModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { accounts, campaigns, submitClip } = useCliptic();
+  const { accounts, campaigns, submitClip } = useClipVault();
   const convex = useConvex();
   const joined = campaigns.filter((c) => c.joined && c.status === "active");
   const connected = accounts.filter((a) => a.status === "connected");
@@ -286,7 +286,7 @@ export function SubmitClipModal({
         setFetched(true);
         toast.success("Clip sent to review", {
           description:
-            "A CLIPTIC operator checks it by hand — it goes live on the campaign once accepted.",
+            "A Clip Vault operator checks it by hand — it goes live on the campaign once accepted.",
         });
         setPhase("passed");
       } catch (err) {
@@ -653,7 +653,7 @@ export function SubmitClipModal({
                 ) : (
                   <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
                     {scan.metricsNote ??
-                      "This platform doesn't expose view counts to CLIPTIC, so earnings will start once the platform API is connected."}
+                      "This platform doesn't expose view counts to Clip Vault, so earnings will start once the platform API is connected."}
                   </p>
                 )}
                 <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">

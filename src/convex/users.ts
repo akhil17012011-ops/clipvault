@@ -17,7 +17,7 @@ export const currentUser = query({
 });
 
 /**
- * Lets a creator set the display name and picture shown across CLIPTIC.
+ * Lets a creator set the display name and picture shown across Clip Vault.
  *
  * The sign-up record is the starting point, not the last word — a creator
  * publishing under a brand name should not be stuck with the handle their

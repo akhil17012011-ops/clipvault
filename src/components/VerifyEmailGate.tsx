@@ -1,4 +1,4 @@
-import { ClipticLogo } from "@/components/ClipticMark";
+import { ClipVaultLogo } from "@/components/ClipVaultMark";
 import { Button } from "@/components/ui/button";
 import {
   InputOTP,
@@ -110,7 +110,7 @@ function VerifyEmailPanel({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="relative w-full max-w-[420px]">
         <div className="mb-7 flex justify-center">
-          <ClipticLogo textClassName="text-xl" />
+          <ClipVaultLogo textClassName="text-xl" />
         </div>
 
         <div className="glass-panel rounded-3xl p-7 text-center sm:p-8">

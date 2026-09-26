@@ -7,7 +7,7 @@ import {
 } from "@/components/dashboard/OverviewPanels";
 import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
 import { AdminMessages } from "@/components/dashboard/AdminMessages";
-import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,8 +32,8 @@ import {
   fmtRate,
   fmtViews,
   type InvoiceStatus,
-} from "@/lib/cliptic-data";
-import { useAdminStats, useCliptic } from "@/lib/cliptic-store";
+} from "@/lib/clip-vault-data";
+import { useAdminStats, useClipVault } from "@/lib/clip-vault-store";
 import { EASE } from "@/lib/motion";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -108,7 +108,7 @@ export function AdminView({
     settleSubmission,
     reviewSubmission,
     deleteCampaign,
-  } = useCliptic();
+  } = useClipVault();
   const stats = useAdminStats();
 
   /* Settled payouts over the last 7 days — derived from real approvals only. */
@@ -200,13 +200,13 @@ export function AdminView({
       kicker: "Directory",
       title: "Connected accounts",
       description:
-        "Every social account verified on CLIPTIC, and what it has produced.",
+        "Every social account verified on Clip Vault, and what it has produced.",
     },
     users: {
       kicker: "People",
       title: "Users",
       description:
-        "Every account on CLIPTIC, the handles they connected, and what they have earned.",
+        "Every account on Clip Vault, the handles they connected, and what they have earned.",
     },
     messages: {
       kicker: "Reach out",

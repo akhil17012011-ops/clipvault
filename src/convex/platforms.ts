@@ -1,7 +1,7 @@
 /**
  * Real public-profile lookups for the platforms creators publish on.
  *
- * Bio verification is the security anchor of CLIPTIC: a creator proves they own
+ * Bio verification is the security anchor of Clip Vault: a creator proves they own
  * a handle by putting a one-time code in that handle's bio. To check the code
  * honestly we have to actually read the bio, so each platform here is fetched
  * and parsed the way that platform really serves it:

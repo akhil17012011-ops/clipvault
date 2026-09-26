@@ -4,7 +4,7 @@ import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 /**
  * Sends a one-time code to an address through freebuff's mail relay.
  *
- * Shared by the auth provider's own OTP flow and by CLIPTIC's own email
+ * Shared by the auth provider's own OTP flow and by Clip Vault's own email
  * verification for password accounts.
  */
 export async function sendOtpEmail({
@@ -54,7 +54,7 @@ export const emailOtp = Email({
     await sendOtpEmail({
       to: email,
       otp: token,
-      subject: "Your CLIPTIC sign-in code",
+      subject: "Your Clip Vault sign-in code",
     });
   },
 });

@@ -272,7 +272,7 @@ export const review = mutation({
  * Fixes the view count on a clip.
  *
  * The number a creator's platform reports is their claim, and it drifts. A
- * CLIPTIC operator records the count they actually measured at review time and
+ * Clip Vault operator records the count they actually measured at review time and
  * marks it confirmed, so the number driving a payout has a human behind it
  * rather than coming straight off a link the creator pasted.
  */

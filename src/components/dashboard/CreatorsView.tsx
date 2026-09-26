@@ -1,4 +1,4 @@
-import { PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import {
   Table,
   TableBody,
@@ -17,8 +17,8 @@ import {
   type CreatorProfile,
   type Platform,
   type SubmissionStatus,
-} from "@/lib/cliptic-data";
-import { useCliptic, useCreatorDirectory } from "@/lib/cliptic-store";
+} from "@/lib/clip-vault-data";
+import { useClipVault, useCreatorDirectory } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import {
@@ -39,12 +39,12 @@ function clipEarnings(clip: CreatorProfile["clips"][number], campaigns: Campaign
 }
 
 /**
- * Every social account connected to CLIPTIC: which clipper owns it, whether
+ * Every social account connected to Clip Vault: which clipper owns it, whether
  * it's bio-verified, and what those accounts have actually produced — clips,
  * views and earnings.
  */
 export function CreatorsView() {
-  const { campaigns } = useCliptic();
+  const { campaigns } = useClipVault();
   const [query, setQuery] = useState("");
   /* Built from the accounts and clips that actually exist. */
   const creators = useCreatorDirectory();
@@ -89,7 +89,7 @@ export function CreatorsView() {
             Connected accounts
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Every social account verified on CLIPTIC, and what it has produced.
+            Every social account verified on Clip Vault, and what it has produced.
           </p>
         </div>
         <div className="relative w-full sm:w-64">
@@ -190,7 +190,7 @@ export function CreatorsView() {
                                   86_400_000,
                               ),
                             )}{" "}
-                            days on CLIPTIC
+                            days on Clip Vault
                           </p>
                         </div>
                       </div>
