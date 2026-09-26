@@ -1,5 +1,5 @@
 import { Infer, v } from "convex/values";
-import { action, internalMutation, mutation, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireAdmin, requireUser } from "./access";
 import { fetchProfile } from "./platforms";
@@ -206,15 +206,54 @@ type CheckResult = {
  * bio. The profile is read on the server, and the code has to genuinely appear
  * there — the client cannot assert that a verification happened.
  */
-export const verifyBio = action({
-  args: {
-    accountId: v.id("connectedAccounts"),
-    platform: PLATFORM,
-    handle: v.string(),
-    code: v.string(),
+/**
+ * Reads the stored verification inputs for a row, but only for the account
+ * that owns it. Both "gone" and "not yours" return null so a caller cannot use
+ * this to discover which account ids exist.
+ */
+export const getForVerify = internalQuery({
+  args: { accountId: v.id("connectedAccounts") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const account = await ctx.db.get(args.accountId);
+    if (!account) return null;
+    if (account.userId !== user._id && user.role !== "admin") return null;
+    return {
+      _id: account._id,
+      platform: account.platform,
+      handle: account.handle,
+      code: account.code,
+    };
   },
+});
+
+export const verifyBio = action({
+  args: { accountId: v.id("connectedAccounts") },
   handler: async (ctx, args): Promise<CheckResult> => {
-    if (!CODE_PATTERN.test(args.code)) {
+    /* Everything that decides a verification is read from the stored row, not
+       from the browser, and the caller has to own it. An action cannot reach
+       the database directly, so the read happens in an internal query that
+       enforces that.
+
+       If the handle or code came from the client, someone could create a
+       connection row for a handle they do not own, then verify it while
+       pointing the bio check at a profile they do own. Their own bio would
+       satisfy the code check and the row would flip to "connected" while
+       naming somebody else's handle — which is exactly the person whose clips
+       and payouts it would then carry. */
+    const account = await ctx.runQuery(internal.accounts.getForVerify, {
+      accountId: args.accountId,
+    });
+    if (!account) {
+      return {
+        verified: false,
+        bio: null,
+        bioRead: false,
+        message: "That connection request is no longer available to you.",
+      };
+    }
+
+    if (!CODE_PATTERN.test(account.code)) {
       return {
         verified: false,
         bio: null,
@@ -223,11 +262,11 @@ export const verifyBio = action({
       };
     }
 
-    const profile = await fetchProfile(args.platform, args.handle);
+    const profile = await fetchProfile(account.platform, account.handle);
 
     if (!profile.ok) {
       await ctx.runMutation(internal.accounts.setStatus, {
-        accountId: args.accountId,
+        accountId: account._id,
         status: "failed",
       });
       return {
@@ -240,24 +279,24 @@ export const verifyBio = action({
 
     /* A platform can resolve a different account than the one requested, so
        the handle has to match what we looked for. */
-    if (profile.handle !== args.handle.toLowerCase()) {
+    if (profile.handle !== account.handle.toLowerCase()) {
       await ctx.runMutation(internal.accounts.setStatus, {
-        accountId: args.accountId,
+        accountId: account._id,
         status: "failed",
       });
       return {
         verified: false,
         bio: profile.bio,
         bioRead: true,
-        message: `That link points to @${profile.handle}, not @${args.handle}.`,
+        message: `That link points to @${profile.handle}, not @${account.handle}.`,
       };
     }
 
     const bio = profile.bio ?? "";
-    const found = bio.includes(args.code);
+    const found = bio.includes(account.code);
 
     await ctx.runMutation(internal.accounts.setStatus, {
-      accountId: args.accountId,
+      accountId: account._id,
       status: found ? "connected" : "failed",
     });
 
@@ -266,7 +305,7 @@ export const verifyBio = action({
         verified: true,
         bio,
         bioRead: true,
-        message: `We found ${args.code} in the bio on @${args.handle}.`,
+        message: `We found ${account.code} in the bio on @${account.handle}.`,
       };
     }
 
@@ -277,8 +316,8 @@ export const verifyBio = action({
       bio,
       bioRead: true,
       message: bio
-        ? `We read @${args.handle}'s bio but ${args.code} isn't in it yet. Paste the code into the bio, save, then hit Verify again.`
-        : `@${args.handle}'s bio is empty right now. Add the ${args.code} code, save, then hit Verify again.`,
+        ? `We read @${account.handle}'s bio but ${account.code} isn't in it yet. Paste the code into the bio, save, then hit Verify again.`
+        : `@${account.handle}'s bio is empty right now. Add the ${account.code} code, save, then hit Verify again.`,
     };
   },
 });

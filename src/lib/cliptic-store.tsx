@@ -324,11 +324,11 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
           bioRead: false,
         };
       }
+      /* Only the row is named. The server reads the platform, handle and code
+         from the database itself, so the browser cannot assert a
+         verification or point the bio check at a different profile. */
       const result = await convex.action(api.accounts.verifyBio, {
         accountId: account._id,
-        platform: account.platform,
-        handle: account.handle,
-        code: account.code,
       });
       return {
         verified: result.verified,
