@@ -38,6 +38,7 @@ const fadeUp = {
 /* ------------------------------------------------------------------ */
 
 function SiteNav() {
+  const { isAuthenticated } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -73,16 +74,26 @@ function SiteNav() {
           </a>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            asChild
-            variant="ghost"
-            className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
-          >
-            <Link to="/auth">Sign in</Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button
+              asChild
+              variant="ghost"
+              className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
+            >
+              <Link to="/dashboard">Dashboard</Link>
+            </Button>
+          ) : (
+            <Button
+              asChild
+              variant="ghost"
+              className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
+            >
+              <Link to="/auth">Sign in</Link>
+            </Button>
+          )}
           <Button asChild className="glow-primary">
-            <Link to="/auth">
-              Start clipping
+            <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
+              {isAuthenticated ? "Open dashboard" : "Start clipping"}
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </Button>
@@ -212,6 +223,8 @@ function HeroPreview() {
 }
 
 function Hero() {
+  const { isAuthenticated } = useAuth();
+  const ctaTarget = isAuthenticated ? "/dashboard" : "/auth";
   return (
     <section className="relative overflow-hidden pb-20 pt-32 sm:pt-40">
       <div className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#5B37E8]/35 blur-[150px]" />
@@ -261,8 +274,8 @@ function Hero() {
             size="lg"
             className="glow-primary h-12 bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
           >
-            <Link to="/auth">
-              Start clipping
+            <Link to={ctaTarget}>
+              {isAuthenticated ? "Open dashboard" : "Start clipping"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -272,9 +285,15 @@ function Hero() {
             variant="outline"
             className="h-12 border-white/15 bg-white/5 px-7 text-base text-foreground hover:bg-white/10"
           >
-            <Link to="/auth?returnTo=/dashboard?tab=admin">
+            <Link
+              to={
+                isAuthenticated
+                  ? "/dashboard?tab=admin"
+                  : "/auth?returnTo=/dashboard?tab=admin"
+              }
+            >
               <Megaphone className="mr-2 h-4 w-4" />
-              Start campaign
+              {isAuthenticated ? "Admin console" : "Start campaign"}
             </Link>
           </Button>
         </motion.div>
@@ -731,8 +750,10 @@ function CampaignsSection() {
             variant="outline"
             className="border-white/15 bg-white/5 hover:bg-white/10"
           >
-            <Link to="/auth">
-              Browse all 200+ campaigns
+            <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
+              {isAuthenticated
+                ? "Open your campaign feed"
+                : "Browse all 200+ campaigns"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -747,6 +768,7 @@ function CampaignsSection() {
 /* ------------------------------------------------------------------ */
 
 function TwoSides() {
+  const { isAuthenticated } = useAuth();
   const cards = [
     {
       icon: Wallet,
@@ -757,8 +779,8 @@ function TwoSides() {
         "No follower minimum, no application",
         "Weekly cycles, PayPal or crypto",
       ],
-      cta: "Start clipping",
-      to: "/auth",
+      cta: isAuthenticated ? "Open dashboard" : "Start clipping",
+      to: isAuthenticated ? "/dashboard" : "/auth",
       accent: "from-brand/25 to-brand/[0.04]",
       iconColor: "text-[#c4b5fd] bg-brand/15 border-brand/30",
     },
@@ -771,8 +793,10 @@ function TwoSides() {
         "Full control of rate, rules and budget",
         "Invoice tracking and payout reporting",
       ],
-      cta: "Start a campaign",
-      to: "/auth?returnTo=/dashboard?tab=admin",
+      cta: isAuthenticated ? "Open admin console" : "Start a campaign",
+      to: isAuthenticated
+        ? "/dashboard?tab=admin"
+        : "/auth?returnTo=/dashboard?tab=admin",
       accent: "from-neon/15 to-transparent",
       iconColor: "text-neon bg-neon/10 border-neon/25",
     },
@@ -845,6 +869,7 @@ function TwoSides() {
 }
 
 function FinalCTA() {
+  const { isAuthenticated } = useAuth();
   return (
     <section className="mx-auto max-w-6xl px-5 pb-24">
       <motion.div
@@ -868,8 +893,8 @@ function FinalCTA() {
               size="lg"
               className="glow-primary h-12 bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
             >
-              <Link to="/auth">
-                Start clipping
+              <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
+                {isAuthenticated ? "Open dashboard" : "Start clipping"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -879,8 +904,14 @@ function FinalCTA() {
               variant="outline"
               className="h-12 border-white/20 bg-white/5 px-7 text-base hover:bg-white/10"
             >
-              <Link to="/auth?returnTo=/dashboard?tab=admin">
-                Start campaign
+              <Link
+                to={
+                  isAuthenticated
+                    ? "/dashboard?tab=admin"
+                    : "/auth?returnTo=/dashboard?tab=admin"
+                }
+              >
+                {isAuthenticated ? "Admin console" : "Start campaign"}
               </Link>
             </Button>
           </div>
