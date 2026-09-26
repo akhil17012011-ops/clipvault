@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { Infer, v } from "convex/values";
 import { action, internalMutation, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireAdmin, requireUser } from "./access";
@@ -24,6 +24,44 @@ const CODE_PATTERN = /^CLIPTIC-[0-9]{6}$/;
 
 /** Handles are 1-30 chars of letters, digits, dot or underscore. */
 const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
+
+type Platform = Infer<typeof PLATFORM>;
+
+/** Domains a profile link for each platform can legitimately come from. */
+const PROFILE_DOMAINS: Record<Platform, readonly string[]> = {
+  tiktok: ["tiktok.com"],
+  instagram: ["instagram.com"],
+  youtube: ["youtube.com", "youtu.be"],
+  x: ["x.com", "twitter.com"],
+};
+
+/**
+ * Turns whatever a creator pasted into a bare handle.
+ *
+ * Handles get copied out of bios in many shapes — "@nasa",
+ * "instagram.com/nasa", "https://www.instagram.com/nasa/?hl=en" — and all of
+ * them name the same account, so a connection should not be rejected over a
+ * prefix. Returns null when it cannot be reduced to a plain handle, including
+ * when a link points at a different site's domain, which would otherwise look
+ * like a plausible handle.
+ */
+function normalizeHandle(raw: string, platform: Platform): string | null {
+  // A query string or fragment is never part of a handle.
+  let value = raw.trim().split(/[?#]/)[0];
+
+  // Drop the scheme and any leading "www.".
+  value = value.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "").replace(/^www\./i, "");
+
+  if (value.includes("/")) {
+    const [host, ...segments] = value.split("/");
+    const known = PROFILE_DOMAINS[platform].includes(host.toLowerCase());
+    if (!known) return null;
+    value = segments[0] ?? "";
+  }
+
+  value = value.replace(/^@+/, "").trim();
+  return HANDLE_PATTERN.test(value) ? value : null;
+}
 
 function makeCode(): string {
   const digits = Math.floor(Math.random() * 1_000_000)
@@ -76,8 +114,8 @@ export const request = mutation({
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
 
-    const handle = args.handle.trim().replace(/^@+/, "");
-    if (!HANDLE_PATTERN.test(handle)) {
+    const handle = normalizeHandle(args.handle, args.platform);
+    if (!handle) {
       throw new Error(
         "That doesn't look like a valid username — letters, numbers, dots and underscores only.",
       );
