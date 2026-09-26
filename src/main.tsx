@@ -150,6 +150,14 @@ createRoot(document.getElementById("root")!).render(
                     </RequireAuth>
                   }
                 />
+                <Route
+                  path="/dashboard/:section"
+                  element={
+                    <RequireAuth>
+                      <Dashboard />
+                    </RequireAuth>
+                  }
+                />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

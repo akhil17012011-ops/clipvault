@@ -1,6 +1,7 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { CampaignCard } from "@/components/CampaignCard";
 import { PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -28,6 +29,7 @@ import {
   Eye,
   ExternalLink,
   Link2,
+  Megaphone,
   ShieldAlert,
   ShieldCheck,
   Trash2,
@@ -37,10 +39,20 @@ import {
   Zap,
 } from "lucide-react";
 
+/** Each sidebar entry is its own page under /dashboard/:section. */
+export type CreatorSection =
+  | "overview"
+  | "campaigns"
+  | "clips"
+  | "payments"
+  | "accounts";
+
 export function CreatorView({
+  section,
   onConnect,
   onSubmitClip,
 }: {
+  section: CreatorSection;
   onConnect: () => void;
   onSubmitClip: () => void;
 }) {
@@ -64,21 +76,94 @@ export function CreatorView({
       };
     });
 
+  const PAGES: Record<
+    CreatorSection,
+    { kicker: string; title: string; description: string }
+  > = {
+    overview: {
+      kicker: "Creator dashboard",
+      title: `Hey, ${name.split(" ")[0]} \u{1F44B}`,
+      description:
+        stats.mine.length > 0
+          ? `${stats.mine.length} clips live across ${new Set(stats.mine.map((s) => s.campaignId)).size} campaigns — views sync every few seconds.`
+          : "Connect an account and join a campaign to start earning.",
+    },
+    campaigns: {
+      kicker: "Browse",
+      title: "Campaigns",
+      description:
+        "Live campaigns with published rates — join one in a tap, no application.",
+    },
+    clips: {
+      kicker: "Track",
+      title: "Clips",
+      description:
+        "Every clip you submitted, with live views and what it has earned.",
+    },
+    payments: {
+      kicker: "Get paid",
+      title: "Payments",
+      description:
+        "Your current cycle and every payout CLIPTIC has settled to you.",
+    },
+    accounts: {
+      kicker: "Verification",
+      title: "Accounts",
+      description:
+        "Bio-verified handles that CLIPTIC tracks views back to you for.",
+    },
+  };
+  const page = PAGES[section];
+
+  const connected = accounts.filter((a) => a.status === "connected").length;
+  const joined = campaigns.filter((c) => c.joined).length;
+  const shortcuts = [
+    {
+      to: "/dashboard/accounts",
+      icon: ShieldCheck,
+      value: `${connected}/${accounts.length} verified`,
+      label: "Connected accounts",
+      hint:
+        accounts.length === 0
+          ? "Connect a handle to start tracking views"
+          : "Add or remove your bio-verified handles",
+    },
+    {
+      to: "/dashboard/campaigns",
+      icon: Megaphone,
+      value: `${joined} joined`,
+      label: "Campaigns",
+      hint: `${stats.activeCampaigns} live on CLIPTIC right now`,
+    },
+    {
+      to: "/dashboard/clips",
+      icon: Upload,
+      value: `${stats.mine.length} clips`,
+      label: "Submissions",
+      hint: "Views, qualification and earnings per clip",
+    },
+    {
+      to: "/dashboard/payments",
+      icon: Wallet,
+      value: fmtMoney(stats.pending, true),
+      label: "Pending payout",
+      hint: "Settled automatically when the cycle closes",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Creator dashboard
+            {page.kicker}
           </p>
           <h1 className="mt-1.5 text-3xl font-extrabold tracking-[-0.03em]">
-            Hey, {name.split(" ")[0]} 👋
+            {page.title}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {stats.mine.length > 0
-              ? `${stats.mine.length} clips live across ${new Set(stats.mine.map((s) => s.campaignId)).size} campaigns — views sync every few seconds.`
-              : "Connect an account and join a campaign to start earning."}
+            {page.description}
           </p>
         </div>
         <div className="flex gap-2.5">
@@ -97,7 +182,7 @@ export function CreatorView({
         </div>
       </div>
 
-      {accounts.length === 0 && (
+      {section === "overview" && accounts.length === 0 && (
         <div className="flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <ShieldAlert className="mt-0.5 h-[18px] w-[18px] shrink-0 text-amber-600 dark:text-amber-300" />
@@ -122,6 +207,7 @@ export function CreatorView({
       )}
 
       {/* stats */}
+      {section === "overview" && (
       <motion.div
         initial={{ opacity: 0, y: 26 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -160,11 +246,11 @@ export function CreatorView({
           tone={stats.pending > 0 ? "violet" : "neon"}
         />
       </motion.div>
+      )}
 
-      {/* main + sidebar */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <div className="space-y-5 lg:col-span-2">
-          {/* campaigns feed */}
+      {section === "overview" && <ShortcutGrid cards={shortcuts} />}
+
+      {section === "campaigns" && (
           <motion.section
             id="campaigns"
             initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -196,8 +282,9 @@ export function CreatorView({
               ))}
             </div>
           </motion.section>
+      )}
 
-          {/* submissions */}
+      {section === "clips" && (
           <motion.section
             id="clips"
             initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -327,10 +414,9 @@ export function CreatorView({
               </div>
             )}
           </motion.section>
-        </div>
+      )}
 
-        {/* sidebar */}
-        <div className="space-y-5">
+      {section === "accounts" && (
           <motion.section
             id="accounts"
             initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -384,7 +470,9 @@ export function CreatorView({
               Connect another account
             </Button>
           </motion.section>
+      )}
 
+      {section === "payments" && (
           <motion.section
             id="payouts"
             initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -455,8 +543,7 @@ export function CreatorView({
               closes.
             </p>
           </motion.section>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

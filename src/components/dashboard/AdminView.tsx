@@ -1,5 +1,6 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -50,9 +51,19 @@ const INVOICE_TONE: Record<InvoiceStatus, string> = {
 
 const STATUS_ORDER = { pending: 0, active: 1, paid: 2, rejected: 3 } as const;
 
+/** Each sidebar entry is its own page under /dashboard/:section. */
+export type AdminSection =
+  | "overview"
+  | "payouts"
+  | "invoices"
+  | "campaigns"
+  | "moderation";
+
 export function AdminView({
+  section,
   onCreateCampaign,
 }: {
+  section: AdminSection;
   onCreateCampaign: () => void;
 }) {
   const {
@@ -113,20 +124,82 @@ export function AdminView({
     });
   };
 
+  const PAGES: Record<
+    AdminSection,
+    { kicker: string; title: string; description: string }
+  > = {
+    overview: {
+      kicker: "Admin console",
+      title: "Campaigns, moderation & payouts",
+      description: `${stats.live} live campaigns · ${fmtViews(stats.volume)} verified views tracked · ${stats.reviewQueue} clips awaiting review`,
+    },
+    payouts: {
+      kicker: "Settlements",
+      title: "Platform payouts",
+      description: "Amounts settled to clippers over the last 7 days.",
+    },
+    invoices: {
+      kicker: "Billing",
+      title: "Brand invoices",
+      description: "One invoice per brand per cycle — cycle each one along.",
+    },
+    campaigns: {
+      kicker: "Manage",
+      title: "Campaign management",
+      description: "Rates, budgets, rules and platform restrictions.",
+    },
+    moderation: {
+      kicker: "Moderate",
+      title: "Submissions & payouts",
+      description: "Approve payouts once views are verified.",
+    },
+  };
+  const page = PAGES[section];
+
+  const shortcuts = [
+    {
+      to: "/dashboard/moderation",
+      icon: ScanSearch,
+      value: `${stats.reviewQueue}`,
+      label: "Review queue",
+      hint: "Clips waiting on moderation",
+    },
+    {
+      to: "/dashboard/payouts",
+      icon: Wallet,
+      value: fmtMoney(stats.pending, true),
+      label: "Pending payouts",
+      hint: "Awaiting approval in the queue",
+    },
+    {
+      to: "/dashboard/invoices",
+      icon: FileText,
+      value: `${invoiceCounts.draft} draft`,
+      label: "Brand invoices",
+      hint: `${invoiceCounts.sent} sent · ${invoiceCounts.paid} paid`,
+    },
+    {
+      to: "/dashboard/campaigns",
+      icon: Rocket,
+      value: `${stats.live}`,
+      label: "Live campaigns",
+      hint: "Rates, budgets and rules you control",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Admin console
+            {page.kicker}
           </p>
           <h1 className="mt-1.5 text-3xl font-extrabold tracking-[-0.03em]">
-            Campaigns, moderation &amp; payouts
+            {page.title}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {stats.live} live campaigns · {fmtViews(stats.volume)} verified
-            views tracked · {stats.reviewQueue} clips awaiting review
+            {page.description}
           </p>
         </div>
         <Button className="gap-1.5 glow-primary" onClick={onCreateCampaign}>
@@ -136,6 +209,7 @@ export function AdminView({
       </div>
 
       {/* stats */}
+      {section === "overview" && (
       <motion.div
         initial={{ opacity: 0, y: 26 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -171,16 +245,18 @@ export function AdminView({
           tone="amber"
         />
       </motion.div>
+      )}
 
-      {/* chart + invoices */}
-      <div className="grid gap-5 lg:grid-cols-3">
+      {section === "overview" && <ShortcutGrid cards={shortcuts} />}
+
+      {section === "payouts" && (
         <motion.section
           id="payouts"
           initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5 lg:col-span-2"
+          className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -197,7 +273,9 @@ export function AdminView({
           </div>
           <PayoutChart data={payoutSeries} />
         </motion.section>
+      )}
 
+      {section === "invoices" && (
         <motion.section
           id="invoices"
           initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -252,9 +330,10 @@ export function AdminView({
             ))}
           </ul>
         </motion.section>
-      </div>
+      )}
 
       {/* campaign management */}
+      {section === "campaigns" && (
       <motion.section
         id="campaigns"
         initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -398,8 +477,10 @@ export function AdminView({
           </Table>
         </div>
       </motion.section>
+      )}
 
       {/* moderation */}
+      {section === "moderation" && (
       <motion.section
         id="moderation"
         initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -556,6 +637,7 @@ export function AdminView({
         </div>
         )}
       </motion.section>
+      )}
     </div>
   );
 }

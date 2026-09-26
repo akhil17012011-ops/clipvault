@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useCliptic } from "@/lib/cliptic-store";
-import { scrollToSection } from "@/lib/smooth-scroll";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
@@ -30,26 +29,31 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import type { DashboardView } from "./TopBar";
 
-type NavItem = { id: string; label: string; icon: LucideIcon };
+type NavItem = { to: string; label: string; icon: LucideIcon };
 
+/** Every sidebar entry is a separate page under /dashboard/:section. */
 const NAV: Record<DashboardView, NavItem[]> = {
   creator: [
-    { id: "top", label: "Dashboard", icon: LayoutDashboard },
-    { id: "campaigns", label: "Campaigns", icon: Megaphone },
-    { id: "clips", label: "Clips", icon: Clapperboard },
-    { id: "payouts", label: "Payments", icon: Wallet },
-    { id: "accounts", label: "Accounts", icon: UserRound },
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    {
+      to: "/dashboard/campaigns",
+      label: "Campaigns",
+      icon: Megaphone,
+    },
+    { to: "/dashboard/clips", label: "Clips", icon: Clapperboard },
+    { to: "/dashboard/payments", label: "Payments", icon: Wallet },
+    { to: "/dashboard/accounts", label: "Accounts", icon: UserRound },
   ],
   admin: [
-    { id: "top", label: "Dashboard", icon: LayoutDashboard },
-    { id: "payouts", label: "Payouts", icon: Wallet },
-    { id: "invoices", label: "Invoices", icon: ReceiptText },
-    { id: "campaigns", label: "Campaigns", icon: Megaphone },
-    { id: "moderation", label: "Moderation", icon: ShieldCheck },
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/dashboard/payouts", label: "Payouts", icon: Wallet },
+    { to: "/dashboard/invoices", label: "Invoices", icon: ReceiptText },
+    { to: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone },
+    { to: "/dashboard/moderation", label: "Moderation", icon: ShieldCheck },
   ],
 };
 
@@ -123,7 +127,7 @@ function SidebarBody({
   const { profile } = useCliptic();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState("top");
+  const location = useLocation();
 
   const name =
     profile?.name ?? user?.name ?? user?.email?.split("@")[0] ?? "Creator";
@@ -135,41 +139,9 @@ function SidebarBody({
     .slice(0, 2)
     .toUpperCase();
 
-  /* Scrollspy: highlight the section currently under the reading band. */
-  useEffect(() => {
-    const sectionIds = items
-      .map((item) => item.id)
-      .filter((id) => id !== "top");
-    const visible = new Set<string>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.add(entry.target.id);
-          else visible.delete(entry.target.id);
-        }
-        const next = sectionIds.find((id) => visible.has(id));
-        if (next) setActive(next);
-      },
-      { rootMargin: "-22% 0px -55% 0px", threshold: 0 },
-    );
-    for (const id of sectionIds) {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    }
-    const onScroll = () => {
-      if (window.scrollY < 220) setActive("top");
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [items]);
-
-  const go = (id: string) => {
-    scrollToSection(id);
-    setActive(id);
+  /* Active entry follows the route. */
+  const go = (to: string) => {
+    navigate(to);
     onNavigate?.();
   };
 
@@ -242,12 +214,12 @@ function SidebarBody({
       >
         {filtered.map((item, index) => {
           const Icon = item.icon;
-          const isActive = active === item.id;
+          const isActive = location.pathname === item.to;
           return (
             <motion.button
-              key={item.id}
+              key={item.to}
               type="button"
-              onClick={() => go(item.id)}
+              onClick={() => go(item.to)}
               whileHover={{ x: 3 }}
               whileTap={{ scale: 0.97 }}
               initial={{ opacity: 0, x: -14 }}
