@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useCliptic } from "@/lib/cliptic-store";
-import { motion } from "framer-motion";
-import { Clapperboard, Home, LogOut, Megaphone, RotateCcw, Wallet } from "lucide-react";
+import { motion, useScroll, useSpring } from "framer-motion";
+import { Clapperboard, Home, LogOut, Megaphone, Menu, RotateCcw, Wallet } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -20,14 +20,23 @@ export type DashboardView = "creator" | "admin";
 export function TopBar({
   role,
   onReset,
+  onMenu,
 }: {
   /** Derived from the email used at sign-in — no manual switch. */
   role: DashboardView;
   onReset: () => void;
+  /** Opens the mobile sidebar drawer (lg and up show the fixed rail). */
+  onMenu: () => void;
 }) {
   const { user, signOut } = useAuth();
   const { profile } = useCliptic();
   const navigate = useNavigate();
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, {
+    stiffness: 160,
+    damping: 26,
+    restDelta: 0.001,
+  });
 
   const name =
     profile?.name ?? user?.name ?? user?.email?.split("@")[0] ?? "Creator";
@@ -58,12 +67,25 @@ export function TopBar({
   return (
     <header className="sticky top-0 z-40 border-b border-black/8 dark:border-white/10 bg-white/75 dark:bg-[#0C0A14]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <ClipticLogo markClassName="h-8 w-8" textClassName="text-base" />
-          <span className="hidden rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand sm:inline-block">
-            Beta
-          </span>
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={onMenu}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] text-muted-foreground transition-colors hover:border-brand/35 hover:bg-brand/10 hover:text-brand dark:border-white/10 dark:bg-white/[0.05] lg:hidden"
+            aria-label="Open navigation"
+          >
+            <Menu className="h-4.5 w-4.5" />
+          </motion.button>
+
+          <Link to="/" className="flex shrink-0 items-center gap-2.5">
+            <ClipticLogo markClassName="h-8 w-8" textClassName="text-base" />
+            <span className="hidden rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand sm:inline-block">
+              Beta
+            </span>
+          </Link>
+        </div>
 
         <div className="hidden items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-brand sm:inline-flex">
           {role === "admin" ? (
@@ -130,6 +152,12 @@ export function TopBar({
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Reading progress — fills as you scroll the dashboard */}
+      <motion.div
+        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-brand via-[#a78bfa] to-brand"
+        style={{ scaleX: progress }}
+      />
     </header>
   );
 }

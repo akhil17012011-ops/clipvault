@@ -2,6 +2,7 @@ import { AdminView } from "@/components/dashboard/AdminView";
 import { ConnectAccountModal } from "@/components/dashboard/ConnectAccountModal";
 import { CreateCampaignModal } from "@/components/dashboard/CreateCampaignModal";
 import { CreatorView } from "@/components/dashboard/CreatorView";
+import { Sidebar } from "@/components/dashboard/Sidebar";
 import { SubmitClipModal } from "@/components/dashboard/SubmitClipModal";
 import { TopBar, type DashboardView } from "@/components/dashboard/TopBar";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,6 +18,7 @@ export default function Dashboard() {
   /* The email you signed in with decides the dashboard — no manual switch. */
   const view: DashboardView = roleForEmail(profile?.email ?? user?.email);
   const [modal, setModal] = useState<ModalKind>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [onboardingSkipped, setOnboardingSkipped] = useState(false);
   const onboardedOnce = useRef(accounts.length > 0);
 
@@ -55,23 +57,36 @@ export default function Dashboard() {
     <main className="relative min-h-screen bg-background">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-brand/[0.09] to-transparent" />
 
-      <TopBar role={view} onReset={handleReset} />
+      <Sidebar
+        role={view}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onReset={handleReset}
+      />
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
-        {view === "creator" ? (
-          <CreatorView
-            onConnect={() => setModal("connect")}
-            onSubmitClip={() => setModal("submit")}
-          />
-        ) : (
-          <AdminView onCreateCampaign={() => setModal("create")} />
-        )}
+      <div className="relative lg:pl-[264px]">
+        <TopBar
+          role={view}
+          onReset={handleReset}
+          onMenu={() => setMenuOpen(true)}
+        />
+
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
+          {view === "creator" ? (
+            <CreatorView
+              onConnect={() => setModal("connect")}
+              onSubmitClip={() => setModal("submit")}
+            />
+          ) : (
+            <AdminView onCreateCampaign={() => setModal("create")} />
+          )}
+        </div>
+
+        <footer className="relative border-t border-black/8 dark:border-white/10 py-6 text-center text-xs text-muted-foreground">
+          CLIPTIC demo console · views, earnings and payouts update live from
+          simulated data.
+        </footer>
       </div>
-
-      <footer className="relative border-t border-black/8 dark:border-white/10 py-6 text-center text-xs text-muted-foreground">
-        CLIPTIC demo console · views, earnings and payouts update live from
-        simulated data.
-      </footer>
 
       {modal === "connect" && (
         <ConnectAccountModal open onOpenChange={handleConnectOpenChange} />

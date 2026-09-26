@@ -4,8 +4,12 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ClipticProvider } from "@/lib/cliptic-store";
+import {
+  ensureSmoothScroll,
+  resetScroll,
+} from "@/lib/smooth-scroll";
 import { ConvexReactClient } from "convex/react";
-import React, { StrictMode, useEffect, lazy, Suspense } from "react";
+import React, { StrictMode, useEffect, useRef, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import "./index.css";
@@ -87,11 +91,23 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 function RouteSyncer() {
   const location = useLocation();
+  const lastPath = useRef<string | null>(null);
+
+  /* Inertia smooth scrolling for the whole app (skipped for reduced motion). */
+  useEffect(() => {
+    ensureSmoothScroll();
+  }, []);
+
   useEffect(() => {
     window.parent.postMessage(
       { type: "iframe-route-change", path: location.pathname },
       "*",
     );
+    /* Glide to top on real navigations, not the first paint. */
+    if (lastPath.current !== null && lastPath.current !== location.pathname) {
+      resetScroll();
+    }
+    lastPath.current = location.pathname;
   }, [location.pathname]);
 
   useEffect(() => {

@@ -174,7 +174,14 @@ export function AdminView({
 
       {/* chart + invoices */}
       <div className="grid gap-5 lg:grid-cols-3">
-        <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5 lg:col-span-2">
+        <motion.section
+          id="payouts"
+          initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5 lg:col-span-2"
+        >
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[15px] font-bold tracking-tight">
@@ -189,9 +196,16 @@ export function AdminView({
             </span>
           </div>
           <PayoutChart data={payoutSeries} />
-        </section>
+        </motion.section>
 
-        <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
+        <motion.section
+          id="invoices"
+          initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
@@ -237,11 +251,18 @@ export function AdminView({
               </li>
             ))}
           </ul>
-        </section>
+        </motion.section>
       </div>
 
       {/* campaign management */}
-      <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70">
+      <motion.section
+        id="campaigns"
+        initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70"
+      >
         <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
           <div>
             <h2 className="text-[15px] font-bold tracking-tight">
@@ -376,10 +397,17 @@ export function AdminView({
             </TableBody>
           </Table>
         </div>
-      </section>
+      </motion.section>
 
       {/* moderation */}
-      <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70">
+      <motion.section
+        id="moderation"
+        initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70"
+      >
         <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
           <div>
             <h2 className="text-[15px] font-bold tracking-tight">
@@ -527,7 +555,7 @@ export function AdminView({
           </Table>
         </div>
         )}
-      </section>
+      </motion.section>
     </div>
   );
 }

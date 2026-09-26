@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { fmtRate, type Platform } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { useAuth } from "@/hooks/use-auth";
+import { useTilt } from "@/hooks/use-tilt";
 import {
   ArrowRight,
   Check,
@@ -182,6 +183,8 @@ function ParallaxClipCard({
   const depth = index === 1 ? 30 : index === 0 ? 16 : 21;
   const x = useTransform(mx, (v) => v * depth);
   const y = useTransform(my, (v) => v * depth);
+  /* Per-card 3D tilt layered on top of the cluster parallax. */
+  const tilt = useTilt(10);
 
   return (
     <motion.div
@@ -191,9 +194,11 @@ function ParallaxClipCard({
       className={index === 1 ? "z-10 -mt-6" : ""}
     >
       <motion.div
-        style={{ x, y }}
+        style={{ x, y, ...tilt.style }}
         whileHover={{ scale: 1.06 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        onMouseMove={tilt.onMouseMove}
+        onMouseLeave={tilt.onMouseLeave}
         className="cursor-pointer"
       >
         <div
@@ -222,6 +227,12 @@ function ParallaxClipCard({
               {card.views}
             </p>
           </div>
+          {/* Violet specular glare following the pointer */}
+          <motion.span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-[26px]"
+            style={{ backgroundImage: tilt.glare }}
+          />
         </div>
       </motion.div>
     </motion.div>
@@ -436,15 +447,27 @@ function MockFrame({
   title?: string;
   children: ReactNode;
 }) {
+  /* Mock product panels tilt toward the pointer in 3D. */
+  const tilt = useTilt(4);
   return (
-    <div className="panel-fx rounded-2xl border border-black/10 dark:border-white/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(91_55_232/0.9)]">
+    <motion.div
+      style={tilt.style}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      className="panel-fx rounded-2xl border border-black/10 dark:border-white/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(91_55_232/0.9)]"
+    >
       {title && (
-        <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="relative z-[2] mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           {title}
         </p>
       )}
-      {children}
-    </div>
+      <div className="relative z-[2]">{children}</div>
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-2xl"
+        style={{ backgroundImage: tilt.glare }}
+      />
+    </motion.div>
   );
 }
 

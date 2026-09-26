@@ -165,7 +165,14 @@ export function CreatorView({
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           {/* campaigns feed */}
-          <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
+          <motion.section
+            id="campaigns"
+            initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
+          >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight">
@@ -188,10 +195,17 @@ export function CreatorView({
                 />
               ))}
             </div>
-          </section>
+          </motion.section>
 
           {/* submissions */}
-          <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70">
+          <motion.section
+            id="clips"
+            initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70"
+          >
             <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight">
@@ -312,12 +326,19 @@ export function CreatorView({
                 </Table>
               </div>
             )}
-          </section>
+          </motion.section>
         </div>
 
         {/* sidebar */}
         <div className="space-y-5">
-          <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
+          <motion.section
+            id="accounts"
+            initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
@@ -362,9 +383,16 @@ export function CreatorView({
               <Link2 className="h-4 w-4" />
               Connect another account
             </Button>
-          </section>
+          </motion.section>
 
-          <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
+          <motion.section
+            id="payouts"
+            initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
@@ -426,7 +454,7 @@ export function CreatorView({
               Earnings land automatically in your payout method when a cycle
               closes.
             </p>
-          </section>
+          </motion.section>
         </div>
       </div>
     </div>
