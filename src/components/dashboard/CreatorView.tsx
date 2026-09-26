@@ -1,4 +1,5 @@
 import { StatCard } from "@/components/dashboard/StatCard";
+import { CampaignDetail } from "@/components/dashboard/CampaignDetail";
 import { CampaignCard } from "@/components/CampaignCard";
 import { PlatformChip, StatusBadge } from "@/components/ClipticUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
@@ -13,6 +14,8 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import {
   campaignById,
   daysAgo,
@@ -58,6 +61,9 @@ export function CreatorView({
 }) {
   const { profile, accounts, campaigns, toggleJoinCampaign, removeAccount } =
     useCliptic();
+  /* Clicking a joined campaign takes you inside it. */
+  const [openCampaignId, setOpenCampaignId] = useState<string | null>(null);
+  const openCampaign = campaigns.find((c) => c.id === openCampaignId);
   const { user } = useAuth();
   const stats = useCreatorStats();
   const name =
@@ -250,7 +256,24 @@ export function CreatorView({
 
       {section === "overview" && <ShortcutGrid cards={shortcuts} />}
 
-      {section === "campaigns" && (
+      {section === "campaigns" && openCampaign && (
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => setOpenCampaignId(null)}
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            All campaigns
+          </button>
+          <CampaignDetail
+            campaign={openCampaign}
+            onBack={() => setOpenCampaignId(null)}
+          />
+        </div>
+      )}
+
+      {section === "campaigns" && !openCampaign && (
           <motion.section
             id="campaigns"
             initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -278,6 +301,11 @@ export function CreatorView({
                   key={campaign.id}
                   campaign={campaign}
                   onJoin={() => toggleJoinCampaign(campaign.id)}
+                  onOpen={
+                    campaign.joined && campaign.status === "active"
+                      ? () => setOpenCampaignId(campaign.id)
+                      : undefined
+                  }
                 />
               ))}
             </div>

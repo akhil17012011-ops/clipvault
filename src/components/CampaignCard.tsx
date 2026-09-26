@@ -11,10 +11,13 @@ import { fmtRate, fmtViews } from "@/lib/cliptic-data";
 export function CampaignCard({
   campaign,
   onJoin,
+  onOpen,
 }: {
   campaign: Campaign;
   /** Omit for read-only previews (landing page). */
   onJoin?: () => void;
+  /** Opens the campaign's detail view (brief, assets, submit a clip). */
+  onOpen?: () => void;
 }) {
   const budgetPct = Math.min(
     100,
@@ -22,9 +25,28 @@ export function CampaignCard({
   );
 
   return (
-    <article className="panel-fx group relative flex flex-col gap-4 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5">
+    <article
+      onClick={onOpen}
+      className={`panel-fx group relative flex flex-col gap-4 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5 ${
+        onOpen ? "cursor-pointer" : ""
+      }`}
+    >
       <div className="flex items-start gap-3.5">
-        <BrandAvatar name={campaign.brand} />
+        {campaign.logo ? (
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 bg-black/[0.03] text-lg dark:border-white/10 dark:bg-white/[0.05]">
+            {campaign.logo.startsWith("http") ? (
+              <img
+                src={campaign.logo}
+                alt={campaign.brand}
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              campaign.logo
+            )}
+          </span>
+        ) : (
+          <BrandAvatar name={campaign.brand} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-semibold text-foreground">
@@ -132,14 +154,24 @@ export function CampaignCard({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onJoin}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onJoin();
+                }}
                 className="border-neon/30 bg-neon/10 text-neon hover:bg-neon/15 hover:text-neon"
               >
                 <Check className="mr-1.5 h-3.5 w-3.5" />
-                Joined — leave
+                Leave
               </Button>
             ) : (
-              <Button size="sm" onClick={onJoin} className="glow-primary">
+              <Button
+                size="sm"
+                className="glow-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onJoin();
+                }}
+              >
                 Join campaign
               </Button>
             ))}

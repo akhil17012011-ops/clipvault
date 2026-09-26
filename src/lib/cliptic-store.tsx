@@ -13,6 +13,7 @@ import {
   seedCampaigns,
   uid,
   type Campaign,
+  type CampaignAsset,
   type ClipMetrics,
   type DemoProfile,
   type LinkedAccount,
@@ -85,6 +86,10 @@ interface ClipticContextValue extends ClipticState {
   createCampaign: (input: {
     brand: string;
     title: string;
+    logo?: string;
+    brief?: string;
+    referenceLinks: CampaignAsset[];
+    sourceFiles: CampaignAsset[];
     ratePer1k: number;
     minViews: number;
     budget: number;
@@ -92,6 +97,7 @@ interface ClipticContextValue extends ClipticState {
     platforms: Platform[];
     guidelines: string[];
   }) => void;
+  updateCampaign: (id: string, patch: Partial<Campaign>) => void;
   setCampaignStatus: (id: string, status: Campaign["status"]) => void;
   cycleInvoice: (id: string) => void;
   settleSubmission: (id: string, status: "paid" | "rejected") => void;
@@ -262,6 +268,10 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
     (input: {
       brand: string;
       title: string;
+      logo?: string;
+      brief?: string;
+      referenceLinks: CampaignAsset[];
+      sourceFiles: CampaignAsset[];
       ratePer1k: number;
       minViews: number;
       budget: number;
@@ -280,6 +290,19 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
         createdAt: Date.now(),
       };
       setState((prev) => ({ ...prev, campaigns: [campaign, ...prev.campaigns] }));
+    },
+    [],
+  );
+
+  /** Edit a live campaign — rate, rules, assets and budget. */
+  const updateCampaign = useCallback(
+    (id: string, patch: Partial<Campaign>) => {
+      setState((prev) => ({
+        ...prev,
+        campaigns: prev.campaigns.map((c) =>
+          c.id === id ? { ...c, ...patch } : c,
+        ),
+      }));
     },
     [],
   );
@@ -370,6 +393,7 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       toggleJoinCampaign,
       submitClip,
       createCampaign,
+      updateCampaign,
       setCampaignStatus,
       cycleInvoice,
       settleSubmission,
@@ -385,6 +409,7 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       toggleJoinCampaign,
       submitClip,
       createCampaign,
+      updateCampaign,
       setCampaignStatus,
       cycleInvoice,
       settleSubmission,

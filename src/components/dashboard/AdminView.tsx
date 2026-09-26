@@ -1,4 +1,5 @@
 import { StatCard } from "@/components/dashboard/StatCard";
+import { CreatorsView } from "@/components/dashboard/CreatorsView";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ const DECLINE_REASONS = [
 /** Each sidebar entry is its own page under /dashboard/:section. */
 export type AdminSection =
   | "overview"
+  | "creators"
   | "payouts"
   | "invoices"
   | "campaigns"
@@ -174,6 +176,12 @@ export function AdminView({
       kicker: "Settlements",
       title: "Platform payouts",
       description: "Amounts settled to clippers over the last 7 days.",
+    },
+    creators: {
+      kicker: "Directory",
+      title: "Connected accounts",
+      description:
+        "Every social account verified on CLIPTIC, and what it has produced.",
     },
     invoices: {
       kicker: "Billing",
@@ -285,6 +293,8 @@ export function AdminView({
       )}
 
       {section === "overview" && <ShortcutGrid cards={shortcuts} />}
+
+      {section === "creators" && <CreatorsView />}
 
       {section === "payouts" && (
         <motion.section

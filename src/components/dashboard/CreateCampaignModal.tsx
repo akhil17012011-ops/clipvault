@@ -13,9 +13,9 @@ import { PLATFORMS, PLATFORM_META, type Platform } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { toast } from "sonner";
 import { useState } from "react";
-import { DollarSign, Rocket } from "lucide-react";
+import { HardDriveDownload, Link2, Plus, Trash2, DollarSign, Rocket } from "lucide-react";
 
-/** Admin form for launching a new brand campaign. */
+/** Admin form for launching or editing a brand campaign. */
 export function CreateCampaignModal({
   open,
   onOpenChange,
@@ -26,13 +26,55 @@ export function CreateCampaignModal({
   const { createCampaign } = useCliptic();
   const [brand, setBrand] = useState("");
   const [title, setTitle] = useState("");
+  const [logo, setLogo] = useState("");
+  const [brief, setBrief] = useState("");
   const [rate, setRate] = useState("1.50");
   const [minViews, setMinViews] = useState("50000");
   const [budget, setBudget] = useState("25000");
   const [daysLeft, setDaysLeft] = useState("30");
   const [platforms, setPlatforms] = useState<Platform[]>(["tiktok"]);
   const [guidelines, setGuidelines] = useState("");
+  const [referenceLinks, setReferenceLinks] = useState<
+    { label: string; url: string }[]
+  >([]);
+  const [sourceFiles, setSourceFiles] = useState<
+    { label: string; url: string }[]
+  >([]);
   const [error, setError] = useState<string | null>(null);
+
+  const addRow = (
+    setter: React.Dispatch<
+      React.SetStateAction<{ label: string; url: string }[]>
+    >,
+  ) => setter((prev) => [...prev, { label: "", url: "" }]);
+
+  const updateRow = (
+    setter: React.Dispatch<
+      React.SetStateAction<{ label: string; url: string }[]>
+    >,
+    index: number,
+    patch: Partial<{ label: string; url: string }>,
+  ) =>
+    setter((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
+
+  const removeRow = (
+    setter: React.Dispatch<
+      React.SetStateAction<{ label: string; url: string }[]>
+    >,
+    index: number,
+  ) => setter((prev) => prev.filter((_, i) => i !== index));
+
+  /* Only rows with a URL are kept — an empty draft row isn't an asset. */
+  const cleanRows = (rows: { label: string; url: string }[], kind: "drive" | "link") =>
+    rows
+      .filter((row) => row.url.trim().length > 0)
+      .map((row) => ({
+        label: row.label.trim() || (kind === "drive" ? "Source file" : "Reference"),
+        url: row.url.trim(),
+        kind,
+      }));
 
   const togglePlatform = (p: Platform) =>
     setPlatforms((prev) =>
@@ -65,6 +107,10 @@ export function CreateCampaignModal({
     createCampaign({
       brand: brand.trim(),
       title: title.trim(),
+      logo: logo.trim() || undefined,
+      brief: brief.trim() || undefined,
+      referenceLinks: cleanRows(referenceLinks, "link"),
+      sourceFiles: cleanRows(sourceFiles, "drive"),
       ratePer1k: rateValue,
       minViews: Number.isFinite(min) && min > 0 ? min : 10_000,
       budget: budgetValue,
@@ -125,6 +171,33 @@ export function CreateCampaignModal({
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Fall Product Drop"
                   className={fieldClass}
+                />
+              </label>
+
+              {/* brand mark */}
+              <label className="block">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Brand logo
+                </span>
+                <Input
+                  value={logo}
+                  onChange={(e) => setLogo(e.target.value)}
+                  placeholder="🎧 or paste an image URL"
+                  className={fieldClass}
+                />
+              </label>
+              <div className="hidden sm:block" />
+
+              <label className="block sm:col-span-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Campaign brief
+                </span>
+                <Textarea
+                  value={brief}
+                  onChange={(e) => setBrief(e.target.value)}
+                  placeholder="What should the clip show? Tone, angles, anything clippers should know before they cut."
+                  rows={3}
+                  className={`${fieldClass} h-auto py-2.5`}
                 />
               </label>
 
@@ -220,6 +293,113 @@ export function CreateCampaignModal({
                 className="mt-2 resize-none bg-background/60 leading-relaxed"
               />
             </label>
+
+            {/* reference links */}
+            <div className="mt-5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Reference links
+                </span>
+                <button
+                  type="button"
+                  onClick={() => addRow(setReferenceLinks)}
+                  className="flex items-center gap-1 text-[12px] font-semibold text-brand transition-opacity hover:opacity-70"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add link
+                </button>
+              </div>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">
+                Product pages, brand channels, moodboards.
+              </p>
+              <div className="mt-2.5 space-y-2">
+                {referenceLinks.map((row, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={row.label}
+                      onChange={(e) =>
+                        updateRow(setReferenceLinks, index, { label: e.target.value })
+                      }
+                      placeholder="Product page"
+                      className="h-10 w-[38%]"
+                    />
+                    <div className="relative flex-1">
+                      <Link2 className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={row.url}
+                        onChange={(e) =>
+                          updateRow(setReferenceLinks, index, { url: e.target.value })
+                        }
+                        placeholder="https://…"
+                        className="h-10 pl-8 font-mono text-[12.5px]"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeRow(setReferenceLinks, index)}
+                      className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-400/10 hover:text-red-600 dark:hover:text-red-300"
+                      aria-label="Remove link"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* source footage clippers can cut from */}
+            <div className="mt-5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Source footage &amp; Drive files
+                </span>
+                <button
+                  type="button"
+                  onClick={() => addRow(setSourceFiles)}
+                  className="flex items-center gap-1 text-[12px] font-semibold text-brand transition-opacity hover:opacity-70"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add file
+                </button>
+              </div>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">
+                Footage clippers download and cut from — paste any Drive or
+                file link.
+              </p>
+              <div className="mt-2.5 space-y-2">
+                {sourceFiles.map((row, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={row.label}
+                      onChange={(e) =>
+                        updateRow(setSourceFiles, index, { label: e.target.value })
+                      }
+                      placeholder="Hero footage (4K)"
+                      className="h-10 w-[38%]"
+                    />
+                    <div className="relative flex-1">
+                      <HardDriveDownload className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={row.url}
+                        onChange={(e) =>
+                          updateRow(setSourceFiles, index, { url: e.target.value })
+                        }
+                        placeholder="https://drive.google.com/…"
+                        className="h-10 pl-8 font-mono text-[12.5px]"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeRow(setSourceFiles, index)}
+                      className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-400/10 hover:text-red-600 dark:hover:text-red-300"
+                      aria-label="Remove file"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {error && <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>}
 
