@@ -90,12 +90,12 @@ export function ConnectAccountModal({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto gap-0 p-0 sm:max-w-xl [&>button]:z-20">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[#5B37E8]/35 blur-[80px]" />
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[#5B37E8]/20 blur-[80px]" />
 
           {step === "form" && (
             <div className="relative p-6 sm:p-7">
               <DialogHeader className="text-left">
-                <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#c4b5fd]">
+                <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#5B37E8]">
                   <ScanSearch className="h-5 w-5" />
                 </div>
                 <DialogTitle className="text-xl font-extrabold tracking-tight">
@@ -119,13 +119,13 @@ export function ConnectAccountModal({
                     className={`flex items-center gap-2.5 rounded-xl border px-3 py-3 text-left text-sm font-semibold transition-all ${
                       platform === p
                         ? "border-brand/50 bg-brand/12 text-foreground"
-                        : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-white/20"
+                        : "border-black/10 bg-black/[0.02] text-muted-foreground hover:border-black/15"
                     }`}
                   >
                     <PlatformChip platform={p} size="sm" />
                     {PLATFORM_META[p].label}
                     {platform === p && (
-                      <Check className="ml-auto h-4 w-4 text-[#c4b5fd]" />
+                      <Check className="ml-auto h-4 w-4 text-[#5B37E8]" />
                     )}
                   </button>
                 ))}
@@ -188,7 +188,7 @@ export function ConnectAccountModal({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4 gap-1.5 border-white/15 bg-white/5 hover:bg-white/10"
+                  className="mt-4 gap-1.5 border-black/12 bg-black/[0.03] hover:bg-black/[0.05]"
                   onClick={copyCode}
                 >
                   {copied ? (
@@ -206,7 +206,7 @@ export function ConnectAccountModal({
               <ol className="mt-5 space-y-2.5">
                 {INSTRUCTIONS.map((text, i) => (
                   <li key={text} className="flex gap-3 text-[13px] leading-snug">
-                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 font-mono text-[10px] font-bold text-muted-foreground">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-black/12 bg-black/[0.03] font-mono text-[10px] font-bold text-muted-foreground">
                       {i + 1}
                     </span>
                     <span className="text-muted-foreground">{text}</span>
@@ -235,7 +235,7 @@ export function ConnectAccountModal({
           {step === "verifying" && account && (
             <div className="relative px-6 py-14 text-center sm:px-7">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-brand/30 bg-brand/10">
-                <Loader2 className="h-6 w-6 animate-spin text-[#c4b5fd]" />
+                <Loader2 className="h-6 w-6 animate-spin text-[#5B37E8]" />
               </div>
               <h3 className="mt-5 text-lg font-extrabold tracking-tight">
                 Checking @{account.handle}&apos;s bio…
@@ -247,7 +247,7 @@ export function ConnectAccountModal({
                 </span>{" "}
                 on {PLATFORM_META[account.platform].label}
               </p>
-              <div className="mx-auto mt-6 h-1.5 w-56 overflow-hidden rounded-full bg-white/8">
+              <div className="mx-auto mt-6 h-1.5 w-56 overflow-hidden rounded-full bg-black/[0.04]">
                 <div className="shimmer h-full w-full rounded-full bg-gradient-to-r from-brand to-[#a78bfa]" />
               </div>
             </div>

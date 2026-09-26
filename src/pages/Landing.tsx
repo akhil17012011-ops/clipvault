@@ -1,10 +1,10 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useSpring } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { CampaignCard } from "@/components/CampaignCard";
 import { ClipticLogo, ClipticMark } from "@/components/ClipticMark";
-import { PlatformChip, StatusBadge } from "@/components/ClipticUI";
+import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI";
 import { Button } from "@/components/ui/button";
 import { fmtMoney, fmtRate, fmtViews, type Platform } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Megaphone,
   MousePointerClick,
+  Play,
   Search,
   ShieldCheck,
   Sparkles,
@@ -39,6 +40,12 @@ const fadeUp = {
 
 function SiteNav() {
   const { isAuthenticated } = useAuth();
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, {
+    stiffness: 120,
+    damping: 30,
+    mass: 0.3,
+  });
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -48,14 +55,14 @@ function SiteNav() {
   }, []);
 
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "border-b border-white/8 bg-background/85 backdrop-blur-xl"
-          : "border-b border-transparent"
-      }`}
-    >
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
+    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 transition-all duration-300 sm:px-5 sm:pt-4">
+      <nav
+        className={`relative mx-auto flex h-16 max-w-6xl items-center justify-between overflow-hidden rounded-2xl px-4 transition-all duration-300 sm:px-5 ${
+          scrolled
+            ? "glass shadow-[0_20px_50px_-28px_rgb(30_20_80/0.4)]"
+            : "border border-black/5 bg-white/60 backdrop-blur-xl"
+        }`}
+      >
         <Link to="/" className="shrink-0">
           <ClipticLogo />
         </Link>
@@ -91,13 +98,18 @@ function SiteNav() {
               <Link to="/auth">Sign in</Link>
             </Button>
           )}
-          <Button asChild className="glow-primary">
+          <Button asChild className="liquid glow-primary">
             <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
               {isAuthenticated ? "Open dashboard" : "Start clipping"}
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </Button>
         </div>
+
+        <motion.div
+          style={{ scaleX: progress }}
+          className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-gradient-to-r from-[#5B37E8] via-[#8B5CF6] to-[#5B37E8]"
+        />
       </nav>
     </header>
   );
@@ -132,26 +144,26 @@ function HeroPreview() {
       className="relative mx-auto mt-16 max-w-4xl"
     >
       <div className="float-a absolute -left-4 top-14 z-10 hidden md:block">
-        <div className="flex items-center gap-2 rounded-xl border border-neon/25 bg-[#0d1410]/95 px-3 py-2 text-xs font-semibold text-neon shadow-2xl backdrop-blur">
+        <div className="flex items-center gap-2 rounded-xl border border-neon/25 bg-white/85 px-3 py-2 text-xs font-semibold text-neon shadow-xl backdrop-blur">
           <BadgeCheck className="h-4 w-4" />
           @avaclips verified
         </div>
       </div>
       <div className="float-b absolute -right-4 bottom-20 z-10 hidden md:block">
-        <div className="flex items-center gap-2 rounded-xl border border-brand/35 bg-[#100c22]/95 px-3 py-2 text-xs font-semibold text-[#c4b5fd] shadow-2xl backdrop-blur">
+        <div className="flex items-center gap-2 rounded-xl border border-brand/35 bg-white/85 px-3 py-2 text-xs font-semibold text-[#5B37E8] shadow-xl backdrop-blur">
           <TrendingUp className="h-4 w-4" />
           +{fmtViews(48_210)} views today
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0b12]/90 shadow-[0_50px_140px_-50px_rgb(91_55_232/0.85)] backdrop-blur-xl">
-        <div className="flex items-center gap-3 border-b border-white/8 px-4 py-3">
+      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white/85 shadow-[0_50px_140px_-60px_rgb(91_55_232/0.5)] backdrop-blur-xl">
+        <div className="flex items-center gap-3 border-b border-black/8 px-4 py-3">
           <span className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06]" />
           </span>
-          <span className="flex-1 rounded-md bg-white/5 px-3 py-1 text-center font-mono text-[11px] text-muted-foreground">
+          <span className="flex-1 rounded-md bg-black/[0.03] px-3 py-1 text-center font-mono text-[11px] text-muted-foreground">
             app.cliptic.com/dashboard
           </span>
         </div>
@@ -170,7 +182,7 @@ function HeroPreview() {
             {rows.map((row) => (
               <div
                 key={row.campaign}
-                className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl border border-black/8 bg-black/[0.03] px-3 py-2.5"
               >
                 <PlatformChip platform={row.platform} size="sm" />
                 <div className="min-w-0 flex-1">
@@ -200,12 +212,12 @@ function HeroPreview() {
                 <TrendingUp className="h-3.5 w-3.5" /> +18.2% this week
               </p>
             </div>
-            <div className="rounded-xl border border-white/8 bg-white/[0.03] p-4">
+            <div className="rounded-xl border border-black/8 bg-black/[0.03] p-4">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-muted-foreground">Next payout</span>
                 <span className="font-semibold text-foreground">in 3 days</span>
               </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/8">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04]">
                 <div className="h-full w-[72%] rounded-full bg-gradient-to-r from-brand to-neon" />
               </div>
               <div className="mt-3 flex items-center justify-between text-[11px]">
@@ -222,22 +234,126 @@ function HeroPreview() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Hero: left copy + floating clip cluster (clipping.net layout)      */
+/* ------------------------------------------------------------------ */
+
+function ClipCluster() {
+  const cards = [
+    {
+      platform: "tiktok" as Platform,
+      title: "Ring walk cut",
+      views: "1.2M",
+      tone: "from-[#5B37E8] to-[#2C1B7E]",
+      tilt: "-rotate-3",
+      bob: "float-a",
+      delay: 0.15,
+      wide: false,
+    },
+    {
+      platform: "youtube" as Platform,
+      title: "Podcast highlight",
+      views: "840K",
+      tone: "from-[#7C3AED] to-[#4C1D95]",
+      tilt: "rotate-2",
+      bob: "float-b",
+      delay: 0.3,
+      wide: true,
+    },
+    {
+      platform: "instagram" as Platform,
+      title: "Training reel",
+      views: "2.4M",
+      tone: "from-[#8B5CF6] to-[#5B37E8]",
+      tilt: "-rotate-1",
+      bob: "float-a",
+      delay: 0.45,
+      wide: false,
+    },
+  ];
+
+  return (
+    <div className="relative mx-auto w-full max-w-md">
+      <div className="pointer-events-none absolute -inset-6 rounded-[40px] bg-[#5B37E8]/15 blur-3xl" />
+      <div className="relative flex items-end justify-center gap-2.5 sm:gap-3.5">
+        {cards.map((card, i) => (
+          <motion.div
+            key={card.title}
+            initial={{ opacity: 0, y: 46 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: card.delay, ease: "easeOut" }}
+            className={`${card.bob} ${i === 1 ? "z-10 -mt-6" : ""}`}
+          >
+            <div
+              className={`w-32 rounded-[26px] border border-white/70 bg-gradient-to-b ${card.tone} p-2 shadow-[0_34px_70px_-34px_rgb(45_25_120/0.6)] sm:w-40 ${card.tilt}`}
+            >
+              <div className="flex items-center justify-between px-0.5">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-white backdrop-blur">
+                  <PlatformIcon platform={card.platform} className="h-4 w-4" />
+                </span>
+                <span className="rounded-full bg-black/45 px-2 py-0.5 text-[8.5px] font-bold tracking-[0.14em] text-white backdrop-blur">
+                  TRACKING
+                </span>
+              </div>
+              <div
+                className={`mt-2 flex ${card.wide ? "aspect-[9/15]" : "aspect-[9/17]"} flex-col items-center justify-center rounded-[18px] bg-white/15`}
+              >
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-[#5B37E8] shadow-lg transition-transform duration-300 hover:scale-110">
+                  <Play className="ml-0.5 h-4 w-4 fill-current" />
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-1 px-0.5 pb-0.5 pt-2 text-white">
+                <p className="truncate text-[10.5px] font-semibold">
+                  {card.title}
+                </p>
+                <p className="font-mono text-[10.5px] font-bold">
+                  {card.views}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.55, ease: "easeOut" }}
+        className="mt-7 flex items-center justify-center gap-2.5"
+      >
+        {(["youtube", "tiktok", "instagram", "youtube", "tiktok"] as Platform[]).map(
+          (platform, i) => (
+            <span
+              key={`${platform}-${i}`}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white text-foreground shadow-sm transition-transform duration-300 hover:-translate-y-1"
+            >
+              <PlatformIcon platform={platform} className="h-4 w-4" />
+            </span>
+          ),
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
 function Hero() {
   const { isAuthenticated } = useAuth();
   const ctaTarget = isAuthenticated ? "/dashboard" : "/auth";
   return (
     <section className="relative overflow-hidden pb-20 pt-32 sm:pt-40">
-      <div className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#5B37E8]/35 blur-[150px]" />
-      <div className="pointer-events-none absolute -left-40 top-64 h-[380px] w-[380px] rounded-full bg-[#8B5CF6]/20 blur-[130px]" />
-      <div className="pointer-events-none absolute -right-40 top-96 h-[340px] w-[340px] rounded-full bg-[#4C1D95]/30 blur-[120px]" />
+      <div className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#5B37E8]/25 blur-[150px]" />
+      <div className="pointer-events-none absolute -left-40 top-64 h-[380px] w-[380px] rounded-full bg-[#8B5CF6]/15 blur-[130px]" />
+      <div className="pointer-events-none absolute -right-40 top-96 h-[340px] w-[340px] rounded-full bg-[#4C1D95]/15 blur-[120px]" />
       <div className="grid-fade pointer-events-none absolute inset-0" />
 
-      <div className="relative mx-auto max-w-6xl px-5 text-center">
+      <div className="relative mx-auto max-w-6xl px-5">
+        <div className="grid items-center gap-10 pt-6 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+        <div className="text-center lg:text-left">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="inline-flex items-center gap-2.5 rounded-full border border-brand/35 bg-brand/10 px-4 py-1.5 text-[12.5px] font-semibold text-[#c9bcff]"
+          className="inline-flex items-center gap-2.5 rounded-full border border-brand/35 bg-brand/10 px-4 py-1.5 text-[12.5px] font-semibold text-[#5B37E8]"
         >
           <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-neon text-neon" />
           The UGC clipping network · Clip · Post · Get Paid
@@ -247,7 +363,7 @@ function Hero() {
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.08, ease: "easeOut" }}
-          className="mx-auto mt-7 max-w-4xl text-balance text-5xl font-extrabold leading-[1.03] tracking-[-0.045em] sm:text-6xl lg:text-7xl"
+          className="mt-7 max-w-4xl text-balance text-5xl font-extrabold leading-[1.03] tracking-[-0.045em] sm:text-6xl lg:mx-0 lg:text-7xl"
         >
           Grow, Earn, and Go Viral with <span className="text-grad">CLIPTIC</span>
         </motion.h1>
@@ -256,7 +372,7 @@ function Hero() {
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.16, ease: "easeOut" }}
-          className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg"
+          className="mt-6 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0"
         >
           A creative marketplace uniting brands and digital talent. Brands launch
           campaigns, expert clippers craft viral content, and every verified view
@@ -267,12 +383,12 @@ function Hero() {
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.24, ease: "easeOut" }}
-          className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start"
         >
           <Button
             asChild
             size="lg"
-            className="glow-primary h-12 bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
+            className="liquid glow-primary h-12 bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
           >
             <Link to={ctaTarget}>
               {isAuthenticated ? "Open dashboard" : "Start clipping"}
@@ -283,7 +399,7 @@ function Hero() {
             asChild
             size="lg"
             variant="outline"
-            className="h-12 border-white/15 bg-white/5 px-7 text-base text-foreground hover:bg-white/10"
+            className="h-12 border-black/15 bg-black/[0.03] px-7 text-base text-foreground hover:bg-black/[0.05]"
           >
             <Link
               to={
@@ -302,7 +418,7 @@ function Hero() {
           Free to join · No following required
         </p>
 
-        <dl className="mx-auto mt-12 grid max-w-2xl grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/[0.03] py-5 backdrop-blur">
+        <dl className="mx-auto mt-12 grid w-full max-w-2xl grid-cols-3 divide-x divide-black/10 rounded-2xl border border-black/10 bg-white/70 py-5 backdrop-blur lg:mx-0">
           {[
             { value: "$60M+", label: "paid to clippers" },
             { value: "77,000+", label: "clippers ready" },
@@ -318,6 +434,10 @@ function Hero() {
             </div>
           ))}
         </dl>
+        </div>
+
+        <ClipCluster />
+        </div>
 
         <HeroPreview />
       </div>
@@ -343,7 +463,7 @@ function BrandMarquee() {
     "BRIGHTSIDE",
   ];
   return (
-    <section id="brands" className="scroll-mt-24 border-y border-white/8 bg-white/[0.015] py-10">
+    <section id="brands" className="scroll-mt-24 border-y border-black/8 bg-black/[0.015] py-10">
       <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
         Trusted by top brands
       </p>
@@ -362,7 +482,7 @@ function BrandMarquee() {
               {brands.map((brand) => (
                 <span
                   key={brand}
-                  className="whitespace-nowrap text-2xl font-extrabold tracking-tight text-white/35 transition-colors duration-300 hover:text-white/75"
+                  className="whitespace-nowrap text-2xl font-extrabold tracking-tight text-muted-foreground transition-colors duration-300 hover:text-foreground"
                 >
                   {brand}
                 </span>
@@ -387,7 +507,7 @@ function MockFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(91_55_232/0.9)]">
+    <div className="rounded-2xl border border-black/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(91_55_232/0.9)]">
       {title && (
         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           {title}
@@ -402,7 +522,7 @@ function MockCampaign() {
   return (
     <MockFrame title="Live campaign">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white ring-1 ring-white/15">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white ring-1 ring-black/10">
           RA
         </span>
         <div>
@@ -415,7 +535,7 @@ function MockCampaign() {
           50d left
         </span>
       </div>
-      <div className="mt-4 flex items-end justify-between rounded-xl border border-white/8 bg-background/60 px-4 py-3">
+      <div className="mt-4 flex items-end justify-between rounded-xl border border-black/8 bg-background/60 px-4 py-3">
         <div>
           <p className="text-2xl font-extrabold tracking-tight text-neon">
             {fmtRate(0.4)}
@@ -458,7 +578,7 @@ function MockAccounts() {
         {accounts.map((account) => (
           <li
             key={account.handle}
-            className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-2.5"
+            className="flex items-center justify-between rounded-xl border border-black/8 bg-black/[0.03] px-3.5 py-2.5"
           >
             <span className="font-mono text-[13px] text-foreground">
               {account.handle}
@@ -490,11 +610,11 @@ function MockPayout() {
             className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm ${
               i === 0
                 ? "border-brand/45 bg-brand/10"
-                : "border-white/8 bg-white/[0.03]"
+                : "border-black/8 bg-black/[0.03]"
             }`}
           >
             <span className="flex items-center gap-2.5 font-semibold">
-              <Wallet className={`h-4 w-4 ${i === 0 ? "text-[#c4b5fd]" : "text-muted-foreground"}`} />
+              <Wallet className={`h-4 w-4 ${i === 0 ? "text-[#5B37E8]" : "text-muted-foreground"}`} />
               {method.name}
             </span>
             <span className="flex items-center gap-2 text-[12px] text-muted-foreground">
@@ -528,14 +648,14 @@ function MockPost() {
             className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${
               tab.active
                 ? "bg-primary text-primary-foreground"
-                : "border border-white/10 bg-white/5 text-muted-foreground"
+                : "border border-black/10 bg-black/[0.03] text-muted-foreground"
             }`}
           >
             {tab.label}
           </span>
         ))}
       </div>
-      <div className="mt-3.5 flex items-center gap-2 rounded-xl border border-white/10 bg-background/60 px-3.5 py-3">
+      <div className="mt-3.5 flex items-center gap-2 rounded-xl border border-black/10 bg-background/60 px-3.5 py-3">
         <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="flex-1 truncate font-mono text-[12.5px] text-muted-foreground">
           tiktok.com/@avaclips/video/74018…
@@ -560,16 +680,16 @@ function MockCycles() {
   ];
   return (
     <MockFrame title="Your payout cycles">
-      <div className="overflow-hidden rounded-xl border border-white/8">
+      <div className="overflow-hidden rounded-xl border border-black/8">
         <table className="w-full text-left text-[13px]">
-          <thead className="bg-white/[0.04] text-[11px] uppercase tracking-wider text-muted-foreground">
+          <thead className="bg-black/[0.04] text-[11px] uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-3.5 py-2 font-semibold">Cycle</th>
               <th className="px-3.5 py-2 font-semibold">Status</th>
               <th className="px-3.5 py-2 text-right font-semibold">Amount</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/8">
+          <tbody className="divide-y divide-black/8">
             {cycles.map((cycle) => (
               <tr key={cycle.label}>
                 <td className="px-3.5 py-2.5 font-medium">{cycle.label}</td>
@@ -639,7 +759,7 @@ function HowItWorks() {
     <section id="how" className="scroll-mt-24 py-24">
       <div className="mx-auto max-w-6xl px-5">
         <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
+          <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
             <Zap className="h-3.5 w-3.5 text-neon" />
             How it works
           </span>
@@ -661,7 +781,7 @@ function HowItWorks() {
             >
               <div className={i % 2 === 1 ? "lg:order-2" : undefined}>
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-brand/35 bg-brand/10 font-mono text-sm font-bold text-[#c4b5fd]">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-brand/35 bg-brand/10 font-mono text-sm font-bold text-[#5B37E8]">
                     {step.n}
                   </span>
                   <span className="text-[12px] font-bold uppercase tracking-[0.22em] text-neon">
@@ -713,13 +833,13 @@ function CampaignsSection() {
   return (
     <section
       id="campaigns"
-      className="scroll-mt-24 border-y border-white/8 bg-white/[0.015] py-24"
+      className="scroll-mt-24 border-y border-black/8 bg-black/[0.015] py-24"
     >
       <div className="mx-auto max-w-6xl px-5">
         <motion.div {...fadeUp} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-[#c4b5fd]" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-[#5B37E8]" />
               Live campaigns
             </span>
             <h2 className="mt-5 text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
@@ -748,7 +868,7 @@ function CampaignsSection() {
             asChild
             size="lg"
             variant="outline"
-            className="border-white/15 bg-white/5 hover:bg-white/10"
+            className="border-black/15 bg-black/[0.03] hover:bg-black/[0.05]"
           >
             <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
               {isAuthenticated
@@ -782,7 +902,7 @@ function TwoSides() {
       cta: isAuthenticated ? "Open dashboard" : "Start clipping",
       to: isAuthenticated ? "/dashboard" : "/auth",
       accent: "from-brand/25 to-brand/[0.04]",
-      iconColor: "text-[#c4b5fd] bg-brand/15 border-brand/30",
+      iconColor: "text-[#5B37E8] bg-brand/15 border-brand/30",
     },
     {
       icon: Megaphone,
@@ -822,7 +942,7 @@ function TwoSides() {
             <motion.div
               key={card.title}
               {...fadeUp}
-              className={`group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b ${card.accent} p-8 transition-all duration-300 hover:border-white/20`}
+              className={`group relative overflow-hidden rounded-3xl border border-black/10 bg-gradient-to-b ${card.accent} p-8 transition-all duration-300 hover:border-black/15`}
             >
               <span
                 className={`inline-flex h-12 w-12 items-center justify-center rounded-xl border ${card.iconColor}`}
@@ -891,7 +1011,7 @@ function FinalCTA() {
             <Button
               asChild
               size="lg"
-              className="glow-primary h-12 bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
+              className="liquid glow-primary h-12 bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
             >
               <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
                 {isAuthenticated ? "Open dashboard" : "Start clipping"}
@@ -902,7 +1022,7 @@ function FinalCTA() {
               asChild
               size="lg"
               variant="outline"
-              className="h-12 border-white/20 bg-white/5 px-7 text-base hover:bg-white/10"
+              className="h-12 border-black/20 bg-black/[0.03] px-7 text-base hover:bg-black/[0.05]"
             >
               <Link
                 to={
@@ -932,7 +1052,7 @@ function SiteFooter() {
     { title: "Company", links: ["About", "Careers", "Privacy", "Terms"] },
   ];
   return (
-    <footer className="border-t border-white/8 bg-black/25">
+    <footer className="border-t border-black/8 bg-black/[0.02]">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-5">
         <div className="lg:col-span-1">
           <ClipticLogo />
@@ -965,7 +1085,7 @@ function SiteFooter() {
           </div>
         ))}
       </div>
-      <div className="border-t border-white/8 py-5">
+      <div className="border-t border-black/8 py-5">
         <p className="mx-auto max-w-6xl px-5 text-center text-xs text-muted-foreground">
           © 2026 CLIPTIC · Clip. Post. Get Paid. · Demo interface, simulated
           data.

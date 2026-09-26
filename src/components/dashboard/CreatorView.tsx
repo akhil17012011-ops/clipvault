@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
+import { motion } from "framer-motion";
 import {
   campaignById,
   daysAgo,
@@ -83,7 +84,7 @@ export function CreatorView({
         <div className="flex gap-2.5">
           <Button
             variant="outline"
-            className="gap-1.5 border-white/15 bg-white/5 hover:bg-white/10"
+            className="gap-1.5 border-black/12 bg-black/[0.03] hover:bg-black/[0.05]"
             onClick={onConnect}
           >
             <Link2 className="h-4 w-4" />
@@ -121,7 +122,13 @@ export function CreatorView({
       )}
 
       {/* stats */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <motion.div
+        initial={{ opacity: 0, y: 26 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
         <StatCard
           icon={Wallet}
           label="Total earnings"
@@ -152,13 +159,13 @@ export function CreatorView({
           }
           tone={stats.pending > 0 ? "violet" : "neon"}
         />
-      </div>
+      </motion.div>
 
       {/* main + sidebar */}
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           {/* campaigns feed */}
-          <section className="rounded-2xl border border-white/8 bg-card/70 p-5">
+          <section className="rounded-2xl border border-black/8 bg-card/70 p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight">
@@ -168,7 +175,7 @@ export function CreatorView({
                   Published rates — join in one tap
                 </p>
               </div>
-              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+              <span className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                 {feed.length} live
               </span>
             </div>
@@ -184,8 +191,8 @@ export function CreatorView({
           </section>
 
           {/* submissions */}
-          <section className="rounded-2xl border border-white/8 bg-card/70">
-            <div className="flex items-center justify-between gap-3 border-b border-white/8 px-5 py-4">
+          <section className="rounded-2xl border border-black/8 bg-card/70">
+            <div className="flex items-center justify-between gap-3 border-b border-black/8 px-5 py-4">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight">
                   Submissions &amp; earnings
@@ -197,7 +204,7 @@ export function CreatorView({
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1.5 border-white/15 bg-white/5 hover:bg-white/10"
+                className="gap-1.5 border-black/12 bg-black/[0.03] hover:bg-black/[0.05]"
                 onClick={onSubmitClip}
               >
                 <Upload className="h-3.5 w-3.5" />
@@ -248,7 +255,7 @@ export function CreatorView({
                               href={submission.link}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex max-w-[190px] items-center gap-1.5 truncate font-mono text-[12.5px] text-[#c4b5fd] transition-colors hover:text-[#ddd3ff]"
+                              className="inline-flex max-w-[190px] items-center gap-1.5 truncate font-mono text-[12.5px] text-[#5B37E8] transition-colors hover:text-[#4C1FD0]"
                             >
                               <span className="truncate">
                                 {linkLabel(submission.link)}
@@ -310,24 +317,24 @@ export function CreatorView({
 
         {/* sidebar */}
         <div className="space-y-5">
-          <section className="rounded-2xl border border-white/8 bg-card/70 p-5">
+          <section className="rounded-2xl border border-black/8 bg-card/70 p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-[#c4b5fd]">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-[#5B37E8]">
                   <ShieldCheck className="h-4 w-4" />
                 </span>
                 <h2 className="text-[15px] font-bold tracking-tight">
                   My connected accounts
                 </h2>
               </div>
-              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+              <span className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                 {accounts.filter((a) => a.status === "connected").length}/
                 {accounts.length || 0} verified
               </span>
             </div>
 
             {accounts.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-dashed border-white/15 px-4 py-6 text-center">
+              <div className="mt-4 rounded-xl border border-dashed border-black/12 px-4 py-6 text-center">
                 <p className="text-[13px] font-semibold text-foreground/85">
                   Nothing connected yet
                 </p>
@@ -349,7 +356,7 @@ export function CreatorView({
 
             <Button
               variant="outline"
-              className="mt-4 w-full gap-1.5 border-white/15 bg-white/5 hover:bg-white/10"
+              className="mt-4 w-full gap-1.5 border-black/12 bg-black/[0.03] hover:bg-black/[0.05]"
               onClick={onConnect}
             >
               <Link2 className="h-4 w-4" />
@@ -357,7 +364,7 @@ export function CreatorView({
             </Button>
           </section>
 
-          <section className="rounded-2xl border border-white/8 bg-card/70 p-5">
+          <section className="rounded-2xl border border-black/8 bg-card/70 p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neon/25 bg-neon/10 text-neon">
@@ -391,14 +398,14 @@ export function CreatorView({
 
             <ul className="mt-3 space-y-2">
               {paidCycles.length === 0 ? (
-                <li className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-4 text-center text-xs text-muted-foreground">
+                <li className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-4 text-center text-xs text-muted-foreground">
                   Paid cycles will show up here.
                 </li>
               ) : (
                 paidCycles.map((cycle) => (
                   <li
                     key={cycle.id}
-                    className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-2.5"
+                    className="flex items-center justify-between rounded-xl border border-black/8 bg-black/[0.02] px-4 py-2.5"
                   >
                     <div>
                       <p className="text-[13px] font-medium">{cycle.label}</p>
@@ -434,7 +441,7 @@ function AccountRow({
   onRemove: () => void;
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5">
+    <li className="flex items-center gap-3 rounded-xl border border-black/8 bg-black/[0.02] px-3 py-2.5">
       <PlatformChip platform={account.platform} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold">@{account.handle}</p>
@@ -447,7 +454,7 @@ function AccountRow({
         type="button"
         onClick={onRemove}
         title="Disconnect account"
-        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/5 hover:text-red-400"
+        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-black/[0.03] hover:text-red-400"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>

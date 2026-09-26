@@ -24,9 +24,9 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
           y2="94"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#7C5CFF" />
-          <stop offset="0.55" stopColor="#5B37E8" />
-          <stop offset="1" stopColor="#3A1FB0" />
+          <stop stopColor="#8358FF" />
+          <stop offset="0.5" stopColor="#5B37E8" />
+          <stop offset="1" stopColor="#2F0FA6" />
         </linearGradient>
         <linearGradient
           id={id("gloss")}
@@ -47,8 +47,8 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
           y2="88"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#EDE8FF" />
-          <stop offset="1" stopColor="#9C86FF" />
+          <stop stopColor="#F3EFFF" />
+          <stop offset="1" stopColor="#8B6BFA" />
         </linearGradient>
         <linearGradient
           id={id("bar")}

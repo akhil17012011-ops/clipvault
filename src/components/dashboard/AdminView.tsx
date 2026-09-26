@@ -44,7 +44,7 @@ const INVOICE_LABEL: Record<InvoiceStatus, string> = {
 };
 
 const INVOICE_TONE: Record<InvoiceStatus, string> = {
-  draft: "border-white/15 bg-white/5 text-muted-foreground",
+  draft: "border-black/12 bg-black/[0.03] text-muted-foreground",
   sent: "border-amber-400/25 bg-amber-400/10 text-amber-300",
   paid: "border-neon/25 bg-neon/10 text-neon",
 };
@@ -115,7 +115,13 @@ export function AdminView({
       </div>
 
       {/* stats */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <motion.div
+        initial={{ opacity: 0, y: 26 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
         <StatCard
           icon={Wallet}
           label="Paid out"
@@ -143,11 +149,11 @@ export function AdminView({
           sub="Clips waiting on moderation"
           tone="amber"
         />
-      </div>
+      </motion.div>
 
       {/* chart + invoices */}
       <div className="grid gap-5 lg:grid-cols-3">
-        <section className="rounded-2xl border border-white/8 bg-card/70 p-5 lg:col-span-2">
+        <section className="rounded-2xl border border-black/8 bg-card/70 p-5 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[15px] font-bold tracking-tight">
@@ -157,17 +163,17 @@ export function AdminView({
                 Amounts settled to clippers over the last 7 days
               </p>
             </div>
-            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+            <span className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
               USD
             </span>
           </div>
           <PayoutChart data={seedPayoutSeries()} />
         </section>
 
-        <section className="rounded-2xl border border-white/8 bg-card/70 p-5">
+        <section className="rounded-2xl border border-black/8 bg-card/70 p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-[#c4b5fd]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-[#5B37E8]">
                 <FileText className="h-4 w-4" />
               </span>
               <h2 className="text-[15px] font-bold tracking-tight">
@@ -183,7 +189,7 @@ export function AdminView({
             {invoices.map((campaign) => (
               <li
                 key={campaign.id}
-                className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl border border-black/8 bg-black/[0.02] px-3 py-2.5"
               >
                 <BrandAvatar name={campaign.brand} className="h-8 w-8 text-[11px]" />
                 <div className="min-w-0 flex-1">
@@ -214,8 +220,8 @@ export function AdminView({
       </div>
 
       {/* campaign management */}
-      <section className="rounded-2xl border border-white/8 bg-card/70">
-        <div className="flex items-center justify-between gap-3 border-b border-white/8 px-5 py-4">
+      <section className="rounded-2xl border border-black/8 bg-card/70">
+        <div className="flex items-center justify-between gap-3 border-b border-black/8 px-5 py-4">
           <div>
             <h2 className="text-[15px] font-bold tracking-tight">
               Campaign management
@@ -288,7 +294,7 @@ export function AdminView({
                           </span>
                           <span>{pct}%</span>
                         </div>
-                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/8">
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04]">
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-brand to-[#a78bfa]"
                             style={{ width: `${pct}%` }}
@@ -324,7 +330,7 @@ export function AdminView({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-1.5 border-white/15 bg-white/5 text-[12px] hover:bg-white/10"
+                        className="gap-1.5 border-black/12 bg-black/[0.03] text-[12px] hover:bg-black/[0.05]"
                         onClick={() =>
                           setCampaignStatus(
                             campaign.id,
@@ -352,8 +358,8 @@ export function AdminView({
       </section>
 
       {/* moderation */}
-      <section className="rounded-2xl border border-white/8 bg-card/70">
-        <div className="flex items-center justify-between gap-3 border-b border-white/8 px-5 py-4">
+      <section className="rounded-2xl border border-black/8 bg-card/70">
+        <div className="flex items-center justify-between gap-3 border-b border-black/8 px-5 py-4">
           <div>
             <h2 className="text-[15px] font-bold tracking-tight">
               Submissions &amp; payouts
@@ -397,7 +403,7 @@ export function AdminView({
                     <TableCell>
                       <span
                         className={`text-[13px] font-semibold ${
-                          submission.mine ? "text-[#c4b5fd]" : "text-foreground"
+                          submission.mine ? "text-[#5B37E8]" : "text-foreground"
                         }`}
                       >
                         {submission.creator === "you"
@@ -432,7 +438,7 @@ export function AdminView({
                         href={submission.link}
                         target="_blank"
                         rel="noreferrer"
-                        className="max-w-[180px] truncate font-mono text-[12px] text-[#c4b5fd] hover:underline"
+                        className="max-w-[180px] truncate font-mono text-[12px] text-[#5B37E8] hover:underline"
                       >
                         {submission.link.replace(/^https?:\/\//, "").slice(0, 24)}
                         …
@@ -520,7 +526,7 @@ function PayoutChart({
                 className={`w-full rounded-t-lg ${
                   isLast
                     ? "bg-gradient-to-t from-[#5B37E8] to-[#a78bfa]"
-                    : "bg-gradient-to-t from-[#372776] to-brand/60"
+                    : "bg-gradient-to-t from-brand/70 to-brand/35"
                 }`}
               />
             </div>

@@ -47,55 +47,55 @@
   --color-brand-soft: var(--brand-soft);
   --color-neon: var(--neon);
   --color-neon-foreground: var(--neon-foreground);
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    sans-serif;
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* CHANGE VALUES FOR THEME */
+/* CHANGE VALUES FOR THEME — light, clipping.net-inspired with logo purple */
 :root {
-  --radius: 0.875rem;
-  --background: oklch(0.137 0.012 278);
-  --foreground: oklch(0.965 0.006 280);
-  --card: oklch(0.175 0.014 278);
-  --card-foreground: oklch(0.965 0.006 280);
-  --popover: oklch(0.185 0.014 278);
-  --popover-foreground: oklch(0.965 0.006 280);
-  --primary: oklch(0.615 0.235 277);
+  --radius: 0.9rem;
+  --background: oklch(0.973 0.003 280);
+  --foreground: oklch(0.155 0.012 280);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.155 0.012 280);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.155 0.012 280);
+  --primary: oklch(0.523 0.235 277);
   --primary-foreground: oklch(0.985 0.005 280);
-  --secondary: oklch(0.245 0.016 278);
-  --secondary-foreground: oklch(0.965 0.006 280);
-  --muted: oklch(0.225 0.015 278);
-  --muted-foreground: oklch(0.685 0.018 280);
-  --accent: oklch(0.265 0.02 278);
-  --accent-foreground: oklch(0.965 0.006 280);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 13%);
-  --ring: oklch(0.66 0.22 277);
-  --chart-1: oklch(0.655 0.225 277);
-  --chart-2: oklch(0.769 0.188 70.08);
-  --chart-3: oklch(0.696 0.17 162.48);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.165 0.013 278);
-  --sidebar-foreground: oklch(0.965 0.006 280);
-  --sidebar-primary: oklch(0.615 0.235 277);
+  --secondary: oklch(0.955 0.004 280);
+  --secondary-foreground: oklch(0.2 0.012 280);
+  --muted: oklch(0.955 0.004 280);
+  --muted-foreground: oklch(0.5 0.016 280);
+  --accent: oklch(0.945 0.006 280);
+  --accent-foreground: oklch(0.2 0.012 280);
+  --destructive: oklch(0.577 0.191 22.216);
+  --border: oklch(0.14 0.01 280 / 0.09);
+  --input: oklch(0.14 0.01 280 / 0.13);
+  --ring: oklch(0.523 0.235 277);
+  --chart-1: oklch(0.523 0.235 277);
+  --chart-2: oklch(0.6 0.155 152);
+  --chart-3: oklch(0.65 0.19 303);
+  --chart-4: oklch(0.7 0.16 70);
+  --chart-5: oklch(0.6 0.2 24);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.155 0.012 280);
+  --sidebar-primary: oklch(0.523 0.235 277);
   --sidebar-primary-foreground: oklch(0.985 0.005 280);
-  --sidebar-accent: oklch(0.245 0.016 278);
-  --sidebar-accent-foreground: oklch(0.965 0.006 280);
-  --sidebar-border: oklch(1 0 0 / 9%);
-  --sidebar-ring: oklch(0.66 0.22 277);
+  --sidebar-accent: oklch(0.955 0.004 280);
+  --sidebar-accent-foreground: oklch(0.2 0.012 280);
+  --sidebar-border: oklch(0.14 0.01 280 / 0.09);
+  --sidebar-ring: oklch(0.523 0.235 277);
 
-  /* Brand palette (shared across themes) */
-  --brand: oklch(0.615 0.235 277);
-  --brand-strong: oklch(0.545 0.255 277);
+  /* Brand palette (shared across themes) — taken from the CLIPTIC logo */
+  --brand: oklch(0.523 0.235 277);
+  --brand-strong: oklch(0.46 0.25 277);
   --brand-foreground: oklch(0.985 0.005 280);
-  --brand-soft: oklch(0.615 0.235 277 / 0.14);
-  --neon: oklch(0.872 0.192 133);
-  --neon-foreground: oklch(0.28 0.055 133);
+  --brand-soft: oklch(0.523 0.235 277 / 0.1);
+  --neon: oklch(0.6 0.15 152);
+  --neon-foreground: oklch(0.32 0.07 152);
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 .dark {
@@ -143,7 +143,7 @@
     scroll-behavior: smooth;
   }
   ::selection {
-    background: rgb(124 92 255 / 0.35);
+    background: rgb(91 55 232 / 0.22);
   }
   ::-webkit-scrollbar {
     width: 10px;
@@ -153,13 +153,13 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgb(255 255 255 / 0.12);
+    background: rgb(15 12 40 / 0.16);
     background-clip: padding-box;
     border: 2px solid transparent;
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(255 255 255 / 0.2);
+    background: rgb(15 12 40 / 0.3);
     background-clip: padding-box;
   }
   button:not([disabled]),
@@ -173,35 +173,85 @@
 .text-grad {
   background-image: linear-gradient(
     100deg,
-    #c9bcff 0%,
-    #8b5cf6 45%,
-    #a78bfa 70%,
-    #ede9ff 100%
+    #4c1fd0 0%,
+    #7c3aed 45%,
+    #5b37e8 70%,
+    #35149e 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
+/* iOS-style liquid glass panels */
+.glass {
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow:
+    0 14px 40px -18px rgb(30 20 80 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.95);
+}
+
+.glass-soft {
+  background: rgb(255 255 255 / 0.55);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgb(255 255 255 / 0.65);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.85);
+}
+
+/* Moving specular highlight for buttons/hero chips */
+.liquid {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.liquid::after {
+  content: "";
+  position: absolute;
+  inset: -60% auto -60% -45%;
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgb(255 255 255 / 0.55),
+    transparent
+  );
+  transform: skewX(-18deg);
+  animation: cliptic-sweep 4.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes cliptic-sweep {
+  0%,
+  62% {
+    left: -45%;
+  }
+  100% {
+    left: 130%;
+  }
+}
+
 .panel {
   background-image: linear-gradient(
     180deg,
-    rgb(255 255 255 / 0.05),
-    rgb(255 255 255 / 0.015)
+    rgb(255 255 255 / 0.9),
+    rgb(247 247 250 / 0.75)
   );
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(15 12 40 / 0.08);
 }
 
 .glow-primary {
   box-shadow:
-    0 12px 34px -10px rgb(109 74 255 / 0.65),
-    0 0 0 1px rgb(255 255 255 / 0.1) inset;
+    0 14px 34px -12px rgb(91 55 232 / 0.55),
+    0 0 0 1px rgb(255 255 255 / 0.35) inset;
 }
 
 .grid-fade {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.055) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.055) 1px, transparent 1px);
+    linear-gradient(to right, rgb(15 12 40 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(15 12 40 / 0.05) 1px, transparent 1px);
   background-size: 56px 56px;
   -webkit-mask-image: radial-gradient(
     ellipse 75% 65% at 50% 0%,
@@ -213,6 +263,20 @@
     black 25%,
     transparent 78%
   );
+}
+
+/* Scroll reveal — pairs with framer-motion whileInView sections */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
 }
 
 .marquee {
@@ -275,7 +339,7 @@
   background-image: linear-gradient(
     100deg,
     transparent 20%,
-    rgb(255 255 255 / 0.18) 50%,
+    rgb(91 55 232 / 0.25) 50%,
     transparent 80%
   );
   background-size: 200% 100%;
@@ -290,7 +354,12 @@
   .float-a,
   .float-b,
   .shimmer,
+  .liquid::after,
   .live-dot::after {
     animation: none !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
   }
 }

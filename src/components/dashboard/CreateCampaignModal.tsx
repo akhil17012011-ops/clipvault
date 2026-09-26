@@ -82,17 +82,17 @@ export function CreateCampaignModal({
   };
 
   const fieldClass =
-    "mt-2 h-11 bg-background/60 [&>option]:bg-[#141319]";
+    "mt-2 h-11 bg-background/60 [&>option]:bg-white";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto p-0 sm:max-w-2xl [&>button]:z-20">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-96 -translate-x-1/2 rounded-full bg-[#5B37E8]/35 blur-[80px]" />
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-96 -translate-x-1/2 rounded-full bg-[#5B37E8]/20 blur-[80px]" />
 
           <div className="relative p-6 sm:p-7">
             <DialogHeader className="text-left">
-              <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#c4b5fd]">
+              <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#5B37E8]">
                 <Rocket className="h-5 w-5" />
               </div>
               <DialogTitle className="text-xl font-extrabold tracking-tight">
@@ -197,7 +197,7 @@ export function CreateCampaignModal({
                   className={`flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-all ${
                     platforms.includes(p)
                       ? "border-brand/50 bg-brand/12 text-foreground"
-                      : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-white/20"
+                      : "border-black/10 bg-black/[0.02] text-muted-foreground hover:border-black/15"
                   }`}
                 >
                   <PlatformChip platform={p} size="sm" />

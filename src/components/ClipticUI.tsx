@@ -88,7 +88,7 @@ const SUBMISSION_BADGES: Record<
   paid: { label: "Paid", className: "bg-neon/15 text-neon border-neon/25" },
   active: {
     label: "Active",
-    className: "bg-brand/15 text-[#b7a5ff] border-brand/30",
+    className: "bg-brand/15 text-[#5B37E8] border-brand/30",
   },
   pending: {
     label: "Pending",
@@ -114,7 +114,7 @@ export function StatusBadge({
     verified: { label: "Verified", className: "bg-neon/15 text-neon border-neon/25" },
     checking: {
       label: "Checking…",
-      className: "bg-brand/15 text-[#b7a5ff] border-brand/30",
+      className: "bg-brand/15 text-[#5B37E8] border-brand/30",
     },
     failed: {
       label: "Failed",
@@ -126,10 +126,10 @@ export function StatusBadge({
     },
     paused: {
       label: "Paused",
-      className: "bg-white/8 text-white/60 border-white/15",
+      className: "bg-black/[0.04] text-muted-foreground border-black/12",
     },
   };
-  const badge = map[status] ?? { label: status, className: "bg-white/8 text-white/60 border-white/15" };
+  const badge = map[status] ?? { label: status, className: "bg-black/[0.04] text-muted-foreground border-black/12" };
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${badge.className}`}
@@ -172,7 +172,7 @@ export function BrandAvatar({
     .toUpperCase();
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white shadow-inner ring-1 ring-white/15 ${brandGradient(name)} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white shadow-inner ring-1 ring-black/10 ${brandGradient(name)} ${className}`}
     >
       {initials}
     </span>

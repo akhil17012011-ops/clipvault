@@ -68,7 +68,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <footer className="relative border-t border-white/8 py-6 text-center text-xs text-muted-foreground">
+      <footer className="relative border-t border-black/8 py-6 text-center text-xs text-muted-foreground">
         CLIPTIC demo console · views, earnings and payouts update live from
         simulated data.
       </footer>

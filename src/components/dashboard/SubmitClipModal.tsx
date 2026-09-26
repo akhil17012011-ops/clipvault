@@ -61,11 +61,11 @@ export function SubmitClipModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto p-0 sm:max-w-xl [&>button]:z-20">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[#5B37E8]/35 blur-[80px]" />
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[#5B37E8]/20 blur-[80px]" />
 
           {joined.length === 0 ? (
             <div className="relative p-7 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03]">
                 <Megaphone className="h-5 w-5 text-muted-foreground" />
               </div>
               <h3 className="mt-4 text-lg font-extrabold tracking-tight">
@@ -85,7 +85,7 @@ export function SubmitClipModal({
           ) : (
             <div className="relative p-6 sm:p-7">
               <DialogHeader className="text-left">
-                <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#c4b5fd]">
+                <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#5B37E8]">
                   <Upload className="h-5 w-5" />
                 </div>
                 <DialogTitle className="text-xl font-extrabold tracking-tight">
@@ -112,7 +112,7 @@ export function SubmitClipModal({
                     className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all ${
                       campaignId === campaign.id
                         ? "border-brand/50 bg-brand/12"
-                        : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                        : "border-black/10 bg-black/[0.02] hover:border-black/15"
                     }`}
                   >
                     <BrandAvatar name={campaign.brand} className="h-9 w-9 text-xs" />
@@ -145,7 +145,7 @@ export function SubmitClipModal({
                     className={`flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-all ${
                       platform === p
                         ? "border-brand/50 bg-brand/12 text-foreground"
-                        : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-white/20"
+                        : "border-black/10 bg-black/[0.02] text-muted-foreground hover:border-black/15"
                     }`}
                   >
                     <PlatformChip platform={p} size="sm" />
