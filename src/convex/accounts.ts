@@ -186,14 +186,18 @@ export const setStatus = internalMutation({
   },
 });
 
-/**
- * Public profile URL for a platform + handle. Used to fetch the bio during
- * verification.
- */
 type CheckResult = {
   verified: boolean;
   /** The bio text we read, when we could read one. */
   bio: string | null;
+  /**
+   * Whether the platform actually returned the profile.
+   *
+   * This separates "we asked and the profile has an empty bio" from "the
+   * lookup itself was refused", which are very different problems for a
+   * creator and must not be shown the same way.
+   */
+  bioRead: boolean;
   message: string;
 };
 
@@ -211,7 +215,12 @@ export const verifyBio = action({
   },
   handler: async (ctx, args): Promise<CheckResult> => {
     if (!CODE_PATTERN.test(args.code)) {
-      return { verified: false, bio: null, message: "That code is not valid." };
+      return {
+        verified: false,
+        bio: null,
+        bioRead: false,
+        message: "That code is not valid.",
+      };
     }
 
     const profile = await fetchProfile(args.platform, args.handle);
@@ -221,7 +230,12 @@ export const verifyBio = action({
         accountId: args.accountId,
         status: "failed",
       });
-      return { verified: false, bio: null, message: profile.reason };
+      return {
+        verified: false,
+        bio: null,
+        bioRead: false,
+        message: profile.reason,
+      };
     }
 
     /* A platform can resolve a different account than the one requested, so
@@ -234,6 +248,7 @@ export const verifyBio = action({
       return {
         verified: false,
         bio: profile.bio,
+        bioRead: true,
         message: `That link points to @${profile.handle}, not @${args.handle}.`,
       };
     }
@@ -250,16 +265,20 @@ export const verifyBio = action({
       return {
         verified: true,
         bio,
+        bioRead: true,
         message: `We found ${args.code} in the bio on @${args.handle}.`,
       };
     }
 
+    /* We did read the profile here — the bio just doesn't carry the code (or
+       is empty), which is a different fix for the creator than being blocked. */
     return {
       verified: false,
       bio,
+      bioRead: true,
       message: bio
         ? `We read @${args.handle}'s bio but ${args.code} isn't in it yet. Paste the code into the bio, save, then hit Verify again.`
-        : `We reached @${args.handle} but couldn't read a bio. Make sure the account is public and has the ${args.code} code in its bio.`,
+        : `@${args.handle}'s bio is empty right now. Add the ${args.code} code, save, then hit Verify again.`,
     };
   },
 });

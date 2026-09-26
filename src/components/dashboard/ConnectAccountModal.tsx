@@ -51,7 +51,14 @@ export function ConnectAccountModal({
   const [account, setAccount] = useState<LinkedAccount | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [seenBio, setSeenBio] = useState<string | null>(null);
+  /**
+   * What the last check actually managed to read, so the creator can see the
+   * bio as it is right now instead of only being told that it failed.
+   */
+  const [attempt, setAttempt] = useState<{
+    bio: string | null;
+    read: boolean;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const generate = async () => {
@@ -84,7 +91,7 @@ export function ConnectAccountModal({
     if (!account) return;
     setStep("verifying");
     setError(null);
-    setSeenBio(null);
+    setAttempt(null);
     try {
       /* The bio is fetched and checked server-side. */
       const result = await verifyAccount(account.id);
@@ -97,10 +104,11 @@ export function ConnectAccountModal({
       } else {
         setStep("code");
         setError(result.message);
-        setSeenBio(result.bio ?? null);
+        setAttempt({ bio: result.bio, read: result.bioRead });
       }
     } catch (err) {
       setStep("code");
+      setAttempt({ bio: null, read: false });
       setError(
         err instanceof Error
           ? err.message
@@ -131,6 +139,7 @@ export function ConnectAccountModal({
     setHandle("");
     setAccount(null);
     setError(null);
+    setAttempt(null);
   };
 
   return (
@@ -267,6 +276,40 @@ export function ConnectAccountModal({
                 ))}
               </ol>
 
+              {/* Show the bio exactly as it is right now, so it is obvious
+                  whether the code is missing or we simply could not read it. */}
+              {attempt && (
+                <div className="mt-5 rounded-xl border border-black/8 bg-black/[0.03] px-3.5 py-3 text-left dark:border-white/10 dark:bg-white/[0.04]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    Bio right now
+                  </p>
+                  {attempt.read ? (
+                    attempt.bio ? (
+                      <>
+                        <p className="mt-1.5 max-h-24 overflow-y-auto whitespace-pre-wrap break-words text-[12px] leading-relaxed text-foreground/85">
+                          {attempt.bio}
+                        </p>
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                          {attempt.bio.includes(account.code)
+                            ? "Your code is in there — hit Verify again."
+                            : `No ${account.code} in this text yet.`}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="mt-1.5 text-[12px] text-foreground/80">
+                        This profile has an empty bio right now.
+                      </p>
+                    )
+                  ) : (
+                    <p className="mt-1.5 text-[12px] leading-relaxed text-foreground/80">
+                      We couldn&apos;t load this profile&apos;s bio, so we
+                      can&apos;t show you what&apos;s in it. That means our lookup
+                      was blocked — nothing is wrong with your account.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-6 flex gap-2.5">
                 <Button
                   variant="outline"
@@ -283,17 +326,6 @@ export function ConnectAccountModal({
                 <p className="mt-3 text-center text-[12px] text-red-500 dark:text-red-400">
                   {error}
                 </p>
-              )}
-              {/* Show the bio we actually read, so a mismatch is obvious. */}
-              {seenBio !== null && (
-                <div className="mt-3 rounded-xl border border-black/8 bg-black/[0.03] px-3 py-2.5 text-left dark:border-white/10 dark:bg-white/[0.04]">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                    Bio we read
-                  </p>
-                  <p className="mt-1 line-clamp-3 text-[12px] text-foreground/80">
-                    {seenBio || <span className="text-muted-foreground">This profile has no bio text.</span>}
-                  </p>
-                </div>
               )}
               <p className="mt-3 text-center text-[11px] text-muted-foreground">
                 We load your public profile and look for the code above.

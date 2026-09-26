@@ -54,7 +54,13 @@ interface ClipticContextValue {
   addAccount: (platform: Platform, handle: string) => Promise<LinkedAccount>;
   verifyAccount: (
     id: string,
-  ) => Promise<{ verified: boolean; message: string; bio: string | null }>;
+  ) => Promise<{
+    verified: boolean;
+    message: string;
+    bio: string | null;
+    /** False when the lookup was refused, so no bio could be read. */
+    bioRead: boolean;
+  }>;
   removeAccount: (id: string) => Promise<void>;
 
   toggleJoinCampaign: (id: string) => Promise<void>;
@@ -315,6 +321,7 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
           verified: false,
           message: "That connection request no longer exists.",
           bio: null,
+          bioRead: false,
         };
       }
       const result = await convex.action(api.accounts.verifyBio, {
@@ -327,6 +334,7 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
         verified: result.verified,
         message: result.message,
         bio: result.bio,
+        bioRead: result.bioRead,
       };
     },
     [convex, rawAccounts],
