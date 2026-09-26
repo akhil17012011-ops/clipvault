@@ -90,7 +90,7 @@ export function ConnectAccountModal({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto gap-0 p-0 sm:max-w-xl [&>button]:z-20">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[#5B37E8]/20 blur-[80px]" />
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[#8B3FE2]/20 blur-[80px]" />
 
           {step === "form" && (
             <div className="relative p-6 sm:p-7">

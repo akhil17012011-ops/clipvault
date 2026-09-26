@@ -62,7 +62,7 @@ function SiteNav() {
       <nav
         className={`relative mx-auto flex h-16 max-w-6xl items-center justify-between overflow-hidden rounded-2xl px-4 transition-all duration-300 sm:px-5 ${
           scrolled
-            ? "glass shadow-[0_20px_50px_-28px_rgb(30_20_80/0.4)]"
+            ? "glass shadow-[0_20px_50px_-28px_rgb(52_20_88/0.4)]"
             : "border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] backdrop-blur-xl"
         }`}
       >
@@ -109,7 +109,7 @@ function SiteNav() {
 
         <motion.div
           style={{ scaleX: progress }}
-          className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-gradient-to-r from-[#5B37E8] via-[#8B5CF6] to-[#5B37E8]"
+          className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-gradient-to-r from-[#8B3FE2] via-[#8B5CF6] to-[#8B3FE2]"
         />
       </nav>
     </header>
@@ -136,7 +136,7 @@ const CLIP_CARDS: ClipCardData[] = [
     platform: "tiktok",
     title: "Ring walk cut",
     views: "1.2M",
-    tone: "from-[#5B37E8] to-[#2C1B7E]",
+    tone: "from-[#8B3FE2] to-[#2C1B7E]",
     tilt: "-rotate-3",
     bob: "float-a",
     delay: 0.15,
@@ -156,7 +156,7 @@ const CLIP_CARDS: ClipCardData[] = [
     platform: "instagram",
     title: "Training reel",
     views: "2.4M",
-    tone: "from-[#8B5CF6] to-[#5B37E8]",
+    tone: "from-[#8B5CF6] to-[#8B3FE2]",
     tilt: "-rotate-1",
     bob: "float-a",
     delay: 0.45,
@@ -202,7 +202,7 @@ function ParallaxClipCard({
         className="cursor-pointer"
       >
         <div
-          className={`w-32 rounded-[26px] border border-white/70 bg-gradient-to-b ${card.tone} p-2 shadow-[0_34px_70px_-34px_rgb(45_25_120/0.6)] sm:w-40 ${card.tilt}`}
+          className={`w-32 rounded-[26px] border border-white/70 bg-gradient-to-b ${card.tone} p-2 shadow-[0_34px_70px_-34px_rgb(76_20_130/0.6)] sm:w-40 ${card.tilt}`}
         >
           <div className="flex items-center justify-between px-0.5">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-white backdrop-blur">
@@ -259,7 +259,7 @@ function ClipCluster() {
 
   return (
     <div className="relative mx-auto w-full max-w-md">
-      <div className="pointer-events-none absolute -inset-6 rounded-[40px] bg-[#5B37E8]/15 blur-3xl" />
+      <div className="pointer-events-none absolute -inset-6 rounded-[40px] bg-[#8B3FE2]/15 blur-3xl" />
       <div
         onPointerMove={handleMove}
         onPointerLeave={reset}
@@ -324,7 +324,7 @@ function Hero() {
     >
       <motion.div
         style={{ y: blobY1 }}
-        className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#5B37E8]/25 blur-[150px]"
+        className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#8B3FE2]/25 blur-[150px]"
       />
       <motion.div
         style={{ y: blobY2 }}
@@ -378,7 +378,7 @@ function Hero() {
           <Button
             asChild
             size="lg"
-            className="liquid glow-primary h-12 bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
+            className="liquid glow-primary h-12 bg-gradient-to-b from-[#A855F7] to-[#8B3FE2] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
           >
             <Link to={ctaTarget}>
               {isAuthenticated ? "Open dashboard" : "Start clipping"}
@@ -454,7 +454,7 @@ function MockFrame({
       style={tilt.style}
       onMouseMove={tilt.onMouseMove}
       onMouseLeave={tilt.onMouseLeave}
-      className="panel-fx rounded-2xl border border-black/10 dark:border-white/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(91_55_232/0.9)]"
+      className="panel-fx rounded-2xl border border-black/10 dark:border-white/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(139_63_226/0.9)]"
     >
       {title && (
         <p className="relative z-[2] mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -475,7 +475,7 @@ function MockCampaign() {
   return (
     <MockFrame title="Live campaign">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white ring-1 ring-black/10 dark:ring-white/15">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#C084FC] to-[#5B0FA6] text-sm font-bold text-white ring-1 ring-black/10 dark:ring-white/15">
           RA
         </span>
         <div>
@@ -1123,7 +1123,7 @@ function TwoSides() {
                 className={`mt-8 w-full ${
                   card.title === "Brands"
                     ? "bg-foreground text-background hover:bg-foreground/90"
-                    : "glow-primary bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] hover:from-[#8B6BFF] hover:to-[#6642EE]"
+                    : "glow-primary bg-gradient-to-b from-[#A855F7] to-[#8B3FE2] hover:from-[#8B6BFF] hover:to-[#6642EE]"
                 }`}
               >
                 <Link to={card.to}>
@@ -1147,7 +1147,7 @@ function FinalCTA() {
         {...fadeUp}
         className="panel-fx relative overflow-hidden rounded-3xl border border-brand/25 bg-gradient-to-b from-brand/20 to-brand/[0.03] px-6 py-16 text-center sm:py-20"
       >
-        <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[560px] -translate-x-1/2 rounded-full bg-[#5B37E8]/40 blur-[110px]" />
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[560px] -translate-x-1/2 rounded-full bg-[#8B3FE2]/40 blur-[110px]" />
         <div className="relative">
           <ClipticMark className="mx-auto h-14 w-14" />
           <h2 className="mx-auto mt-6 max-w-2xl text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
@@ -1162,7 +1162,7 @@ function FinalCTA() {
             <Button
               asChild
               size="lg"
-              className="liquid glow-primary h-12 bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
+              className="liquid glow-primary h-12 bg-gradient-to-b from-[#A855F7] to-[#8B3FE2] px-7 text-base hover:from-[#8B6BFF] hover:to-[#6642EE]"
             >
               <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
                 {isAuthenticated ? "Open dashboard" : "Start clipping"}

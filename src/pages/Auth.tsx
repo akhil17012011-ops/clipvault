@@ -65,8 +65,8 @@ function GoogleG({ className = "h-5 w-5" }: { className?: string }) {
 }
 
 const GOOGLE_ACCOUNTS = [
-  { name: "Ava Rivera", email: "ava.rivera@gmail.com", tint: "from-violet-500 to-indigo-600" },
-  { name: "Marcus Lee", email: "marcus.clips@gmail.com", tint: "from-fuchsia-500 to-violet-600" },
+  { name: "Ava Rivera", email: "ava.rivera@gmail.com", tint: "from-[#C084FC] to-[#5B0FA6]" },
+  { name: "Marcus Lee", email: "marcus.clips@gmail.com", tint: "from-[#A855F7] to-[#5B0FA6]" },
   { name: "CLIPTIC Admin", email: "admin@cliptic.com", tint: "from-zinc-900 to-zinc-600" },
 ];
 
@@ -156,7 +156,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       {/* ---------------- brand panel ---------------- */}
       <aside className="relative hidden overflow-hidden border-r border-black/8 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] p-10 lg:flex lg:flex-col lg:justify-between">
-        <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-[#5B37E8]/35 blur-[130px]" />
+        <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-[#8B3FE2]/35 blur-[130px]" />
         <div className="pointer-events-none absolute -bottom-40 -right-24 h-[420px] w-[420px] rounded-full bg-[#7C3AED]/25 blur-[130px]" />
         <div className="grid-fade pointer-events-none absolute inset-0" />
 
@@ -214,14 +214,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       {/* ---------------- sign-in ---------------- */}
       <main className="relative flex items-center justify-center px-5 py-12">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-[420px] -translate-x-1/2 rounded-full bg-[#5B37E8]/20 blur-[120px] lg:hidden" />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-[420px] -translate-x-1/2 rounded-full bg-[#8B3FE2]/20 blur-[120px] lg:hidden" />
 
         <div className="relative w-full max-w-[404px]">
           <div className="mb-8 flex justify-center lg:hidden">
             <ClipticLogo textClassName="text-xl" />
           </div>
 
-          <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06] p-7 shadow-[0_40px_100px_-60px_rgb(91_55_232/0.5)] backdrop-blur-xl sm:p-8">
+          <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06] p-7 shadow-[0_40px_100px_-60px_rgb(139_63_226/0.5)] backdrop-blur-xl sm:p-8">
             <div className="flex justify-center">
               <ClipticMark className="mb-5 h-14 w-14" />
             </div>

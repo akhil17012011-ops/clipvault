@@ -234,7 +234,7 @@ function SidebarBody({
               {isActive && (
                 <motion.span
                   layoutId={`${layoutKey}-active`}
-                  className="absolute inset-0 rounded-xl border border-brand/25 bg-brand/10 shadow-[0_8px_20px_-10px_rgb(91_55_232/0.55)]"
+                  className="absolute inset-0 rounded-xl border border-brand/25 bg-brand/10 shadow-[0_8px_20px_-10px_rgb(139_63_226/0.55)]"
                   transition={{ type: "spring", stiffness: 430, damping: 34 }}
                 />
               )}
@@ -302,9 +302,9 @@ function SidebarBody({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="glass flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-shadow duration-300 hover:shadow-[0_14px_34px_-14px_rgb(91_55_232/0.55)]"
+            className="glass flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-shadow duration-300 hover:shadow-[0_14px_34px_-14px_rgb(139_63_226/0.55)]"
           >
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#5B37E8] to-[#2F0FA6] text-xs font-bold text-white">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B3FE2] to-[#5B0FA6] text-xs font-bold text-white">
               {initials}
             </span>
             <span className="min-w-0 flex-1">

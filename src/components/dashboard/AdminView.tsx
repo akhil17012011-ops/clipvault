@@ -679,7 +679,7 @@ function PayoutChart({
                 style={{ height: `${pct}%`, transformOrigin: "bottom" }}
                 className={`w-full rounded-t-lg ${
                   isLast
-                    ? "bg-gradient-to-t from-[#5B37E8] to-[#a78bfa]"
+                    ? "bg-gradient-to-t from-[#8B3FE2] to-[#a78bfa]"
                     : "bg-gradient-to-t from-brand/70 to-brand/35"
                 }`}
               />

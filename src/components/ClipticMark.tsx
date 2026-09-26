@@ -25,8 +25,8 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="#8358FF" />
-          <stop offset="0.5" stopColor="#5B37E8" />
-          <stop offset="1" stopColor="#2F0FA6" />
+          <stop offset="0.5" stopColor="#8B3FE2" />
+          <stop offset="1" stopColor="#5B0FA6" />
         </linearGradient>
         <linearGradient
           id={id("gloss")}

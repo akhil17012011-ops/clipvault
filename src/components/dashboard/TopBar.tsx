@@ -114,7 +114,7 @@ export function TopBar({
                 type="button"
                 className="flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] py-1 pl-1 pr-2.5 transition-colors hover:border-black/15 dark:hover:border-white/25"
               >
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#A855F7] to-[#5B0FA6] text-xs font-bold text-white">
                   {initials}
                 </span>
                 <span className="hidden text-xs font-semibold text-foreground sm:block">

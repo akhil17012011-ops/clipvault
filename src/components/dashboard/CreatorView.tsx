@@ -356,7 +356,7 @@ export function CreatorView({
                               href={submission.link}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex max-w-[190px] items-center gap-1.5 truncate font-mono text-[12.5px] text-brand transition-colors hover:text-[#4C1FD0] dark:hover:text-[#ddd3ff]"
+                              className="inline-flex max-w-[190px] items-center gap-1.5 truncate font-mono text-[12.5px] text-brand transition-colors hover:text-[#7C2FE0] dark:hover:text-[#ddd3ff]"
                             >
                               <span className="truncate">
                                 {linkLabel(submission.link)}

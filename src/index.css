@@ -47,51 +47,55 @@
   --color-brand-soft: var(--brand-soft);
   --color-neon: var(--neon);
   --color-neon-foreground: var(--neon-foreground);
-  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Apple-style system stack: SF Pro on Apple devices, Inter elsewhere */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Inter", "Segoe UI", Roboto, Helvetica, Arial, ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono: "SF Mono", ui-monospace, SFMono-Regular, "JetBrains Mono",
+    Menlo, Consolas, monospace;
 }
 
 /* CHANGE VALUES FOR THEME — light, clipping.net-inspired with logo purple */
 :root {
   --radius: 0.9rem;
-  --background: oklch(0.973 0.003 280);
-  --foreground: oklch(0.155 0.012 280);
+  --background: oklch(0.973 0.004 300);
+  --foreground: oklch(0.155 0.014 300);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.155 0.012 280);
+  --card-foreground: oklch(0.155 0.014 300);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.155 0.012 280);
-  --primary: oklch(0.523 0.235 277);
-  --primary-foreground: oklch(0.985 0.005 280);
-  --secondary: oklch(0.955 0.004 280);
-  --secondary-foreground: oklch(0.2 0.012 280);
-  --muted: oklch(0.955 0.004 280);
-  --muted-foreground: oklch(0.5 0.016 280);
-  --accent: oklch(0.945 0.006 280);
-  --accent-foreground: oklch(0.2 0.012 280);
+  --popover-foreground: oklch(0.155 0.014 300);
+  --primary: oklch(0.523 0.245 302);
+  --primary-foreground: oklch(0.985 0.006 300);
+  --secondary: oklch(0.955 0.005 300);
+  --secondary-foreground: oklch(0.2 0.014 300);
+  --muted: oklch(0.955 0.005 300);
+  --muted-foreground: oklch(0.5 0.018 300);
+  --accent: oklch(0.945 0.007 300);
+  --accent-foreground: oklch(0.2 0.014 300);
   --destructive: oklch(0.577 0.191 22.216);
-  --border: oklch(0.14 0.01 280 / 0.09);
-  --input: oklch(0.14 0.01 280 / 0.13);
-  --ring: oklch(0.523 0.235 277);
-  --chart-1: oklch(0.523 0.235 277);
+  --border: oklch(0.14 0.012 300 / 0.09);
+  --input: oklch(0.14 0.012 300 / 0.13);
+  --ring: oklch(0.523 0.245 302);
+  --chart-1: oklch(0.523 0.245 302);
   --chart-2: oklch(0.6 0.155 152);
   --chart-3: oklch(0.65 0.19 303);
   --chart-4: oklch(0.7 0.16 70);
   --chart-5: oklch(0.6 0.2 24);
   --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.155 0.012 280);
-  --sidebar-primary: oklch(0.523 0.235 277);
-  --sidebar-primary-foreground: oklch(0.985 0.005 280);
-  --sidebar-accent: oklch(0.955 0.004 280);
-  --sidebar-accent-foreground: oklch(0.2 0.012 280);
-  --sidebar-border: oklch(0.14 0.01 280 / 0.09);
-  --sidebar-ring: oklch(0.523 0.235 277);
+  --sidebar-foreground: oklch(0.155 0.014 300);
+  --sidebar-primary: oklch(0.523 0.245 302);
+  --sidebar-primary-foreground: oklch(0.985 0.006 300);
+  --sidebar-accent: oklch(0.955 0.005 300);
+  --sidebar-accent-foreground: oklch(0.2 0.014 300);
+  --sidebar-border: oklch(0.14 0.012 300 / 0.09);
+  --sidebar-ring: oklch(0.523 0.245 302);
 
   /* Brand palette (shared across themes) — taken from the CLIPTIC logo */
-  --brand: oklch(0.523 0.235 277);
-  --brand-strong: oklch(0.46 0.25 277);
-  --brand-foreground: oklch(0.985 0.005 280);
-  --brand-soft: oklch(0.523 0.235 277 / 0.1);
+  --brand: oklch(0.523 0.245 302);
+  --brand-strong: oklch(0.46 0.26 302);
+  --brand-foreground: oklch(0.985 0.005 300);
+  --brand-soft: oklch(0.523 0.245 302 / 0.1);
   --neon: oklch(0.6 0.15 152);
   --neon-foreground: oklch(0.32 0.07 152);
 
@@ -99,43 +103,43 @@
 }
 
 .dark {
-  --background: oklch(0.11 0.008 280);
-  --foreground: oklch(0.965 0.005 280);
-  --card: oklch(0.145 0.01 280);
-  --card-foreground: oklch(0.965 0.005 280);
-  --popover: oklch(0.155 0.01 280);
-  --popover-foreground: oklch(0.965 0.005 280);
-  --primary: oklch(0.62 0.22 277);
-  --primary-foreground: oklch(0.985 0.005 280);
-  --secondary: oklch(0.21 0.012 280);
-  --secondary-foreground: oklch(0.965 0.005 280);
-  --muted: oklch(0.19 0.011 280);
-  --muted-foreground: oklch(0.67 0.015 280);
-  --accent: oklch(0.23 0.014 280);
-  --accent-foreground: oklch(0.965 0.005 280);
+  --background: oklch(0.11 0.01 300);
+  --foreground: oklch(0.965 0.006 300);
+  --card: oklch(0.145 0.012 300);
+  --card-foreground: oklch(0.965 0.006 300);
+  --popover: oklch(0.155 0.012 300);
+  --popover-foreground: oklch(0.965 0.006 300);
+  --primary: oklch(0.66 0.235 302);
+  --primary-foreground: oklch(0.985 0.006 300);
+  --secondary: oklch(0.21 0.014 300);
+  --secondary-foreground: oklch(0.965 0.006 300);
+  --muted: oklch(0.19 0.013 300);
+  --muted-foreground: oklch(0.67 0.017 300);
+  --accent: oklch(0.23 0.016 300);
+  --accent-foreground: oklch(0.965 0.006 300);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.66 0.22 277);
-  --chart-1: oklch(0.66 0.22 277);
+  --ring: oklch(0.7 0.23 302);
+  --chart-1: oklch(0.7 0.23 302);
   --chart-2: oklch(0.8 0.17 140);
   --chart-3: oklch(0.72 0.18 303);
   --chart-4: oklch(0.75 0.16 70);
   --chart-5: oklch(0.68 0.2 24);
-  --sidebar: oklch(0.13 0.009 280);
-  --sidebar-foreground: oklch(0.965 0.005 280);
-  --sidebar-primary: oklch(0.62 0.22 277);
-  --sidebar-primary-foreground: oklch(0.985 0.005 280);
-  --sidebar-accent: oklch(0.21 0.012 280);
-  --sidebar-accent-foreground: oklch(0.965 0.005 280);
+  --sidebar: oklch(0.13 0.011 300);
+  --sidebar-foreground: oklch(0.965 0.006 300);
+  --sidebar-primary: oklch(0.66 0.235 302);
+  --sidebar-primary-foreground: oklch(0.985 0.006 300);
+  --sidebar-accent: oklch(0.21 0.014 300);
+  --sidebar-accent-foreground: oklch(0.965 0.006 300);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.66 0.22 277);
+  --sidebar-ring: oklch(0.7 0.23 302);
 
   /* Brand palette on black — brighter logo violet + neon */
-  --brand: oklch(0.72 0.19 277);
-  --brand-strong: oklch(0.66 0.21 277);
-  --brand-foreground: oklch(0.12 0.02 277);
-  --brand-soft: oklch(0.72 0.19 277 / 0.16);
+  --brand: oklch(0.74 0.205 302);
+  --brand-strong: oklch(0.68 0.225 302);
+  --brand-foreground: oklch(0.12 0.03 302);
+  --brand-soft: oklch(0.74 0.205 302 / 0.16);
   --neon: oklch(0.87 0.19 133);
   --neon-foreground: oklch(0.28 0.055 133);
 
@@ -153,7 +157,7 @@
     scroll-behavior: smooth;
   }
   ::selection {
-    background: rgb(91 55 232 / 0.22);
+    background: rgb(139 63 226 / 0.24);
   }
   ::-webkit-scrollbar {
     width: 10px;
@@ -163,13 +167,13 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgb(15 12 40 / 0.16);
+    background: rgb(28 10 44 / 0.16);
     background-clip: padding-box;
     border: 2px solid transparent;
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(15 12 40 / 0.3);
+    background: rgb(28 10 44 / 0.3);
     background-clip: padding-box;
   }
   button:not([disabled]),
@@ -198,10 +202,10 @@ html.lenis body {
 .text-grad {
   background-image: linear-gradient(
     100deg,
-    #4c1fd0 0%,
-    #7c3aed 45%,
-    #5b37e8 70%,
-    #35149e 100%
+    #7a2ff2 0%,
+    #9b4dff 42%,
+    #8b2fe0 70%,
+    #5b1099 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -215,7 +219,7 @@ html.lenis body {
   -webkit-backdrop-filter: blur(22px) saturate(180%);
   border: 1px solid rgb(255 255 255 / 0.75);
   box-shadow:
-    0 14px 40px -18px rgb(30 20 80 / 0.28),
+    0 14px 40px -18px rgb(52 20 88 / 0.28),
     inset 0 1px 0 rgb(255 255 255 / 0.95);
 }
 
@@ -264,19 +268,19 @@ html.lenis body {
     rgb(255 255 255 / 0.9),
     rgb(247 247 250 / 0.75)
   );
-  border: 1px solid rgb(15 12 40 / 0.08);
+  border: 1px solid rgb(28 10 44 / 0.08);
 }
 
 .glow-primary {
   box-shadow:
-    0 14px 34px -12px rgb(91 55 232 / 0.55),
+    0 14px 34px -12px rgb(139 63 226 / 0.55),
     0 0 0 1px rgb(255 255 255 / 0.35) inset;
 }
 
 .grid-fade {
   background-image:
-    linear-gradient(to right, rgb(15 12 40 / 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(15 12 40 / 0.05) 1px, transparent 1px);
+    linear-gradient(to right, rgb(28 10 44 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(28 10 44 / 0.05) 1px, transparent 1px);
   background-size: 56px 56px;
   -webkit-mask-image: radial-gradient(
     ellipse 75% 65% at 50% 0%,
@@ -372,7 +376,7 @@ html.lenis body {
   border-radius: inherit;
   background: radial-gradient(
     120% 85% at 50% 0%,
-    rgb(124 92 255 / 0.16),
+    rgb(160 90 255 / 0.16),
     transparent 60%
   );
   opacity: 0;
@@ -401,9 +405,9 @@ html.lenis body {
 .panel-fx:hover {
   transform: translateY(-6px);
   box-shadow:
-    0 30px 60px -30px rgb(91 55 232 / 0.55),
-    0 0 0 1px rgb(91 55 232 / 0.16);
-  border-color: rgb(91 55 232 / 0.38);
+    0 30px 60px -30px rgb(139 63 226 / 0.55),
+    0 0 0 1px rgb(139 63 226 / 0.16);
+  border-color: rgb(139 63 226 / 0.38);
 }
 .panel-fx:hover::before {
   opacity: 1;
@@ -428,15 +432,15 @@ html.lenis body {
   background: linear-gradient(
     100deg,
     transparent,
-    rgb(167 139 250 / 0.24),
+    rgb(192 132 252 / 0.26),
     transparent
   );
 }
 .dark .panel-fx:hover {
   box-shadow:
     0 30px 60px -30px rgb(0 0 0 / 0.85),
-    0 0 0 1px rgb(139 92 246 / 0.4);
-  border-color: rgb(139 92 246 / 0.45);
+    0 0 0 1px rgb(176 107 255 / 0.4);
+  border-color: rgb(176 107 255 / 0.45);
 }
 
 @keyframes cliptic-shimmer {
@@ -448,7 +452,7 @@ html.lenis body {
   background-image: linear-gradient(
     100deg,
     transparent 20%,
-    rgb(91 55 232 / 0.25) 50%,
+    rgb(139 63 226 / 0.25) 50%,
     transparent 80%
   );
   background-size: 200% 100%;
@@ -480,7 +484,7 @@ html.lenis body {
 /* ---------- Dark mode: black + logo violet ---------- */
 
 .dark .glass {
-  background: rgb(18 15 28 / 0.66);
+  background: rgb(22 12 32 / 0.66);
   border-color: rgb(255 255 255 / 0.08);
   box-shadow:
     0 14px 40px -18px rgb(0 0 0 / 0.7),
@@ -488,7 +492,7 @@ html.lenis body {
 }
 
 .dark .glass-soft {
-  background: rgb(18 15 28 / 0.5);
+  background: rgb(22 12 32 / 0.5);
   border-color: rgb(255 255 255 / 0.07);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
 }
@@ -505,16 +509,16 @@ html.lenis body {
 .dark .text-grad {
   background-image: linear-gradient(
     100deg,
-    #c4b5fd 0%,
-    #a78bfa 45%,
-    #8b6bff 70%,
-    #ddd3ff 100%
+    #d9b8ff 0%,
+    #c084fc 45%,
+    #b06bff 70%,
+    #f0e2ff 100%
   );
 }
 
 .dark .glow-primary {
   box-shadow:
-    0 16px 40px -12px rgb(124 92 255 / 0.7),
+    0 16px 40px -12px rgb(160 90 255 / 0.7),
     0 0 0 1px rgb(255 255 255 / 0.12) inset;
 }
 
@@ -525,7 +529,7 @@ html.lenis body {
 }
 
 .dark ::selection {
-  background: rgb(139 92 246 / 0.4);
+  background: rgb(176 107 255 / 0.4);
 }
 
 .dark ::-webkit-scrollbar-thumb {

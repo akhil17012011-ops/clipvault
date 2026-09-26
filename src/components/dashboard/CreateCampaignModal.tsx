@@ -88,7 +88,7 @@ export function CreateCampaignModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto p-0 sm:max-w-2xl [&>button]:z-20">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-96 -translate-x-1/2 rounded-full bg-[#5B37E8]/20 blur-[80px]" />
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-96 -translate-x-1/2 rounded-full bg-[#8B3FE2]/20 blur-[80px]" />
 
           <div className="relative p-6 sm:p-7">
             <DialogHeader className="text-left">

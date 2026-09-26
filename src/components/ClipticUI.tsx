@@ -140,10 +140,10 @@ export function StatusBadge({
 }
 
 const BRAND_GRADIENTS = [
-  "from-[#8358FF] to-[#5B37E8]",
-  "from-[#5B37E8] to-[#2F0FA6]",
+  "from-[#8358FF] to-[#8B3FE2]",
+  "from-[#8B3FE2] to-[#5B0FA6]",
   "from-[#7C3AED] to-[#4C1D95]",
-  "from-[#2F0FA6] to-[#12082E]",
+  "from-[#5B0FA6] to-[#12082E]",
 ];
 
 export function brandGradient(seed: string) {
