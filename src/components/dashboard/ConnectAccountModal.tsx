@@ -8,7 +8,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PLATFORMS, PLATFORM_META, type LinkedAccount, type Platform } from "@/lib/cliptic-data";
+import {
+  PLATFORMS,
+  PLATFORM_META,
+  looksLikeProfileLink,
+  type LinkedAccount,
+  type Platform,
+} from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -49,7 +55,7 @@ export function ConnectAccountModal({
   const [busy, setBusy] = useState(false);
 
   const generate = async () => {
-    const clean = handle.trim().replace(/^@+/, "");
+    const clean = handle.trim();
     if (!clean) {
       setError("Enter the username you post from.");
       return;
@@ -57,7 +63,9 @@ export function ConnectAccountModal({
     setError(null);
     setBusy(true);
     try {
-      /* The code is generated and stored on the server, not in the browser. */
+      /* The code is generated and stored on the server, not in the browser.
+         A pasted profile link is reduced to its username server-side, so the
+         creator can paste straight from their bio. */
       const created = await addAccount(platform, clean);
       setAccount(created);
       setStep("code");
@@ -141,9 +149,10 @@ export function ConnectAccountModal({
                   Connect a social account
                 </DialogTitle>
                 <DialogDescription>
-                  Add the handle you post from. CLIPTIC generates a one-time
-                  code you drop into your bio, then reads your public profile to
-                  confirm it's really there.
+                  Add the handle you post from — or paste your profile link and
+                  we'll read the username out of it. CLIPTIC generates a
+                  one-time code you drop into your bio, then reads your public
+                  profile to confirm it's really there.
                 </DialogDescription>
               </DialogHeader>
 
@@ -172,20 +181,24 @@ export function ConnectAccountModal({
               </div>
 
               <label className="mt-5 block text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Username
+                Username or profile link
               </label>
               <div className="relative mt-2.5">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  @
-                </span>
+                {!looksLikeProfileLink(handle) && (
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    @
+                  </span>
+                )}
                 <Input
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") generate();
                   }}
-                  placeholder="yourhandle"
-                  className="h-11 pl-8 font-mono"
+                  placeholder={`yourhandle or ${PLATFORM_META[platform].domain}yourhandle`}
+                  className={`h-11 font-mono ${
+                    looksLikeProfileLink(handle) ? "pl-3.5" : "pl-8"
+                  }`}
                   autoFocus
                 />
               </div>

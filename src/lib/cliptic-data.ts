@@ -16,13 +16,42 @@ export const PLATFORMS: Platform[] = ["tiktok", "instagram", "youtube", "x"];
  */
 export const PLATFORM_META: Record<
   Platform,
-  { label: string; short: string; color: string }
+  { label: string; short: string; color: string; domain: string }
 > = {
-  tiktok: { label: "TikTok", short: "TT", color: "#52525B" },
-  instagram: { label: "Instagram Reels", short: "IG", color: "#52525B" },
-  youtube: { label: "YouTube Shorts", short: "YT", color: "#52525B" },
-  x: { label: "X", short: "X", color: "#52525B" },
+  tiktok: {
+    label: "TikTok",
+    short: "TT",
+    color: "#52525B",
+    domain: "tiktok.com/@",
+  },
+  instagram: {
+    label: "Instagram Reels",
+    short: "IG",
+    color: "#52525B",
+    domain: "instagram.com/",
+  },
+  youtube: {
+    label: "YouTube Shorts",
+    short: "YT",
+    color: "#52525B",
+    domain: "youtube.com/@",
+  },
+  x: { label: "X", short: "X", color: "#52525B", domain: "x.com/" },
 };
+
+/**
+ * Whether the creator is pasting a profile link rather than typing a bare
+ * handle. Only used for presentation — the authoritative parsing happens on the
+ * server, which normalises a pasted link down to the username.
+ */
+export function looksLikeProfileLink(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return (
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ||
+    /^[a-z0-9-]+(\.[a-z0-9-]+)+\//i.test(trimmed)
+  );
+}
 
 export type AccountStatus = "pending" | "checking" | "connected" | "failed";
 
