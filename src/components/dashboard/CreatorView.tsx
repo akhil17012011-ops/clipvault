@@ -585,26 +585,56 @@ export function CreatorView({
               </span>
             </div>
 
-            <div className="mt-4 flex items-center justify-between rounded-xl border border-brand/30 bg-brand/10 px-4 py-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                  Current cycle
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
+            {/* Balance first. What a creator opens Payouts to find out is how
+                much they have coming, so that is the number at the top rather
+                than buried in a cycle summary. */}
+            <div className="panel-fx mt-4 overflow-hidden rounded-xl border border-brand/30 bg-brand/[0.08] px-5 py-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Available balance
+              </p>
+              <p className="mt-1.5 font-mono text-3xl font-extrabold tracking-tight text-foreground">
+                {fmtMoney(stats.pending, true)}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">
+                Earned and not yet paid out
+              </p>
+
+              <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/8 pt-3.5">
+                <div>
+                  <dt className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Earned to date
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-[14px] font-bold text-foreground">
+                    {fmtMoney(stats.pending + stats.paidOut, true)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Already paid
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-[14px] font-bold text-neon">
+                    {fmtMoney(stats.paidOut, true)}
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="mt-3.5 flex items-center justify-between rounded-lg bg-black/[0.25] px-3 py-2">
+                <span className="text-[11.5px] text-muted-foreground">
+                  Next payout
+                </span>
+                <span className="text-[11.5px] font-semibold text-foreground">
                   Closes in 3 days
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-mono text-lg font-extrabold text-foreground">
-                  {fmtMoney(stats.pending, true)}
-                </p>
-                <StatusBadge status="pending" />
+                </span>
               </div>
             </div>
 
             <PayoutSettings />
 
-            <ul className="mt-3 space-y-2">              {paidCycles.length === 0 ? (
+            <h3 className="mt-5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              Paid cycles
+            </h3>
+            <ul className="mt-2 space-y-2">
+              {paidCycles.length === 0 ? (
                 <li className="rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-4 py-4 text-center text-xs text-muted-foreground">
                   Paid cycles will show up here.
                 </li>
