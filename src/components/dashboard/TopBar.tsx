@@ -62,16 +62,16 @@ export function TopBar({
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/8 bg-white/75 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-black/8 dark:border-white/10 bg-white/75 dark:bg-[#0C0A14]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex shrink-0 items-center gap-2.5">
           <ClipticLogo markClassName="h-8 w-8" textClassName="text-base" />
-          <span className="hidden rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#5B37E8] sm:inline-block">
+          <span className="hidden rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand sm:inline-block">
             Beta
           </span>
         </Link>
 
-        <div className="relative flex rounded-full border border-black/10 bg-black/[0.03] p-1">
+        <div className="relative flex rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] p-1">
           {MODES.map((mode) => (
             <button
               key={mode.id}
@@ -111,7 +111,7 @@ export function TopBar({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] py-1 pl-1 pr-2.5 transition-colors hover:border-black/15"
+                className="flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] py-1 pl-1 pr-2.5 transition-colors hover:border-black/15 dark:hover:border-white/25"
               >
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white">
                   {initials}

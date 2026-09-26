@@ -44,8 +44,8 @@ const INVOICE_LABEL: Record<InvoiceStatus, string> = {
 };
 
 const INVOICE_TONE: Record<InvoiceStatus, string> = {
-  draft: "border-black/12 bg-black/[0.03] text-muted-foreground",
-  sent: "border-amber-400/25 bg-amber-400/10 text-amber-300",
+  draft: "border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] text-muted-foreground",
+  sent: "border-amber-400/25 bg-amber-400/10 text-amber-600 dark:text-amber-300",
   paid: "border-neon/25 bg-neon/10 text-neon",
 };
 
@@ -153,7 +153,7 @@ export function AdminView({
 
       {/* chart + invoices */}
       <div className="grid gap-5 lg:grid-cols-3">
-        <section className="rounded-2xl border border-black/8 bg-card/70 p-5 lg:col-span-2">
+        <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[15px] font-bold tracking-tight">
@@ -163,17 +163,17 @@ export function AdminView({
                 Amounts settled to clippers over the last 7 days
               </p>
             </div>
-            <span className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+            <span className="rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
               USD
             </span>
           </div>
           <PayoutChart data={seedPayoutSeries()} />
         </section>
 
-        <section className="rounded-2xl border border-black/8 bg-card/70 p-5">
+        <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-[#5B37E8]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
                 <FileText className="h-4 w-4" />
               </span>
               <h2 className="text-[15px] font-bold tracking-tight">
@@ -189,7 +189,7 @@ export function AdminView({
             {invoices.map((campaign) => (
               <li
                 key={campaign.id}
-                className="flex items-center gap-3 rounded-xl border border-black/8 bg-black/[0.02] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3 py-2.5"
               >
                 <BrandAvatar name={campaign.brand} className="h-8 w-8 text-[11px]" />
                 <div className="min-w-0 flex-1">
@@ -220,8 +220,8 @@ export function AdminView({
       </div>
 
       {/* campaign management */}
-      <section className="rounded-2xl border border-black/8 bg-card/70">
-        <div className="flex items-center justify-between gap-3 border-b border-black/8 px-5 py-4">
+      <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70">
+        <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
           <div>
             <h2 className="text-[15px] font-bold tracking-tight">
               Campaign management
@@ -294,7 +294,7 @@ export function AdminView({
                           </span>
                           <span>{pct}%</span>
                         </div>
-                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04]">
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-brand to-[#a78bfa]"
                             style={{ width: `${pct}%` }}
@@ -330,7 +330,7 @@ export function AdminView({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-1.5 border-black/12 bg-black/[0.03] text-[12px] hover:bg-black/[0.05]"
+                        className="gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] text-[12px] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
                         onClick={() =>
                           setCampaignStatus(
                             campaign.id,
@@ -358,8 +358,8 @@ export function AdminView({
       </section>
 
       {/* moderation */}
-      <section className="rounded-2xl border border-black/8 bg-card/70">
-        <div className="flex items-center justify-between gap-3 border-b border-black/8 px-5 py-4">
+      <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70">
+        <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
           <div>
             <h2 className="text-[15px] font-bold tracking-tight">
               Submissions &amp; payouts
@@ -368,7 +368,7 @@ export function AdminView({
               Approve payouts once views are verified
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold text-amber-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold text-amber-600 dark:text-amber-300">
             <ClipboardList className="h-3.5 w-3.5" />
             {stats.reviewQueue} in review
           </span>
@@ -403,7 +403,7 @@ export function AdminView({
                     <TableCell>
                       <span
                         className={`text-[13px] font-semibold ${
-                          submission.mine ? "text-[#5B37E8]" : "text-foreground"
+                          submission.mine ? "text-brand" : "text-foreground"
                         }`}
                       >
                         {submission.creator === "you"
@@ -438,7 +438,7 @@ export function AdminView({
                         href={submission.link}
                         target="_blank"
                         rel="noreferrer"
-                        className="max-w-[180px] truncate font-mono text-[12px] text-[#5B37E8] hover:underline"
+                        className="max-w-[180px] truncate font-mono text-[12px] text-brand hover:underline"
                       >
                         {submission.link.replace(/^https?:\/\//, "").slice(0, 24)}
                         …
@@ -472,7 +472,7 @@ export function AdminView({
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 gap-1 text-red-300 hover:bg-red-400/10 hover:text-red-200"
+                            className="h-7 gap-1 text-red-600 dark:text-red-300 hover:bg-red-400/10 hover:text-red-700 dark:hover:text-red-200"
                             onClick={() => reject(submission.id)}
                           >
                             <XCircle className="h-3 w-3" />
@@ -484,7 +484,7 @@ export function AdminView({
                           Settled
                         </span>
                       ) : (
-                        <span className="text-[11.5px] font-semibold text-red-300/70">
+                        <span className="text-[11.5px] font-semibold text-red-600 dark:text-red-300/70">
                           Rejected
                         </span>
                       )}

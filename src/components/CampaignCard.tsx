@@ -22,7 +22,7 @@ export function CampaignCard({
   );
 
   return (
-    <article className="group relative flex flex-col gap-4 rounded-2xl border border-black/8 bg-card/70 p-5 transition-all duration-300 hover:border-brand/40 hover:shadow-[0_18px_50px_-24px_rgb(109_74_255/0.65)]">
+    <article className="group relative flex flex-col gap-4 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5 transition-all duration-300 hover:border-brand/40 hover:shadow-[0_18px_50px_-24px_rgb(109_74_255/0.65)]">
       <div className="flex items-start gap-3.5">
         <BrandAvatar name={campaign.brand} />
         <div className="min-w-0 flex-1">
@@ -38,12 +38,12 @@ export function CampaignCard({
             {campaign.title}
           </h3>
         </div>
-        <span className="shrink-0 rounded-lg border border-black/10 bg-black/[0.03] px-2 py-1 text-[11px] font-medium text-muted-foreground">
+        <span className="shrink-0 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-2 py-1 text-[11px] font-medium text-muted-foreground">
           {campaign.daysLeft}d left
         </span>
       </div>
 
-      <div className="flex items-end justify-between gap-3 rounded-xl border border-black/8 bg-background/50 px-4 py-3">
+      <div className="flex items-end justify-between gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-background/50 px-4 py-3">
         <div>
           <p className="text-2xl font-extrabold tracking-tight text-neon">
             {fmtRate(campaign.ratePer1k)}
@@ -96,7 +96,7 @@ export function CampaignCard({
         )}
       </div>
 
-      <div className="mt-auto space-y-3 border-t border-black/8 pt-3.5">
+      <div className="mt-auto space-y-3 border-t border-black/8 dark:border-white/10 pt-3.5">
         <div>
           <div className="mb-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>
@@ -105,7 +105,7 @@ export function CampaignCard({
             </span>
             <span>{budgetPct}%</span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04]">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
             <div
               className="h-full rounded-full bg-gradient-to-r from-brand to-[#a78bfa]"
               style={{ width: `${budgetPct}%` }}

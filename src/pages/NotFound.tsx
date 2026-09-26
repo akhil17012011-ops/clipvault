@@ -19,7 +19,7 @@ export default function NotFound() {
               <p className="text-lg text-muted-foreground">Page not found</p>
               <a
                 href="/"
-                className="mt-6 inline-flex items-center gap-2 rounded-full border border-black/12 bg-black/[0.03] px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-black/[0.05]"
+                className="mt-6 inline-flex items-center gap-2 rounded-full border border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
               >
                 Back to CLIPTIC
               </a>

@@ -88,15 +88,15 @@ const SUBMISSION_BADGES: Record<
   paid: { label: "Paid", className: "bg-neon/15 text-neon border-neon/25" },
   active: {
     label: "Active",
-    className: "bg-brand/15 text-[#5B37E8] border-brand/30",
+    className: "bg-brand/15 text-brand border-brand/30",
   },
   pending: {
     label: "Pending",
-    className: "bg-amber-400/10 text-amber-300 border-amber-400/25",
+    className: "bg-amber-400/10 text-amber-600 dark:text-amber-300 border-amber-400/25",
   },
   rejected: {
     label: "Rejected",
-    className: "bg-red-400/10 text-red-300 border-red-400/25",
+    className: "bg-red-400/10 text-red-600 dark:text-red-300 border-red-400/25",
   },
 };
 
@@ -114,11 +114,11 @@ export function StatusBadge({
     verified: { label: "Verified", className: "bg-neon/15 text-neon border-neon/25" },
     checking: {
       label: "Checking…",
-      className: "bg-brand/15 text-[#5B37E8] border-brand/30",
+      className: "bg-brand/15 text-brand border-brand/30",
     },
     failed: {
       label: "Failed",
-      className: "bg-red-400/10 text-red-300 border-red-400/25",
+      className: "bg-red-400/10 text-red-600 dark:text-red-300 border-red-400/25",
     },
     "active-campaign": {
       label: "Active",
@@ -126,10 +126,10 @@ export function StatusBadge({
     },
     paused: {
       label: "Paused",
-      className: "bg-black/[0.04] text-muted-foreground border-black/12",
+      className: "bg-black/[0.04] dark:bg-white/[0.06] text-muted-foreground border-black/12 dark:border-white/15",
     },
   };
-  const badge = map[status] ?? { label: status, className: "bg-black/[0.04] text-muted-foreground border-black/12" };
+  const badge = map[status] ?? { label: status, className: "bg-black/[0.04] dark:bg-white/[0.06] text-muted-foreground border-black/12 dark:border-white/15" };
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${badge.className}`}
@@ -172,7 +172,7 @@ export function BrandAvatar({
     .toUpperCase();
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white shadow-inner ring-1 ring-black/10 ${brandGradient(name)} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white shadow-inner ring-1 ring-black/10 dark:ring-white/15 ${brandGradient(name)} ${className}`}
     >
       {initials}
     </span>

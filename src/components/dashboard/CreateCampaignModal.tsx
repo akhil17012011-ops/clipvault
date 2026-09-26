@@ -92,7 +92,7 @@ export function CreateCampaignModal({
 
           <div className="relative p-6 sm:p-7">
             <DialogHeader className="text-left">
-              <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#5B37E8]">
+              <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand">
                 <Rocket className="h-5 w-5" />
               </div>
               <DialogTitle className="text-xl font-extrabold tracking-tight">
@@ -197,7 +197,7 @@ export function CreateCampaignModal({
                   className={`flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-all ${
                     platforms.includes(p)
                       ? "border-brand/50 bg-brand/12 text-foreground"
-                      : "border-black/10 bg-black/[0.02] text-muted-foreground hover:border-black/15"
+                      : "border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] text-muted-foreground hover:border-black/15 dark:hover:border-white/25"
                   }`}
                 >
                   <PlatformChip platform={p} size="sm" />
@@ -221,7 +221,7 @@ export function CreateCampaignModal({
               />
             </label>
 
-            {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+            {error && <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>}
 
             <div className="mt-7 flex gap-2.5">
               <Button

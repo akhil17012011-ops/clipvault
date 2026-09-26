@@ -65,7 +65,7 @@ export function SubmitClipModal({
 
           {joined.length === 0 ? (
             <div className="relative p-7 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03]">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05]">
                 <Megaphone className="h-5 w-5 text-muted-foreground" />
               </div>
               <h3 className="mt-4 text-lg font-extrabold tracking-tight">
@@ -85,7 +85,7 @@ export function SubmitClipModal({
           ) : (
             <div className="relative p-6 sm:p-7">
               <DialogHeader className="text-left">
-                <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#5B37E8]">
+                <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand">
                   <Upload className="h-5 w-5" />
                 </div>
                 <DialogTitle className="text-xl font-extrabold tracking-tight">
@@ -112,7 +112,7 @@ export function SubmitClipModal({
                     className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all ${
                       campaignId === campaign.id
                         ? "border-brand/50 bg-brand/12"
-                        : "border-black/10 bg-black/[0.02] hover:border-black/15"
+                        : "border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] hover:border-black/15 dark:hover:border-white/25"
                     }`}
                   >
                     <BrandAvatar name={campaign.brand} className="h-9 w-9 text-xs" />
@@ -145,7 +145,7 @@ export function SubmitClipModal({
                     className={`flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-all ${
                       platform === p
                         ? "border-brand/50 bg-brand/12 text-foreground"
-                        : "border-black/10 bg-black/[0.02] text-muted-foreground hover:border-black/15"
+                        : "border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] text-muted-foreground hover:border-black/15 dark:hover:border-white/25"
                     }`}
                   >
                     <PlatformChip platform={p} size="sm" />
@@ -170,7 +170,7 @@ export function SubmitClipModal({
                   autoFocus
                 />
               </div>
-              {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+              {error && <p className="mt-2 text-sm text-red-500 dark:text-red-400">{error}</p>}
 
               <div className="mt-7 flex gap-2.5">
                 <Button

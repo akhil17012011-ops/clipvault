@@ -149,7 +149,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       {/* ---------------- brand panel ---------------- */}
-      <aside className="relative hidden overflow-hidden border-r border-black/8 bg-white/60 p-10 lg:flex lg:flex-col lg:justify-between">
+      <aside className="relative hidden overflow-hidden border-r border-black/8 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] p-10 lg:flex lg:flex-col lg:justify-between">
         <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-[#5B37E8]/35 blur-[130px]" />
         <div className="pointer-events-none absolute -bottom-40 -right-24 h-[420px] w-[420px] rounded-full bg-[#7C3AED]/25 blur-[130px]" />
         <div className="grid-fade pointer-events-none absolute inset-0" />
@@ -159,7 +159,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         </div>
 
         <div className="relative max-w-md">
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand/35 bg-brand/10 px-3.5 py-1.5 text-[12px] font-semibold text-[#5B37E8]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand/35 bg-brand/10 px-3.5 py-1.5 text-[12px] font-semibold text-brand">
             <BadgeCheck className="h-3.5 w-3.5" />
             For creators & brands
           </span>
@@ -181,7 +181,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 key={item.text}
                 className="flex items-center gap-3 text-sm text-foreground/85"
               >
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-[#5B37E8]">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
                   <item.icon className="h-4 w-4" />
                 </span>
                 {item.text}
@@ -190,7 +190,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </ul>
         </div>
 
-        <div className="relative grid max-w-md grid-cols-3 gap-4 rounded-2xl border border-black/10 bg-black/[0.02] p-5 backdrop-blur">
+        <div className="relative grid max-w-md grid-cols-3 gap-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] p-5 backdrop-blur">
           {[
             { v: "$60M+", l: "paid to clippers" },
             { v: "200+", l: "brand campaigns" },
@@ -215,7 +215,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             <ClipticLogo textClassName="text-xl" />
           </div>
 
-          <div className="rounded-3xl border border-black/10 bg-white/70 p-7 shadow-[0_40px_100px_-60px_rgb(91_55_232/0.5)] backdrop-blur-xl sm:p-8">
+          <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06] p-7 shadow-[0_40px_100px_-60px_rgb(91_55_232/0.5)] backdrop-blur-xl sm:p-8">
             <div className="flex justify-center">
               <ClipticMark className="mb-5 h-14 w-14" />
             </div>
@@ -233,7 +233,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   type="button"
                   onClick={() => setGoogleOpen(true)}
                   disabled={isLoading}
-                  className="mt-7 flex w-full items-center justify-center gap-3 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 hover:shadow-md disabled:opacity-60"
+                  className="mt-7 flex w-full items-center justify-center gap-3 rounded-xl border border-black/10 dark:border-white/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 hover:shadow-md disabled:opacity-60"
                 >
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -244,11 +244,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 </button>
 
                 <div className="my-5 flex items-center gap-3">
-                  <span className="h-px flex-1 bg-black/10" />
+                  <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                     or
                   </span>
-                  <span className="h-px flex-1 bg-black/10" />
+                  <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
                 </div>
 
                 <form onSubmit={handleEmailSubmit}>
@@ -278,17 +278,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </Button>
                   </div>
                   {error && (
-                    <p className="mt-3 text-sm text-red-400">{error}</p>
+                    <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>
                   )}
                 </form>
 
                 <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted-foreground">
                   By continuing you agree to CLIPTIC&apos;s{" "}
-                  <span className="text-foreground/70 underline decoration-black/25 underline-offset-2">
+                  <span className="text-foreground/70 underline decoration-black/25 dark:decoration-white/25 underline-offset-2">
                     Terms
                   </span>{" "}
                   and{" "}
-                  <span className="text-foreground/70 underline decoration-black/25 underline-offset-2">
+                  <span className="text-foreground/70 underline decoration-black/25 dark:decoration-white/25 underline-offset-2">
                     Privacy Policy
                   </span>
                   .
@@ -327,7 +327,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </InputOTP>
                   </div>
                   {error && (
-                    <p className="mt-3 text-center text-sm text-red-400">
+                    <p className="mt-3 text-center text-sm text-red-500 dark:text-red-400">
                       {error}
                     </p>
                   )}
@@ -336,7 +336,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <Button
                       type="button"
                       variant="link"
-                      className="h-auto p-0 text-[#5B37E8]"
+                      className="h-auto p-0 text-brand"
                       onClick={() => setStep("signIn")}
                     >
                       Try again
@@ -384,7 +384,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       {/* ---------------- Google account picker ---------------- */}
       <Dialog open={googleOpen} onOpenChange={setGoogleOpen}>
-        <DialogContent className="max-w-[380px] overflow-hidden rounded-2xl border-black/10 bg-white p-0 sm:max-w-[380px] [&>button]:text-zinc-500">
+        <DialogContent className="max-w-[380px] overflow-hidden rounded-2xl border-black/10 dark:border-white/10 bg-white p-0 sm:max-w-[380px] [&>button]:text-zinc-500">
           <DialogHeader className="sr-only">
             <DialogTitle>Choose an account</DialogTitle>
             <DialogDescription>

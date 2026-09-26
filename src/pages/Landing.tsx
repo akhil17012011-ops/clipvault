@@ -1,10 +1,10 @@
-import { motion, useScroll, useSpring } from "framer-motion";
-import { useEffect, useState, type ReactNode } from "react";
+import { motion, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { CampaignCard } from "@/components/CampaignCard";
 import { ClipticLogo, ClipticMark } from "@/components/ClipticMark";
-import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI";
+import { BrandAvatar, PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { fmtMoney, fmtRate, fmtViews, type Platform } from "@/lib/cliptic-data";
@@ -61,7 +61,7 @@ function SiteNav() {
         className={`relative mx-auto flex h-16 max-w-6xl items-center justify-between overflow-hidden rounded-2xl px-4 transition-all duration-300 sm:px-5 ${
           scrolled
             ? "glass shadow-[0_20px_50px_-28px_rgb(30_20_80/0.4)]"
-            : "border border-black/5 bg-white/60 backdrop-blur-xl"
+            : "border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] backdrop-blur-xl"
         }`}
       >
         <Link to="/" className="shrink-0">
@@ -146,26 +146,26 @@ function HeroPreview() {
       className="relative mx-auto mt-16 max-w-4xl"
     >
       <div className="float-a absolute -left-4 top-14 z-10 hidden md:block">
-        <div className="flex items-center gap-2 rounded-xl border border-neon/25 bg-white/85 px-3 py-2 text-xs font-semibold text-neon shadow-xl backdrop-blur">
+        <div className="flex items-center gap-2 rounded-xl border border-neon/25 bg-white/85 dark:bg-[#14111E]/85 px-3 py-2 text-xs font-semibold text-neon shadow-xl backdrop-blur">
           <BadgeCheck className="h-4 w-4" />
           @avaclips verified
         </div>
       </div>
       <div className="float-b absolute -right-4 bottom-20 z-10 hidden md:block">
-        <div className="flex items-center gap-2 rounded-xl border border-brand/35 bg-white/85 px-3 py-2 text-xs font-semibold text-[#5B37E8] shadow-xl backdrop-blur">
+        <div className="flex items-center gap-2 rounded-xl border border-brand/35 bg-white/85 dark:bg-[#14111E]/85 px-3 py-2 text-xs font-semibold text-brand shadow-xl backdrop-blur">
           <TrendingUp className="h-4 w-4" />
           +{fmtViews(48_210)} views today
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white/85 shadow-[0_50px_140px_-60px_rgb(91_55_232/0.5)] backdrop-blur-xl">
-        <div className="flex items-center gap-3 border-b border-black/8 px-4 py-3">
+      <div className="overflow-hidden rounded-2xl border border-black/10 dark:border-white/10 bg-white/85 dark:bg-[#14111E]/85 shadow-[0_50px_140px_-60px_rgb(91_55_232/0.5)] backdrop-blur-xl">
+        <div className="flex items-center gap-3 border-b border-black/8 dark:border-white/10 px-4 py-3">
           <span className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
           </span>
-          <span className="flex-1 rounded-md bg-black/[0.03] px-3 py-1 text-center font-mono text-[11px] text-muted-foreground">
+          <span className="flex-1 rounded-md bg-black/[0.03] dark:bg-white/[0.05] px-3 py-1 text-center font-mono text-[11px] text-muted-foreground">
             app.cliptic.com/dashboard
           </span>
         </div>
@@ -184,7 +184,7 @@ function HeroPreview() {
             {rows.map((row) => (
               <div
                 key={row.campaign}
-                className="flex items-center gap-3 rounded-xl border border-black/8 bg-black/[0.03] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-3 py-2.5"
               >
                 <PlatformChip platform={row.platform} size="sm" />
                 <div className="min-w-0 flex-1">
@@ -214,12 +214,12 @@ function HeroPreview() {
                 <TrendingUp className="h-3.5 w-3.5" /> +18.2% this week
               </p>
             </div>
-            <div className="rounded-xl border border-black/8 bg-black/[0.03] p-4">
+            <div className="rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] p-4">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-muted-foreground">Next payout</span>
                 <span className="font-semibold text-foreground">in 3 days</span>
               </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04]">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
                 <div className="h-full w-[72%] rounded-full bg-gradient-to-r from-brand to-neon" />
               </div>
               <div className="mt-3 flex items-center justify-between text-[11px]">
@@ -240,80 +240,149 @@ function HeroPreview() {
 /* Hero: left copy + floating clip cluster (clipping.net layout)      */
 /* ------------------------------------------------------------------ */
 
+type ClipCardData = {
+  platform: Platform;
+  title: string;
+  views: string;
+  tone: string;
+  tilt: string;
+  bob: string;
+  delay: number;
+  wide: boolean;
+};
+
+const CLIP_CARDS: ClipCardData[] = [
+  {
+    platform: "tiktok",
+    title: "Ring walk cut",
+    views: "1.2M",
+    tone: "from-[#5B37E8] to-[#2C1B7E]",
+    tilt: "-rotate-3",
+    bob: "float-a",
+    delay: 0.15,
+    wide: false,
+  },
+  {
+    platform: "youtube",
+    title: "Podcast highlight",
+    views: "840K",
+    tone: "from-[#7C3AED] to-[#4C1D95]",
+    tilt: "rotate-2",
+    bob: "float-b",
+    delay: 0.3,
+    wide: true,
+  },
+  {
+    platform: "instagram",
+    title: "Training reel",
+    views: "2.4M",
+    tone: "from-[#8B5CF6] to-[#5B37E8]",
+    tilt: "-rotate-1",
+    bob: "float-a",
+    delay: 0.45,
+    wide: false,
+  },
+];
+
+/**
+ * A single clip tile. Three transform layers keep concerns separate:
+ * entrance animation (outer), pointer parallax (middle), CSS bobbing (inner)
+ * — stacking them on one element would let the CSS keyframes win the cascade.
+ */
+function ParallaxClipCard({
+  card,
+  index,
+  mx,
+  my,
+}: {
+  card: ClipCardData;
+  index: number;
+  mx: MotionValue<number>;
+  my: MotionValue<number>;
+}) {
+  const depth = index === 1 ? 30 : index === 0 ? 16 : 21;
+  const x = useTransform(mx, (v) => v * depth);
+  const y = useTransform(my, (v) => v * depth);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 46 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: card.delay, ease: "easeOut" }}
+      className={index === 1 ? "z-10 -mt-6" : ""}
+    >
+      <motion.div
+        style={{ x, y }}
+        whileHover={{ scale: 1.06 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        className="cursor-pointer"
+      >
+        <div
+          className={`w-32 rounded-[26px] border border-white/70 bg-gradient-to-b ${card.tone} p-2 shadow-[0_34px_70px_-34px_rgb(45_25_120/0.6)] sm:w-40 ${card.tilt}`}
+        >
+          <div className="flex items-center justify-between px-0.5">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-white backdrop-blur">
+              <PlatformIcon platform={card.platform} className="h-4 w-4" />
+            </span>
+            <span className="rounded-full bg-black/45 px-2 py-0.5 text-[8.5px] font-bold tracking-[0.14em] text-white backdrop-blur">
+              TRACKING
+            </span>
+          </div>
+          <div
+            className={`mt-2 flex ${card.wide ? "aspect-[9/15]" : "aspect-[9/17]"} flex-col items-center justify-center rounded-[18px] bg-white/15`}
+          >
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-brand shadow-lg transition-transform duration-300 hover:scale-110">
+              <Play className="ml-0.5 h-4 w-4 fill-current" />
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-1 px-0.5 pb-0.5 pt-2 text-white">
+            <p className="truncate text-[10.5px] font-semibold">
+              {card.title}
+            </p>
+            <p className="font-mono text-[10.5px] font-bold">
+              {card.views}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function ClipCluster() {
-  const cards = [
-    {
-      platform: "tiktok" as Platform,
-      title: "Ring walk cut",
-      views: "1.2M",
-      tone: "from-[#5B37E8] to-[#2C1B7E]",
-      tilt: "-rotate-3",
-      bob: "float-a",
-      delay: 0.15,
-      wide: false,
-    },
-    {
-      platform: "youtube" as Platform,
-      title: "Podcast highlight",
-      views: "840K",
-      tone: "from-[#7C3AED] to-[#4C1D95]",
-      tilt: "rotate-2",
-      bob: "float-b",
-      delay: 0.3,
-      wide: true,
-    },
-    {
-      platform: "instagram" as Platform,
-      title: "Training reel",
-      views: "2.4M",
-      tone: "from-[#8B5CF6] to-[#5B37E8]",
-      tilt: "-rotate-1",
-      bob: "float-a",
-      delay: 0.45,
-      wide: false,
-    },
-  ];
+  /* Pointer position across the cluster, normalised to -1..1 and smoothed. */
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, { stiffness: 140, damping: 18, mass: 0.4 });
+  const sy = useSpring(my, { stiffness: 140, damping: 18, mass: 0.4 });
+
+  const handleMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    mx.set(((event.clientX - rect.left) / rect.width - 0.5) * 2);
+    my.set(((event.clientY - rect.top) / rect.height - 0.5) * 2);
+  };
+
+  const reset = () => {
+    mx.set(0);
+    my.set(0);
+  };
 
   return (
     <div className="relative mx-auto w-full max-w-md">
       <div className="pointer-events-none absolute -inset-6 rounded-[40px] bg-[#5B37E8]/15 blur-3xl" />
-      <div className="relative flex items-end justify-center gap-2.5 sm:gap-3.5">
-        {cards.map((card, i) => (
-          <motion.div
+      <div
+        onPointerMove={handleMove}
+        onPointerLeave={reset}
+        className="relative flex items-end justify-center gap-2.5 sm:gap-3.5"
+      >
+        {CLIP_CARDS.map((card, i) => (
+          <ParallaxClipCard
             key={card.title}
-            initial={{ opacity: 0, y: 46 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: card.delay, ease: "easeOut" }}
-            className={`${card.bob} ${i === 1 ? "z-10 -mt-6" : ""}`}
-          >
-            <div
-              className={`w-32 rounded-[26px] border border-white/70 bg-gradient-to-b ${card.tone} p-2 shadow-[0_34px_70px_-34px_rgb(45_25_120/0.6)] sm:w-40 ${card.tilt}`}
-            >
-              <div className="flex items-center justify-between px-0.5">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-white backdrop-blur">
-                  <PlatformIcon platform={card.platform} className="h-4 w-4" />
-                </span>
-                <span className="rounded-full bg-black/45 px-2 py-0.5 text-[8.5px] font-bold tracking-[0.14em] text-white backdrop-blur">
-                  TRACKING
-                </span>
-              </div>
-              <div
-                className={`mt-2 flex ${card.wide ? "aspect-[9/15]" : "aspect-[9/17]"} flex-col items-center justify-center rounded-[18px] bg-white/15`}
-              >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-[#5B37E8] shadow-lg transition-transform duration-300 hover:scale-110">
-                  <Play className="ml-0.5 h-4 w-4 fill-current" />
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-1 px-0.5 pb-0.5 pt-2 text-white">
-                <p className="truncate text-[10.5px] font-semibold">
-                  {card.title}
-                </p>
-                <p className="font-mono text-[10.5px] font-bold">
-                  {card.views}
-                </p>
-              </div>
-            </div>
-          </motion.div>
+            card={card}
+            index={i}
+            mx={sx}
+            my={sy}
+          />
         ))}
       </div>
 
@@ -327,7 +396,7 @@ function ClipCluster() {
           (platform, i) => (
             <span
               key={`${platform}-${i}`}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white text-foreground shadow-sm transition-transform duration-300 hover:-translate-y-1"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-foreground shadow-sm transition-transform duration-300 hover:-translate-y-1"
             >
               <PlatformIcon platform={platform} className="h-4 w-4" />
             </span>
@@ -341,11 +410,32 @@ function ClipCluster() {
 function Hero() {
   const { isAuthenticated } = useAuth();
   const ctaTarget = isAuthenticated ? "/dashboard" : "/auth";
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const blobY1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
+  const blobY2 = useTransform(scrollYProgress, [0, 1], [0, 340]);
+  const blobY3 = useTransform(scrollYProgress, [0, 1], [0, 260]);
+  const clusterY = useTransform(scrollYProgress, [0, 1], [0, -70]);
   return (
-    <section className="relative overflow-hidden pb-20 pt-32 sm:pt-40">
-      <div className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#5B37E8]/25 blur-[150px]" />
-      <div className="pointer-events-none absolute -left-40 top-64 h-[380px] w-[380px] rounded-full bg-[#8B5CF6]/15 blur-[130px]" />
-      <div className="pointer-events-none absolute -right-40 top-96 h-[340px] w-[340px] rounded-full bg-[#4C1D95]/15 blur-[120px]" />
+    <section
+      ref={sectionRef}
+      className="relative overflow-hidden pb-20 pt-32 sm:pt-40"
+    >
+      <motion.div
+        style={{ y: blobY1 }}
+        className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#5B37E8]/25 blur-[150px]"
+      />
+      <motion.div
+        style={{ y: blobY2 }}
+        className="pointer-events-none absolute -left-40 top-64 h-[380px] w-[380px] rounded-full bg-[#8B5CF6]/15 blur-[130px]"
+      />
+      <motion.div
+        style={{ y: blobY3 }}
+        className="pointer-events-none absolute -right-40 top-96 h-[340px] w-[340px] rounded-full bg-[#4C1D95]/15 blur-[120px]"
+      />
       <div className="grid-fade pointer-events-none absolute inset-0" />
 
       <div className="relative mx-auto max-w-6xl px-5">
@@ -355,7 +445,7 @@ function Hero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="inline-flex items-center gap-2.5 rounded-full border border-brand/35 bg-brand/10 px-4 py-1.5 text-[12.5px] font-semibold text-[#5B37E8]"
+          className="inline-flex items-center gap-2.5 rounded-full border border-brand/35 bg-brand/10 px-4 py-1.5 text-[12.5px] font-semibold text-brand"
         >
           <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-neon text-neon" />
           The UGC clipping network · Clip · Post · Get Paid
@@ -401,7 +491,7 @@ function Hero() {
             asChild
             size="lg"
             variant="outline"
-            className="h-12 border-black/15 bg-black/[0.03] px-7 text-base text-foreground hover:bg-black/[0.05]"
+            className="h-12 border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] px-7 text-base text-foreground hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
           >
             <Link
               to={
@@ -420,7 +510,7 @@ function Hero() {
           Free to join · No following required
         </p>
 
-        <dl className="mx-auto mt-12 grid w-full max-w-2xl grid-cols-3 divide-x divide-black/10 rounded-2xl border border-black/10 bg-white/70 py-5 backdrop-blur lg:mx-0">
+        <dl className="mx-auto mt-12 grid w-full max-w-2xl grid-cols-3 divide-x divide-black/10 dark:divide-white/10 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06] py-5 backdrop-blur lg:mx-0">
           {[
             { value: "$60M+", label: "paid to clippers" },
             { value: "77,000+", label: "clippers ready" },
@@ -438,7 +528,9 @@ function Hero() {
         </dl>
         </div>
 
-        <ClipCluster />
+        <motion.div style={{ y: clusterY }}>
+          <ClipCluster />
+        </motion.div>
         </div>
 
         <HeroPreview />
@@ -465,7 +557,7 @@ function BrandMarquee() {
     "BRIGHTSIDE",
   ];
   return (
-    <section id="brands" className="scroll-mt-24 border-y border-black/8 bg-black/[0.015] py-10">
+    <section id="brands" className="scroll-mt-24 border-y border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.03] py-10">
       <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
         Trusted by top brands
       </p>
@@ -509,7 +601,7 @@ function MockFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-black/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(91_55_232/0.9)]">
+    <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(91_55_232/0.9)]">
       {title && (
         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           {title}
@@ -524,7 +616,7 @@ function MockCampaign() {
   return (
     <MockFrame title="Live campaign">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white ring-1 ring-black/10">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white ring-1 ring-black/10 dark:ring-white/15">
           RA
         </span>
         <div>
@@ -537,7 +629,7 @@ function MockCampaign() {
           50d left
         </span>
       </div>
-      <div className="mt-4 flex items-end justify-between rounded-xl border border-black/8 bg-background/60 px-4 py-3">
+      <div className="mt-4 flex items-end justify-between rounded-xl border border-black/8 dark:border-white/10 bg-background/60 px-4 py-3">
         <div>
           <p className="text-2xl font-extrabold tracking-tight text-neon">
             {fmtRate(0.4)}
@@ -580,7 +672,7 @@ function MockAccounts() {
         {accounts.map((account) => (
           <li
             key={account.handle}
-            className="flex items-center justify-between rounded-xl border border-black/8 bg-black/[0.03] px-3.5 py-2.5"
+            className="flex items-center justify-between rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-3.5 py-2.5"
           >
             <span className="font-mono text-[13px] text-foreground">
               {account.handle}
@@ -612,11 +704,11 @@ function MockPayout() {
             className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm ${
               i === 0
                 ? "border-brand/45 bg-brand/10"
-                : "border-black/8 bg-black/[0.03]"
+                : "border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05]"
             }`}
           >
             <span className="flex items-center gap-2.5 font-semibold">
-              <Wallet className={`h-4 w-4 ${i === 0 ? "text-[#5B37E8]" : "text-muted-foreground"}`} />
+              <Wallet className={`h-4 w-4 ${i === 0 ? "text-brand" : "text-muted-foreground"}`} />
               {method.name}
             </span>
             <span className="flex items-center gap-2 text-[12px] text-muted-foreground">
@@ -650,14 +742,14 @@ function MockPost() {
             className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${
               tab.active
                 ? "bg-primary text-primary-foreground"
-                : "border border-black/10 bg-black/[0.03] text-muted-foreground"
+                : "border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] text-muted-foreground"
             }`}
           >
             {tab.label}
           </span>
         ))}
       </div>
-      <div className="mt-3.5 flex items-center gap-2 rounded-xl border border-black/10 bg-background/60 px-3.5 py-3">
+      <div className="mt-3.5 flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-background/60 px-3.5 py-3">
         <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="flex-1 truncate font-mono text-[12.5px] text-muted-foreground">
           tiktok.com/@avaclips/video/74018…
@@ -682,16 +774,16 @@ function MockCycles() {
   ];
   return (
     <MockFrame title="Your payout cycles">
-      <div className="overflow-hidden rounded-xl border border-black/8">
+      <div className="overflow-hidden rounded-xl border border-black/8 dark:border-white/10">
         <table className="w-full text-left text-[13px]">
-          <thead className="bg-black/[0.04] text-[11px] uppercase tracking-wider text-muted-foreground">
+          <thead className="bg-black/[0.04] dark:bg-white/[0.06] text-[11px] uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-3.5 py-2 font-semibold">Cycle</th>
               <th className="px-3.5 py-2 font-semibold">Status</th>
               <th className="px-3.5 py-2 text-right font-semibold">Amount</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-black/8">
+          <tbody className="divide-y divide-black/8 dark:divide-white/10">
             {cycles.map((cycle) => (
               <tr key={cycle.label}>
                 <td className="px-3.5 py-2.5 font-medium">{cycle.label}</td>
@@ -756,26 +848,212 @@ const STEPS = [
   },
 ];
 
+/* ---------------- brand-side steps ("For brands" tab) ---------------- */
+
+function MockBrandLaunch() {
+  return (
+    <MockFrame title="New campaign">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-4 py-3">
+          <span className="text-sm font-semibold">Ripple Audio</span>
+          <span className="rounded-lg bg-brand/10 px-2 py-1 text-[11px] font-bold text-brand">
+            Fall Drop
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-xl border border-black/8 dark:border-white/10 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Rate / 1K
+            </p>
+            <p className="mt-1 text-xl font-extrabold text-neon">
+              {fmtRate(1.5)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-black/8 dark:border-white/10 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Budget
+            </p>
+            <p className="mt-1 text-xl font-extrabold">$25,000</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <PlatformChip platform="tiktok" size="sm" />
+          <PlatformChip platform="instagram" size="sm" />
+          <PlatformChip platform="youtube" size="sm" />
+        </div>
+        <span className="block rounded-xl bg-foreground px-4 py-2.5 text-center text-xs font-bold text-background">
+          Launch campaign
+        </span>
+      </div>
+    </MockFrame>
+  );
+}
+
+function MockBrandReach() {
+  const stats = [
+    { label: "Clips live", value: "1,284" },
+    { label: "Verified views", value: "357M" },
+    { label: "Avg CPM", value: "$0.90" },
+  ];
+  return (
+    <MockFrame title="Campaign is live">
+      <div className="grid grid-cols-3 gap-2.5">
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-xl border border-black/8 dark:border-white/10 px-3 py-3 text-center"
+          >
+            <p className="font-mono text-lg font-extrabold tracking-tight">
+              {stat.value}
+            </p>
+            <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+              {stat.label}
+            </p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 rounded-xl border border-black/8 dark:border-white/10 px-4 py-3">
+        <div className="flex justify-between text-[11px]">
+          <span className="text-muted-foreground">Budget spent</span>
+          <span className="font-semibold">$18,420 / $25,000</span>
+        </div>
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+          <div className="h-full w-[73%] rounded-full bg-gradient-to-r from-brand to-[#a78bfa]" />
+        </div>
+      </div>
+      <p className="mt-4 flex items-center gap-2 text-[12px] text-muted-foreground">
+        <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-neon text-neon" />
+        Clippers are posting right now — stats refresh live.
+      </p>
+    </MockFrame>
+  );
+}
+
+function MockBrandInvoice() {
+  const invoices = [
+    { brand: "Ripple Audio", status: "Paid", tone: "border-neon/25 bg-neon/10 text-neon", amount: "$8,420" },
+    { brand: "Monolith", status: "Sent", tone: "border-amber-400/25 bg-amber-400/10 text-amber-600 dark:text-amber-300", amount: "$5,140" },
+    { brand: "Pulse", status: "Draft", tone: "border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] text-muted-foreground", amount: "$2,980" },
+  ];
+  return (
+    <MockFrame title="One invoice per cycle">
+      <ul className="space-y-2.5">
+        {invoices.map((invoice) => (
+          <li
+            key={invoice.brand}
+            className="flex items-center justify-between rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-4 py-2.5"
+          >
+            <span className="text-[13px] font-semibold">{invoice.brand}</span>
+            <span className="flex items-center gap-3">
+              <span
+                className={`rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${invoice.tone}`}
+              >
+                {invoice.status}
+              </span>
+              <span className="font-mono text-sm font-bold text-neon">
+                {invoice.amount}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 flex items-center gap-2 text-[12px] text-muted-foreground">
+        <ShieldCheck className="h-4 w-4 text-neon" />
+        Pay only for verified, bot-filtered views.
+      </p>
+    </MockFrame>
+  );
+}
+
+const BRAND_STEPS = [
+  {
+    n: "01",
+    kicker: "Launch",
+    title: "Set rate, rules & budget",
+    body: "Define what a verified view pays, which platforms are allowed, and the guidelines clippers must follow. Everything is public before anyone joins.",
+    mock: <MockBrandLaunch />,
+  },
+  {
+    n: "02",
+    kicker: "Reach",
+    title: "Clippers do the rest",
+    body: "Thousands of verified creators pick up your campaign and post. Views, engagement and attribution are tracked straight from the source platform.",
+    mock: <MockBrandReach />,
+  },
+  {
+    n: "03",
+    kicker: "Pay",
+    title: "Only for verified views",
+    body: "When a cycle closes you review the numbers and get a single invoice. You pay for real, verified views — nothing else, no waste.",
+    mock: <MockBrandInvoice />,
+  },
+];
+
 function HowItWorks() {
+  const [audience, setAudience] = useState<"clippers" | "brands">("clippers");
+  const steps = audience === "clippers" ? STEPS : BRAND_STEPS;
   return (
     <section id="how" className="scroll-mt-24 py-24">
       <div className="mx-auto max-w-6xl px-5">
         <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
+          <span className="inline-flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
             <Zap className="h-3.5 w-3.5 text-neon" />
             How it works
           </span>
           <h2 className="mt-5 text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
-            Five steps to your first payout.
+            {audience === "clippers"
+              ? "Five steps to your first payout."
+              : "Three steps to a live campaign."}
           </h2>
           <p className="mt-4 text-balance text-muted-foreground">
-            No following, no application, no catch. Pick a campaign, post your
-            clips, and watch the views turn into earnings.
+            {audience === "clippers" ? (
+              <>
+                No following, no application, no catch. Pick a campaign, post
+                your clips, and watch the views turn into earnings.
+              </>
+            ) : (
+              <>
+                Set the rate, fund the budget, and only pay for verified views.
+                Clippers handle the reach — you handle the creative brief.
+              </>
+            )}
           </p>
+
+          {/* clipping.net audience switch */}
+          <div className="mt-7 inline-flex rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] p-1">
+            {(["clippers", "brands"] as const).map((audienceOption) => (
+              <button
+                key={audienceOption}
+                type="button"
+                onClick={() => setAudience(audienceOption)}
+                aria-pressed={audience === audienceOption}
+                className="relative rounded-xl px-5 py-2.5 text-sm font-bold transition-colors"
+              >
+                {audience === audienceOption && (
+                  <motion.span
+                    layoutId="cliptic-audience-pill"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    className="absolute inset-0 rounded-xl bg-foreground"
+                  />
+                )}
+                <span
+                  className={`relative z-10 ${
+                    audience === audienceOption
+                      ? "text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {audienceOption === "clippers"
+                    ? "For clippers"
+                    : "For brands"}
+                </span>
+              </button>
+            ))}
+          </div>
         </motion.div>
 
-        <div className="mt-16 space-y-20">
-          {STEPS.map((step, i) => (
+        <div key={audience} className="mt-16 space-y-20">
+          {steps.map((step, i) => (
             <motion.div
               key={step.n}
               {...fadeUp}
@@ -783,7 +1061,7 @@ function HowItWorks() {
             >
               <div className={i % 2 === 1 ? "lg:order-2" : undefined}>
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-brand/35 bg-brand/10 font-mono text-sm font-bold text-[#5B37E8]">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-brand/35 bg-brand/10 font-mono text-sm font-bold text-brand">
                     {step.n}
                   </span>
                   <span className="text-[12px] font-bold uppercase tracking-[0.22em] text-neon">
@@ -835,13 +1113,13 @@ function CampaignsSection() {
   return (
     <section
       id="campaigns"
-      className="scroll-mt-24 border-y border-black/8 bg-black/[0.015] py-24"
+      className="scroll-mt-24 border-y border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.03] py-24"
     >
       <div className="mx-auto max-w-6xl px-5">
         <motion.div {...fadeUp} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-[#5B37E8]" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-brand" />
               Live campaigns
             </span>
             <h2 className="mt-5 text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
@@ -870,7 +1148,7 @@ function CampaignsSection() {
             asChild
             size="lg"
             variant="outline"
-            className="border-black/15 bg-black/[0.03] hover:bg-black/[0.05]"
+            className="border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
           >
             <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
               {isAuthenticated
@@ -880,6 +1158,109 @@ function CampaignsSection() {
             </Link>
           </Button>
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Two sides + final CTA                                               */
+/* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/* Social proof — "Used by industry leaders"                           */
+/* ------------------------------------------------------------------ */
+
+function IndustryLeaders() {
+  const leaders = [
+    {
+      name: "Kick Studios",
+      role: "Brand",
+      quote:
+        "We ran three bounties and cleared 40M verified views in a single month — without touching ad tooling once.",
+      stat: "40M views",
+    },
+    {
+      name: "H3RB CLIPZ",
+      role: "Clipper",
+      quote:
+        "Clipping paid my rent before my main channel ever did. I post the same edits, I just pick better campaigns.",
+      stat: "$12.4K earned",
+    },
+    {
+      name: "Monolith Records",
+      role: "Label",
+      quote:
+        "Every clip is attributed back to its creator automatically. Finance stopped chasing spreadsheets.",
+      stat: "211 campaigns",
+    },
+    {
+      name: "Ava Rivera",
+      role: "Clipper",
+      quote:
+        "Joined on Monday, first payout on Friday. No application, no follower minimum, no catch.",
+      stat: "$1,820 first cycle",
+    },
+    {
+      name: "Pulse Esports",
+      role: "Brand",
+      quote:
+        "We only pay for views that survive bot filtering. The reporting matches our analytics exactly.",
+      stat: "4.9B reach",
+    },
+    {
+      name: "Dee The Great",
+      role: "Clipper",
+      quote:
+        "The rates are published up front, so I always know what a view is worth before I even start cutting.",
+      stat: "2.4M views/mo",
+    },
+  ];
+
+  return (
+    <section className="py-24">
+      <div className="mx-auto max-w-6xl px-5">
+        <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5 text-brand" />
+            Used by industry leaders
+          </span>
+          <h2 className="mt-5 text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
+            The creators and brands behind the campaigns.
+          </h2>
+          <p className="mt-4 text-balance text-muted-foreground">
+            Streamers, labels, and brands run campaigns here. Their clips are
+            the ones your network gets paid to post.
+          </p>
+        </motion.div>
+
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {leaders.map((leader) => (
+            <motion.figure
+              key={leader.name}
+              {...fadeUp}
+              className="group flex flex-col rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_60px_-34px_rgb(91_55_232/0.5)]"
+            >
+              <div className="flex items-center gap-3">
+                <BrandAvatar name={leader.name} className="h-11 w-11 text-sm" />
+                <div>
+                  <figcaption className="text-sm font-bold tracking-tight">
+                    {leader.name}
+                  </figcaption>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {leader.role}
+                  </p>
+                </div>
+                <span className="ml-auto rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-[11px] font-bold text-brand">
+                  {leader.stat}
+                </span>
+              </div>
+              <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
+                “{leader.quote}”
+              </blockquote>
+            </motion.figure>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -904,7 +1285,7 @@ function TwoSides() {
       cta: isAuthenticated ? "Open dashboard" : "Start clipping",
       to: isAuthenticated ? "/dashboard" : "/auth",
       accent: "from-brand/25 to-brand/[0.04]",
-      iconColor: "text-[#5B37E8] bg-brand/15 border-brand/30",
+      iconColor: "text-brand bg-brand/15 border-brand/30",
     },
     {
       icon: Megaphone,
@@ -944,7 +1325,7 @@ function TwoSides() {
             <motion.div
               key={card.title}
               {...fadeUp}
-              className={`group relative overflow-hidden rounded-3xl border border-black/10 bg-gradient-to-b ${card.accent} p-8 transition-all duration-300 hover:border-black/15`}
+              className={`group relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/10 bg-gradient-to-b ${card.accent} p-8 transition-all duration-300 hover:border-black/15 dark:border-white/15 dark:hover:border-white/25`}
             >
               <span
                 className={`inline-flex h-12 w-12 items-center justify-center rounded-xl border ${card.iconColor}`}
@@ -1024,7 +1405,7 @@ function FinalCTA() {
               asChild
               size="lg"
               variant="outline"
-              className="h-12 border-black/20 bg-black/[0.03] px-7 text-base hover:bg-black/[0.05]"
+              className="h-12 border-black/20 dark:border-white/20 bg-black/[0.03] dark:bg-white/[0.05] px-7 text-base hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
             >
               <Link
                 to={
@@ -1054,7 +1435,7 @@ function SiteFooter() {
     { title: "Company", links: ["About", "Careers", "Privacy", "Terms"] },
   ];
   return (
-    <footer className="border-t border-black/8 bg-black/[0.02]">
+    <footer className="border-t border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04]">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-5">
         <div className="lg:col-span-1">
           <ClipticLogo />
@@ -1087,7 +1468,7 @@ function SiteFooter() {
           </div>
         ))}
       </div>
-      <div className="border-t border-black/8 py-5">
+      <div className="border-t border-black/8 dark:border-white/10 py-5">
         <p className="mx-auto max-w-6xl px-5 text-center text-xs text-muted-foreground">
           © 2026 CLIPTIC · Clip. Post. Get Paid. · Demo interface, simulated
           data.
@@ -1113,6 +1494,7 @@ export default function Landing() {
         <BrandMarquee />
         <HowItWorks />
         <CampaignsSection />
+        <IndustryLeaders />
         <TwoSides />
         <FinalCTA />
       </main>

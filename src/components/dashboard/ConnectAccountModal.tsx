@@ -95,7 +95,7 @@ export function ConnectAccountModal({
           {step === "form" && (
             <div className="relative p-6 sm:p-7">
               <DialogHeader className="text-left">
-                <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-[#5B37E8]">
+                <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand">
                   <ScanSearch className="h-5 w-5" />
                 </div>
                 <DialogTitle className="text-xl font-extrabold tracking-tight">
@@ -119,13 +119,13 @@ export function ConnectAccountModal({
                     className={`flex items-center gap-2.5 rounded-xl border px-3 py-3 text-left text-sm font-semibold transition-all ${
                       platform === p
                         ? "border-brand/50 bg-brand/12 text-foreground"
-                        : "border-black/10 bg-black/[0.02] text-muted-foreground hover:border-black/15"
+                        : "border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] text-muted-foreground hover:border-black/15 dark:hover:border-white/25"
                     }`}
                   >
                     <PlatformChip platform={p} size="sm" />
                     {PLATFORM_META[p].label}
                     {platform === p && (
-                      <Check className="ml-auto h-4 w-4 text-[#5B37E8]" />
+                      <Check className="ml-auto h-4 w-4 text-brand" />
                     )}
                   </button>
                 ))}
@@ -149,7 +149,7 @@ export function ConnectAccountModal({
                   autoFocus
                 />
               </div>
-              {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+              {error && <p className="mt-2 text-sm text-red-500 dark:text-red-400">{error}</p>}
 
               <div className="mt-7 flex gap-2.5">
                 <Button
@@ -188,7 +188,7 @@ export function ConnectAccountModal({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4 gap-1.5 border-black/12 bg-black/[0.03] hover:bg-black/[0.05]"
+                  className="mt-4 gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
                   onClick={copyCode}
                 >
                   {copied ? (
@@ -206,7 +206,7 @@ export function ConnectAccountModal({
               <ol className="mt-5 space-y-2.5">
                 {INSTRUCTIONS.map((text, i) => (
                   <li key={text} className="flex gap-3 text-[13px] leading-snug">
-                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-black/12 bg-black/[0.03] font-mono text-[10px] font-bold text-muted-foreground">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] font-mono text-[10px] font-bold text-muted-foreground">
                       {i + 1}
                     </span>
                     <span className="text-muted-foreground">{text}</span>
@@ -235,7 +235,7 @@ export function ConnectAccountModal({
           {step === "verifying" && account && (
             <div className="relative px-6 py-14 text-center sm:px-7">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-brand/30 bg-brand/10">
-                <Loader2 className="h-6 w-6 animate-spin text-[#5B37E8]" />
+                <Loader2 className="h-6 w-6 animate-spin text-brand" />
               </div>
               <h3 className="mt-5 text-lg font-extrabold tracking-tight">
                 Checking @{account.handle}&apos;s bio…
@@ -247,7 +247,7 @@ export function ConnectAccountModal({
                 </span>{" "}
                 on {PLATFORM_META[account.platform].label}
               </p>
-              <div className="mx-auto mt-6 h-1.5 w-56 overflow-hidden rounded-full bg-black/[0.04]">
+              <div className="mx-auto mt-6 h-1.5 w-56 overflow-hidden rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
                 <div className="shimmer h-full w-full rounded-full bg-gradient-to-r from-brand to-[#a78bfa]" />
               </div>
             </div>

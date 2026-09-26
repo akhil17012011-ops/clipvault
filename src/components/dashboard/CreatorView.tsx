@@ -84,7 +84,7 @@ export function CreatorView({
         <div className="flex gap-2.5">
           <Button
             variant="outline"
-            className="gap-1.5 border-black/12 bg-black/[0.03] hover:bg-black/[0.05]"
+            className="gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
             onClick={onConnect}
           >
             <Link2 className="h-4 w-4" />
@@ -100,12 +100,12 @@ export function CreatorView({
       {accounts.length === 0 && (
         <div className="flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <ShieldAlert className="mt-0.5 h-[18px] w-[18px] shrink-0 text-amber-300" />
+            <ShieldAlert className="mt-0.5 h-[18px] w-[18px] shrink-0 text-amber-600 dark:text-amber-300" />
             <div>
-              <p className="text-sm font-semibold text-amber-200">
+              <p className="text-sm font-semibold text-amber-700 dark:text-amber-200">
                 No connected accounts yet
               </p>
-              <p className="text-[13px] text-amber-200/70">
+              <p className="text-[13px] text-amber-700 dark:text-amber-200/70">
                 Add your TikTok or Reels handle and drop the generated code into
                 your bio — that&apos;s how views get tracked back to you.
               </p>
@@ -165,7 +165,7 @@ export function CreatorView({
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           {/* campaigns feed */}
-          <section className="rounded-2xl border border-black/8 bg-card/70 p-5">
+          <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight">
@@ -175,7 +175,7 @@ export function CreatorView({
                   Published rates — join in one tap
                 </p>
               </div>
-              <span className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+              <span className="rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                 {feed.length} live
               </span>
             </div>
@@ -191,8 +191,8 @@ export function CreatorView({
           </section>
 
           {/* submissions */}
-          <section className="rounded-2xl border border-black/8 bg-card/70">
-            <div className="flex items-center justify-between gap-3 border-b border-black/8 px-5 py-4">
+          <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70">
+            <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight">
                   Submissions &amp; earnings
@@ -204,7 +204,7 @@ export function CreatorView({
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1.5 border-black/12 bg-black/[0.03] hover:bg-black/[0.05]"
+                className="gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
                 onClick={onSubmitClip}
               >
                 <Upload className="h-3.5 w-3.5" />
@@ -255,7 +255,7 @@ export function CreatorView({
                               href={submission.link}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex max-w-[190px] items-center gap-1.5 truncate font-mono text-[12.5px] text-[#5B37E8] transition-colors hover:text-[#4C1FD0]"
+                              className="inline-flex max-w-[190px] items-center gap-1.5 truncate font-mono text-[12.5px] text-brand transition-colors hover:text-[#4C1FD0] dark:hover:text-[#ddd3ff]"
                             >
                               <span className="truncate">
                                 {linkLabel(submission.link)}
@@ -317,24 +317,24 @@ export function CreatorView({
 
         {/* sidebar */}
         <div className="space-y-5">
-          <section className="rounded-2xl border border-black/8 bg-card/70 p-5">
+          <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-[#5B37E8]">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
                   <ShieldCheck className="h-4 w-4" />
                 </span>
                 <h2 className="text-[15px] font-bold tracking-tight">
                   My connected accounts
                 </h2>
               </div>
-              <span className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+              <span className="rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                 {accounts.filter((a) => a.status === "connected").length}/
                 {accounts.length || 0} verified
               </span>
             </div>
 
             {accounts.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-dashed border-black/12 px-4 py-6 text-center">
+              <div className="mt-4 rounded-xl border border-dashed border-black/12 dark:border-white/15 px-4 py-6 text-center">
                 <p className="text-[13px] font-semibold text-foreground/85">
                   Nothing connected yet
                 </p>
@@ -356,7 +356,7 @@ export function CreatorView({
 
             <Button
               variant="outline"
-              className="mt-4 w-full gap-1.5 border-black/12 bg-black/[0.03] hover:bg-black/[0.05]"
+              className="mt-4 w-full gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
               onClick={onConnect}
             >
               <Link2 className="h-4 w-4" />
@@ -364,7 +364,7 @@ export function CreatorView({
             </Button>
           </section>
 
-          <section className="rounded-2xl border border-black/8 bg-card/70 p-5">
+          <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neon/25 bg-neon/10 text-neon">
@@ -398,14 +398,14 @@ export function CreatorView({
 
             <ul className="mt-3 space-y-2">
               {paidCycles.length === 0 ? (
-                <li className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-4 text-center text-xs text-muted-foreground">
+                <li className="rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-4 py-4 text-center text-xs text-muted-foreground">
                   Paid cycles will show up here.
                 </li>
               ) : (
                 paidCycles.map((cycle) => (
                   <li
                     key={cycle.id}
-                    className="flex items-center justify-between rounded-xl border border-black/8 bg-black/[0.02] px-4 py-2.5"
+                    className="flex items-center justify-between rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-4 py-2.5"
                   >
                     <div>
                       <p className="text-[13px] font-medium">{cycle.label}</p>
@@ -441,7 +441,7 @@ function AccountRow({
   onRemove: () => void;
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-black/8 bg-black/[0.02] px-3 py-2.5">
+    <li className="flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3 py-2.5">
       <PlatformChip platform={account.platform} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold">@{account.handle}</p>
@@ -454,7 +454,7 @@ function AccountRow({
         type="button"
         onClick={onRemove}
         title="Disconnect account"
-        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-black/[0.03] hover:text-red-400"
+        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-black/[0.03] dark:bg-white/[0.05] dark:hover:bg-white/[0.06] hover:text-red-600 dark:hover:text-red-500 dark:text-red-400"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
