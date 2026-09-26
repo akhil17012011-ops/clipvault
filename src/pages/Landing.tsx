@@ -6,6 +6,7 @@ import { CampaignCard } from "@/components/CampaignCard";
 import { ClipticLogo, ClipticMark } from "@/components/ClipticMark";
 import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { fmtMoney, fmtRate, fmtViews, type Platform } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { useAuth } from "@/hooks/use-auth";
@@ -81,6 +82,7 @@ function SiteNav() {
           </a>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle className="hidden sm:inline-flex" />
           {isAuthenticated ? (
             <Button
               asChild
@@ -100,7 +102,7 @@ function SiteNav() {
           )}
           <Button asChild className="liquid glow-primary">
             <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
-              {isAuthenticated ? "Open dashboard" : "Start clipping"}
+              {isAuthenticated ? "Open dashboard" : "Get Started"}
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </Button>
