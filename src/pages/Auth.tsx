@@ -188,7 +188,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       <aside className="relative hidden overflow-hidden border-r border-black/8 bg-white/60 p-10 dark:border-white/10 dark:bg-white/[0.06] lg:flex lg:flex-col lg:justify-between">
         <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-[#8B3FE2]/35 blur-[130px]" />
         <div className="pointer-events-none absolute -bottom-40 -right-24 h-[420px] w-[420px] rounded-full bg-[#7C3AED]/25 blur-[130px]" />
-        <div className="grid-fade pointer-events-none absolute inset-0" />
+        <div className="console-field pointer-events-none absolute inset-0" />
+        <div className="grid-page pointer-events-none absolute inset-0" />
 
         <div className="relative">
           <ClipticLogo textClassName="text-xl" />

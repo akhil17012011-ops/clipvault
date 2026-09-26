@@ -41,6 +41,7 @@ export function PayoutPulse({
   return (
     <section className="glass-panel relative flex h-full flex-col overflow-hidden rounded-2xl p-5">
       <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#7C3AED]/20" />
+      <div className="grid-dots pointer-events-none absolute inset-0 opacity-60" />
 
       <header className="relative flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -115,7 +116,7 @@ export function PayoutPulse({
             Submit another clip
           </Button>
         ) : (
-          <div className="flex items-start gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-3">
+          <div className="glass-chip flex items-start gap-2.5 rounded-xl px-3.5 py-3">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#C9AEFF]" />
             <p className="text-[12.5px] leading-relaxed text-muted-foreground">
               Earnings appear here the moment a clip you submitted passes its
@@ -274,6 +275,7 @@ export function SettlementPulse({
   return (
     <section className="glass-panel relative flex h-full flex-col overflow-hidden rounded-2xl p-5">
       <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#7C3AED]/20" />
+      <div className="grid-dots pointer-events-none absolute inset-0 opacity-60" />
 
       <header className="relative flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">

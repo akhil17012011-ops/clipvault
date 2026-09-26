@@ -1,7 +1,6 @@
 import '@vly-ai/integrations';
 import { Toaster } from "@/components/ui/sonner";
 import { RequireAuth } from "@/components/RequireAuth";
-import { AppLoading } from "@/components/AppLoading";
 import { RequireVerified } from "@/components/VerifyEmailGate";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
@@ -22,9 +21,10 @@ const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
-// Simple loading fallback for route transitions
+// Route chunks are tiny and the shell is already painted, so the fallback is
+// just the page background — a branded splash here only added a flash.
 function RouteLoading() {
-  return <AppLoading />;
+  return <div className="min-h-screen bg-background" aria-hidden />;
 }
 
 /** Silent error boundary — if VlyToolbar crashes it renders nothing instead of

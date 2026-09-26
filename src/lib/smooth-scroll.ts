@@ -16,13 +16,17 @@ export function ensureSmoothScroll() {
     return;
   }
   lenis = new Lenis({
-    lerp: 0.12,
+    /* A touch lower than the usual 0.1 so the glide keeps gliding for longer
+       and settles without the rubber-band snap at the end. */
+    lerp: 0.085,
     smoothWheel: true,
     /* Momentum on touch devices so phones get the same glide as desktop. */
     syncTouch: true,
-    syncTouchLerp: 0.085,
-    touchMultiplier: 1.6,
-    wheelMultiplier: 1.05,
+    syncTouchLerp: 0.07,
+    touchMultiplier: 1.7,
+    wheelMultiplier: 1,
+    /* Exponential ease-out: fast pickup, very long tail. */
+    easing: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
   });
   const raf = (time: number) => {
     lenis?.raf(time);
@@ -48,9 +52,9 @@ export function scrollToSection(id: string) {
   if (lenis) {
     lenis.scrollTo(el, {
       offset: -96,
-      duration: 1.25,
-      /* Ease-out-expo-ish glide rather than a linear ramp. */
-      easing: (t: number) => 1 - Math.pow(1 - t, 4),
+      duration: 1.35,
+      /* Ease-out-expo rather than a linear ramp — it arrives and stops. */
+      easing: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
     });
   } else {
     el.scrollIntoView({ behavior: "smooth", block: "start" });

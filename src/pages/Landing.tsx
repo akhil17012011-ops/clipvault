@@ -8,6 +8,7 @@ import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI"
 import { Button } from "@/components/ui/button";
 import { fmtRate, type Platform } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
+import { EASE } from "@/lib/motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useTilt } from "@/hooks/use-tilt";
 import {
@@ -32,7 +33,7 @@ const fadeUp = {
   viewport: { once: true, margin: "-70px" },
   transition: {
     duration: 0.7,
-    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
   },
 };
 
@@ -189,7 +190,7 @@ function ParallaxClipCard({
     <motion.div
       initial={{ opacity: 0, y: 46, filter: "blur(10px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.7, delay: card.delay, ease: "easeOut" }}
+      transition={{ duration: 0.8, delay: card.delay, ease: EASE }}
       className={index === 1 ? "z-10 -mt-6" : ""}
     >
       <motion.div
@@ -278,7 +279,7 @@ function ClipCluster() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.55, ease: "easeOut" }}
+        transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
         className="mt-7 flex items-center justify-center gap-2.5"
       >
         {(["youtube", "tiktok", "instagram", "youtube", "tiktok"] as Platform[]).map(
@@ -321,19 +322,23 @@ function Hero() {
       ref={sectionRef}
       className="relative overflow-hidden pb-20 pt-32 sm:pt-40"
     >
+      {/* Parallax blooms drawn as radial gradients rather than blurred divs:
+          animating `y` on a `filter: blur(150px)` layer re-rasterises that
+          layer every frame, which is the single most expensive thing a hero
+          can do. A gradient moves on the compositor for free. */}
       <motion.div
         style={{ y: blobY1 }}
-        className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#6D28D9]/35 blur-[150px]"
+        className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(109_40_217/0.4),transparent)]"
       />
       <motion.div
         style={{ y: blobY2 }}
-        className="pointer-events-none absolute -left-40 top-64 h-[380px] w-[380px] rounded-full bg-[#A855F7]/20 blur-[130px]"
+        className="pointer-events-none absolute -left-40 top-64 h-[380px] w-[380px] rounded-full bg-[radial-gradient(closest-side,rgb(168_85_247/0.26),transparent)]"
       />
       <motion.div
         style={{ y: blobY3 }}
-        className="pointer-events-none absolute -right-40 top-96 h-[340px] w-[340px] rounded-full bg-[#3B0F7A]/30 blur-[120px]"
+        className="pointer-events-none absolute -right-40 top-96 h-[340px] w-[340px] rounded-full bg-[radial-gradient(closest-side,rgb(59_15_122/0.4),transparent)]"
       />
-      <div className="grid-fade pointer-events-none absolute inset-0" />
+      <div className="grid-page pointer-events-none absolute inset-0" />
 
       <div className="relative mx-auto max-w-6xl px-5">
         <div className="grid items-center gap-10 pt-6 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
@@ -341,7 +346,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.75, ease: EASE }}
           className="inline-flex items-center gap-2.5 rounded-full border border-brand/35 bg-brand/10 px-4 py-1.5 text-[12.5px] font-semibold text-brand"
         >
           <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-neon text-neon" />
@@ -351,7 +356,7 @@ function Hero() {
         <motion.h1
           initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.6, delay: 0.08, ease: "easeOut" }}
+          transition={{ duration: 0.75, delay: 0.08, ease: EASE }}
           className="mt-7 max-w-4xl text-balance text-5xl font-extrabold leading-[1.03] tracking-[-0.045em] sm:text-6xl lg:mx-0 lg:text-7xl"
         >
           Grow, Earn, and Go Viral with <span className="text-grad">CLIPTIC</span>
@@ -360,7 +365,7 @@ function Hero() {
         <motion.p
           initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.6, delay: 0.16, ease: "easeOut" }}
+          transition={{ duration: 0.75, delay: 0.16, ease: EASE }}
           className="mt-6 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0"
         >
           A creative marketplace uniting brands and digital talent. Brands launch
@@ -371,7 +376,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.6, delay: 0.24, ease: "easeOut" }}
+          transition={{ duration: 0.75, delay: 0.24, ease: EASE }}
           className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start"
         >
           <Button
@@ -999,9 +1004,9 @@ function CampaignsSection() {
               whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               viewport={{ once: true, margin: "-70px" }}
               transition={{
-                duration: 0.7,
+                duration: 0.85,
                 delay: i * 0.09,
-                ease: [0.22, 1, 0.36, 1],
+                ease: [0.16, 1, 0.3, 1],
               }}
             >
               <CampaignCard

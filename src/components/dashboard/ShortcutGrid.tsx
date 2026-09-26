@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { EASE } from "@/lib/motion";
 import { ArrowUpRight, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 
@@ -23,12 +24,12 @@ export function ShortcutGrid({ cards }: { cards: Shortcut[] }) {
       {cards.map((card, index) => (
         <motion.div
           key={card.to}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 22, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{
-            delay: 0.06 * index,
-            duration: 0.5,
-            ease: [0.22, 1, 0.36, 1],
+            delay: 0.05 * index,
+            duration: 0.7,
+            ease: EASE,
           }}
         >
           <Link

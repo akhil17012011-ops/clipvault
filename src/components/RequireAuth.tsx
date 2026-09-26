@@ -8,8 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { AppLoading } from "@/components/AppLoading";
-import { Loader2, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import type { ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 
@@ -41,9 +40,9 @@ export function RequireAuth({
   const location = useLocation();
 
   if (isLoading) {
-    /* A full branded screen rather than a spinner, so the moment before the
-       sign-in check resolves does not read as an error. */
-    return <AppLoading label="Checking your session" />;
+    /* The session check is fast and the shell is already on screen, so this
+       holds the page background instead of flashing a branded splash. */
+    return <div className="min-h-screen bg-background" aria-hidden />;
   }
 
   if (!isAuthenticated) {

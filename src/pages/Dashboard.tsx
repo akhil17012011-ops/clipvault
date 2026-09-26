@@ -9,6 +9,7 @@ import type { AdminSection } from "@/components/dashboard/AdminView";
 import type { CreatorSection } from "@/components/dashboard/CreatorView";
 import { useAuth } from "@/hooks/use-auth";
 import { useCliptic } from "@/lib/cliptic-store";
+import { SECTION_TRANSITION } from "@/lib/motion";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -91,7 +92,7 @@ export default function Dashboard() {
     <main className="relative min-h-screen bg-background">
       {/* Console backdrop: gradient blooms + a masked grid, no filter blur. */}
       <div className="console-field pointer-events-none absolute inset-0" />
-      <div className="grid-fade pointer-events-none absolute inset-0" />
+      <div className="grid-page pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#A855F7]/45 to-transparent" />
 
       <Sidebar
@@ -111,10 +112,10 @@ export default function Dashboard() {
           <AnimatePresence mode="wait">
             <motion.div
               key={section}
-              initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
+              initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, y: -12, filter: "blur(6px)" }}
+              transition={SECTION_TRANSITION}
             >
               {view === "creator" ? (
                 <CreatorView

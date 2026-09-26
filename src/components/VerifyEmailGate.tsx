@@ -21,11 +21,9 @@ export function RequireVerified({ children }: { children: ReactNode }) {
   const { signOut } = useAuth();
 
   if (isLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </main>
-    );
+    /* Same rule as the rest of the app: hold the page background rather than
+       flashing a loader for a check that resolves in a few hundred ms. */
+    return <div className="min-h-screen bg-background" aria-hidden />;
   }
 
   if (!isVerified) {
@@ -107,14 +105,15 @@ function VerifyEmailPanel({ onSignOut }: { onSignOut: () => void }) {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-5 py-12">
-      <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-[520px] -translate-x-1/2 rounded-full bg-[#8B3FE2]/25 blur-[130px]" />
+      <div className="console-field pointer-events-none absolute inset-0" />
+      <div className="grid-page pointer-events-none absolute inset-0" />
 
       <div className="relative w-full max-w-[420px]">
         <div className="mb-7 flex justify-center">
           <ClipticLogo textClassName="text-xl" />
         </div>
 
-        <div className="rounded-3xl border border-black/10 bg-white/70 p-7 text-center shadow-[0_40px_100px_-60px_rgb(139_63_226/0.5)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06] sm:p-8">
+        <div className="glass-panel rounded-3xl p-7 text-center sm:p-8">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-brand/30 bg-brand/10">
             <MailCheck className="h-6 w-6 text-brand" />
           </div>

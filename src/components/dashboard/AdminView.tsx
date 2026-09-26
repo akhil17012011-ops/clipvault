@@ -34,6 +34,7 @@ import {
   type InvoiceStatus,
 } from "@/lib/cliptic-data";
 import { useAdminStats, useCliptic } from "@/lib/cliptic-store";
+import { EASE } from "@/lib/motion";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
@@ -269,6 +270,7 @@ export function AdminView({
     <div className="space-y-6">
       {/* header */}
       <div className="glass-panel relative overflow-hidden rounded-3xl p-6">
+        <div className="grid-micro pointer-events-none absolute inset-0 opacity-70" />
         <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-[#7C3AED]/25" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -293,10 +295,10 @@ export function AdminView({
       {/* stats */}
       {section === "overview" && (
       <motion.div
-        initial={{ opacity: 0, y: 26 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 26, filter: "blur(6px)" }}
+        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.7, ease: EASE }}
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         <StatCard
@@ -393,7 +395,7 @@ export function AdminView({
           initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.78, ease: EASE }}
           className="glass-panel rounded-2xl p-5"
         >
           <div className="flex items-center justify-between">
@@ -419,7 +421,7 @@ export function AdminView({
           initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.78, ease: EASE }}
           className="glass-panel scroll-mt-24 rounded-2xl p-5"
         >
           <div className="flex items-center justify-between">
@@ -477,7 +479,7 @@ export function AdminView({
         initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.78, ease: EASE }}
         className="glass-panel scroll-mt-24 rounded-2xl"
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-4">
@@ -684,7 +686,7 @@ export function AdminView({
         initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.78, ease: EASE }}
         className="glass-panel scroll-mt-24 rounded-2xl"
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-4">
@@ -911,7 +913,7 @@ function PayoutChart({
                 initial={{ scaleY: 0 }}
                 whileInView={{ scaleY: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.07, ease: "easeOut" }}
+                transition={{ duration: 0.9, delay: i * 0.08, ease: EASE }}
                 style={{ height: `${pct}%`, transformOrigin: "bottom" }}
                 className={`w-full rounded-t-lg ${
                   isLast

@@ -29,6 +29,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { EASE, SPRING, SPRING_PILL } from "@/lib/motion";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -172,7 +173,7 @@ export function Sidebar({
               initial={{ x: -300, opacity: 0.5 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 330, damping: 34 }}
+              transition={SPRING}
             >
               <SidebarBody
                 layoutKey="nav-mobile"
@@ -305,12 +306,12 @@ function SidebarBody({
               onClick={() => go(item.to)}
               whileHover={{ x: 3 }}
               whileTap={{ scale: 0.97 }}
-              initial={{ opacity: 0, x: -14 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: -16, filter: "blur(4px)" }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
               transition={{
-                delay: 0.05 + index * 0.05,
-                duration: 0.45,
-                ease: [0.22, 1, 0.36, 1],
+                delay: 0.04 + index * 0.045,
+                duration: 0.6,
+                ease: EASE,
               }}
               className="group relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[13.5px] font-semibold transition-colors lg:py-2.5"
             >
@@ -318,7 +319,7 @@ function SidebarBody({
                 <motion.span
                   layoutId={`${layoutKey}-active`}
                   className="absolute inset-0 rounded-xl border border-[#A855F7]/35 bg-gradient-to-r from-[#7C3AED]/25 to-[#A855F7]/10 shadow-[0_10px_30px_-12px_rgb(168_85_247/0.75)]"
-                  transition={{ type: "spring", stiffness: 430, damping: 34 }}
+                  transition={SPRING_PILL}
                 />
               )}
               <Icon
