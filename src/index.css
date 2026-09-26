@@ -232,7 +232,12 @@ html.lenis body {
  * separates glass from a coloured box with a border.
  */
 .liquid-glass {
-  position: relative;
+  /* Deliberately no `position` here. This rule is unlayered, so it would beat
+     Tailwind's layered `fixed`/`sticky` utilities and silently pull the top bar
+     and sidebar out of positioning — the element then took up real layout
+     height and pushed the whole app down the page. The rim light and sheen
+     anchor to the nearest positioned ancestor, so apply this only to something
+     that is already positioned (sticky, fixed or relative). */
   isolation: isolate;
   background: linear-gradient(
     168deg,
