@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useCliptic } from "@/lib/cliptic-store";
-import { motion, useScroll, useSpring } from "framer-motion";
+import { motion } from "framer-motion";
 import { Clapperboard, Home, LogOut, Megaphone, Menu, RotateCcw, Settings2, Wallet } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -34,12 +34,6 @@ export function TopBar({
   const { profile } = useCliptic();
   const navigate = useNavigate();
   const [editingProfile, setEditingProfile] = useState(false);
-  const { scrollYProgress } = useScroll();
-  const progress = useSpring(scrollYProgress, {
-    stiffness: 160,
-    damping: 26,
-    restDelta: 0.001,
-  });
 
   const name =
     profile?.name ?? user?.name ?? user?.email?.split("@")[0] ?? "Creator";
@@ -175,12 +169,6 @@ export function TopBar({
       {/* Scroll edge: content fades out as it passes under the bar
           instead of colliding with it. */}
       <div className="pointer-events-none absolute inset-x-0 top-full h-6 bg-gradient-to-b from-[#0C0A14]/70 to-transparent" />
-
-      {/* Reading progress — fills as you scroll the dashboard */}
-      <motion.div
-        className="absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-[#7C3AED] via-[#C084FC] to-[#4C1D95]"
-        style={{ scaleX: progress }}
-      />
 
       <ProfileEditor
         open={editingProfile}

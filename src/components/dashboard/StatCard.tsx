@@ -18,19 +18,31 @@ const DOTS: Record<Tone, string> = {
   plain: "bg-muted-foreground",
 };
 
+const BARS: Record<Tone, string> = {
+  violet: "from-[#7C3AED] to-[#C084FC]",
+  neon: "from-[#34D399] to-[#A7F3D0]",
+  amber: "from-amber-400 to-amber-200",
+  plain: "from-white/40 to-white/20",
+};
+
 export function StatCard({
   icon: Icon,
   label,
   value,
   sub,
   tone = "violet",
+  meter,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
   sub: string;
   tone?: Tone;
+  /** 0–1 completion bar with a caption, shown under the sub-line. */
+  meter?: { value: number; caption: string };
 }) {
+  const pct = Math.max(0, Math.min(1, meter?.value ?? 0));
+
   return (
     <div className="panel-fx glass-panel glass-sheen group relative overflow-hidden rounded-2xl p-5">
       <div className="relative z-10 flex items-start justify-between gap-3">
@@ -44,7 +56,7 @@ export function StatCard({
         </span>
       </div>
 
-      <p className="relative z-10 mt-4 font-mono text-[30px] font-extrabold leading-none tracking-[-0.04em] text-foreground">
+      <p className="relative z-10 mt-4 font-mono text-[30px] font-extrabold leading-none tracking-[-0.04em] tabular-nums text-foreground">
         {value}
       </p>
 
@@ -56,6 +68,20 @@ export function StatCard({
           {sub}
         </p>
       </div>
+
+      {meter && (
+        <div className="relative z-10 mt-3">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.07]">
+            <div
+              className={`h-full rounded-full bg-gradient-to-r ${BARS[tone]} transition-[width] duration-700 ease-out`}
+              style={{ width: `${Math.round(pct * 100)}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-[10.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground/80">
+            {meter.caption}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

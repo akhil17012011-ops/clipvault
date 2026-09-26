@@ -42,7 +42,7 @@ export function ShortcutGrid({ cards }: { cards: Shortcut[] }) {
               <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#C9AEFF]" />
             </div>
 
-            <p className="relative z-10 mt-4 font-mono text-[22px] font-extrabold leading-none tracking-[-0.03em] text-foreground">
+            <p className="relative z-10 mt-4 font-mono text-[22px] font-extrabold leading-none tracking-[-0.03em] tabular-nums text-foreground">
               {card.value}
             </p>
             <p className="relative z-10 mt-2 text-[13px] font-semibold tracking-tight">

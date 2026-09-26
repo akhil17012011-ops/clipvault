@@ -34,31 +34,103 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import type { DashboardView } from "./TopBar";
 
-type NavItem = { to: string; label: string; icon: LucideIcon };
+type NavItem = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  /** Heading this item sits under; a label is drawn when the group changes. */
+  group: "Workspace" | "Manage";
+};
 
 /** Every sidebar entry is a separate page under /dashboard/:section. */
 const NAV: Record<DashboardView, NavItem[]> = {
   creator: [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    {
+      to: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      group: "Workspace",
+    },
     {
       to: "/dashboard/campaigns",
       label: "Campaigns",
       icon: Megaphone,
+      group: "Workspace",
     },
-    { to: "/dashboard/clips", label: "Clips", icon: Clapperboard },
-    { to: "/dashboard/payments", label: "Payments", icon: Wallet },
-    { to: "/dashboard/accounts", label: "Accounts", icon: UserRound },
-    { to: "/dashboard/messages", label: "Messages", icon: MessageSquare },
+    {
+      to: "/dashboard/clips",
+      label: "Clips",
+      icon: Clapperboard,
+      group: "Workspace",
+    },
+    {
+      to: "/dashboard/accounts",
+      label: "Accounts",
+      icon: UserRound,
+      group: "Workspace",
+    },
+    {
+      to: "/dashboard/payments",
+      label: "Payments",
+      icon: Wallet,
+      group: "Manage",
+    },
+    {
+      to: "/dashboard/messages",
+      label: "Messages",
+      icon: MessageSquare,
+      group: "Manage",
+    },
   ],
   admin: [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/dashboard/creators", label: "Creators", icon: UserRound },
-    { to: "/dashboard/users", label: "Users", icon: Users },
-    { to: "/dashboard/messages", label: "Messages", icon: MessageSquare },
-    { to: "/dashboard/payouts", label: "Payouts", icon: Wallet },
-    { to: "/dashboard/invoices", label: "Invoices", icon: ReceiptText },
-    { to: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone },
-    { to: "/dashboard/moderation", label: "Moderation", icon: ShieldCheck },
+    {
+      to: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      group: "Workspace",
+    },
+    {
+      to: "/dashboard/creators",
+      label: "Creators",
+      icon: UserRound,
+      group: "Workspace",
+    },
+    {
+      to: "/dashboard/campaigns",
+      label: "Campaigns",
+      icon: Megaphone,
+      group: "Workspace",
+    },
+    {
+      to: "/dashboard/moderation",
+      label: "Moderation",
+      icon: ShieldCheck,
+      group: "Workspace",
+    },
+    {
+      to: "/dashboard/users",
+      label: "Users",
+      icon: Users,
+      group: "Manage",
+    },
+    {
+      to: "/dashboard/payouts",
+      label: "Payouts",
+      icon: Wallet,
+      group: "Manage",
+    },
+    {
+      to: "/dashboard/invoices",
+      label: "Invoices",
+      icon: ReceiptText,
+      group: "Manage",
+    },
+    {
+      to: "/dashboard/messages",
+      label: "Messages",
+      icon: MessageSquare,
+      group: "Manage",
+    },
   ],
 };
 
@@ -219,9 +291,16 @@ function SidebarBody({
         {filtered.map((item, index) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to;
+          const showGroup =
+            index === 0 || filtered[index - 1]?.group !== item.group;
           return (
+            <div key={item.to} className={showGroup ? "pt-4 first:pt-0" : ""}>
+            {showGroup && (
+              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/70">
+                {item.group}
+              </p>
+            )}
             <motion.button
-              key={item.to}
               type="button"
               onClick={() => go(item.to)}
               whileHover={{ x: 3 }}
@@ -257,6 +336,7 @@ function SidebarBody({
                 {item.label}
               </span>
             </motion.button>
+            </div>
           );
         })}
         {filtered.length === 0 && (

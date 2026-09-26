@@ -1,6 +1,10 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { CreatorsView } from "@/components/dashboard/CreatorsView";
 import { UsersTable } from "@/components/dashboard/UsersTable";
+import {
+  ReviewQueue,
+  SettlementPulse,
+} from "@/components/dashboard/OverviewPanels";
 import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
 import { AdminMessages } from "@/components/dashboard/AdminMessages";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
@@ -93,6 +97,7 @@ export function AdminView({
   const {
     campaigns,
     submissions,
+    allSubmissions,
     adminUsers,
     adminMessages,
     sendToCreator,
@@ -300,12 +305,25 @@ export function AdminView({
           value={fmtMoney(stats.paidOut, true)}
           sub="Settled to clippers this cycle"
           tone="neon"
+          meter={{
+            value: stats.budget > 0 ? stats.paidOut / stats.budget : 0,
+            caption: `${Math.round(
+              (stats.budget > 0 ? stats.paidOut / stats.budget : 0) * 100,
+            )}% of budget settled`,
+          }}
         />
         <StatCard
           icon={BarChart3}
           label="Pending payouts"
           value={fmtMoney(stats.pending, true)}
           sub="Awaiting approval in the queue"
+          meter={{
+            value:
+              stats.paidOut + stats.pending > 0
+                ? stats.pending / (stats.paidOut + stats.pending)
+                : 0,
+            caption: `${fmtMoney(stats.paidOut + stats.pending, true)} in flight`,
+          }}
         />
         <StatCard
           icon={Eye}
@@ -313,6 +331,10 @@ export function AdminView({
           value={fmtViews(stats.volume)}
           sub={`${fmtFull(stats.volume)} verified views`}
           tone="plain"
+          meter={{
+            value: Math.min(1, stats.volume / 1_000_000),
+            caption: `${fmtFull(stats.volume)} of 1M`,
+          }}
         />
         <StatCard
           icon={ScanSearch}
@@ -320,8 +342,34 @@ export function AdminView({
           value={`${stats.reviewQueue}`}
           sub="Clips waiting on moderation"
           tone="amber"
+          meter={{
+            value: allSubmissions.length
+              ? stats.reviewQueue / allSubmissions.length
+              : 0,
+            caption: `of ${allSubmissions.length} submissions`,
+          }}
         />
       </motion.div>
+      )}
+
+      {section === "overview" && (
+        <div className="grid gap-4 lg:grid-cols-5">
+          <div className="lg:col-span-2">
+            <SettlementPulse
+              budget={stats.budget}
+              spent={campaigns.reduce((sum, c) => sum + c.spent, 0)}
+              paidOut={stats.paidOut}
+              pending={stats.pending}
+              liveCampaigns={stats.live}
+            />
+          </div>
+          <div className="lg:col-span-3">
+            <ReviewQueue
+              clips={allSubmissions.filter((s) => s.status === "pending")}
+              campaigns={campaigns}
+            />
+          </div>
+        </div>
       )}
 
       {section === "overview" && <ShortcutGrid cards={shortcuts} />}

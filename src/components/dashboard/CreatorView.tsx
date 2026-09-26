@@ -31,6 +31,10 @@ import { useCliptic, useCreatorStats } from "@/lib/cliptic-store";
 import { MessagesInbox } from "@/components/dashboard/MessagesInbox";
 import { PayoutSettings } from "@/components/dashboard/PayoutSettings";
 import {
+  PayoutPulse,
+  RecentActivity,
+} from "@/components/dashboard/OverviewPanels";
+import {
   Clock3,
   Eye,
   ExternalLink,
@@ -252,18 +256,36 @@ export function CreatorView({
           value={fmtMoney(stats.totalEarned, true)}
           sub={`${fmtMoney(stats.paidOut, true)} already paid out`}
           tone="neon"
+          meter={{
+            value:
+              stats.totalEarned > 0 ? stats.paidOut / stats.totalEarned : 0,
+            caption: `${Math.round(
+              (stats.totalEarned > 0 ? stats.paidOut / stats.totalEarned : 0) *
+                100,
+            )}% settled`,
+          }}
         />
         <StatCard
           icon={Eye}
           label="Views tracked"
           value={fmtViews(stats.totalViews)}
           sub={`${fmtFull(stats.totalViews)} verified views`}
+          meter={{
+            value: Math.min(1, stats.totalViews / 1_000_000),
+            caption: `${fmtFull(stats.totalViews)} of 1M`,
+          }}
         />
         <StatCard
           icon={Zap}
           label="Active campaigns"
           value={`${stats.activeCampaigns}`}
           sub={`${campaigns.filter((c) => c.status === "active").length} live on CLIPTIC right now`}
+          meter={{
+            value: campaigns.length
+              ? stats.activeCampaigns / campaigns.length
+              : 0,
+            caption: `${campaigns.length} listed`,
+          }}
         />
         <StatCard
           icon={Clock3}
@@ -277,6 +299,26 @@ export function CreatorView({
           tone={stats.pending > 0 ? "violet" : "neon"}
         />
       </motion.div>
+      )}
+
+      {section === "overview" && (
+        <div className="grid gap-4 lg:grid-cols-5">
+          <div className="lg:col-span-2">
+            <PayoutPulse
+              totalEarned={stats.totalEarned}
+              paidOut={stats.paidOut}
+              pending={stats.pending}
+              onSubmitClip={onSubmitClip}
+            />
+          </div>
+          <div className="lg:col-span-3">
+            <RecentActivity
+              clips={stats.mine}
+              campaigns={campaigns}
+              onSubmitClip={onSubmitClip}
+            />
+          </div>
+        </div>
       )}
 
       {section === "overview" && <ShortcutGrid cards={shortcuts} />}
