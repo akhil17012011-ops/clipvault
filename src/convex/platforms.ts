@@ -31,8 +31,35 @@ const INSTAGRAM_APP_ID = "936619743392459";
 const APIFY_ACTOR = "apify~instagram-profile-scraper";
 
 export type ProfileResult =
-  | { ok: true; handle: string; bio: string }
+  | {
+      ok: true;
+      handle: string;
+      bio: string;
+      /** Real follower count, when the platform exposes it in what we read. */
+      followers?: number;
+      /** Real post count, when the platform exposes it in what we read. */
+      posts?: number;
+    }
   | { ok: false; reason: string };
+
+/**
+ * Reads a follower or post count that a platform may report as a number, as a
+ * grouped string like "12.3K", or with separators like "1,234". Returns
+ * undefined rather than guessing when the text is not a count.
+ */
+function parseCount(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.round(value) : undefined;
+  }
+  if (typeof value !== "string") return undefined;
+  const match = value.replace(/,/g, "").trim().match(/^([\d.]+)\s*([KMB])?/i);
+  if (!match) return undefined;
+  const base = Number.parseFloat(match[1]);
+  if (!Number.isFinite(base)) return undefined;
+  const suffix = (match[2] ?? "").toLowerCase();
+  const scale = suffix === "k" ? 1_000 : suffix === "m" ? 1_000_000 : suffix === "b" ? 1_000_000_000 : 1;
+  return Math.round(base * scale);
+}
 
 function decodeEntities(text: string): string {
   return text
@@ -92,6 +119,40 @@ function tiktokHandle(html: string): string | null {
   return match?.[1] ?? null;
 }
 
+/** TikTok publishes follower and video counts in the same embedded JSON. */
+function tiktokCounts(html: string): { followers?: number; posts?: number } {
+  return {
+    followers: parseCount(html.match(/"followerCount"\s*:\s*"?(\d+)"?/)?.[1]),
+    posts: parseCount(html.match(/"videoCount"\s*:\s*"?(\d+)"?/)?.[1]),
+  };
+}
+
+/** YouTube's channel header carries the subscriber and video totals as text. */
+function youtubeCounts(html: string): { followers?: number; posts?: number } {
+  return {
+    followers: parseCount(
+      html.match(/"subscriberCountText"[^}]*?"simpleText"\s*:\s*"([^"]+)"/)?.[1],
+    ),
+    posts: parseCount(
+      html.match(/"videosCountText"[^}]*?"simpleText"\s*:\s*"([^"]+)"/)?.[1],
+    ),
+  };
+}
+
+/** The direct Instagram API reports both counts numerically. */
+function instagramDirectCounts(user: Record<string, unknown>): {
+  followers?: number;
+  posts?: number;
+} {
+  const timeline = user.edge_owner_to_timeline_media as
+    | { count?: unknown }
+    | undefined;
+  return {
+    followers: parseCount(user.follower_count),
+    posts: parseCount(timeline?.count),
+  };
+}
+
 async function fetchTikTok(handle: string): Promise<ProfileResult> {
   const html = await fetchText(`https://www.tiktok.com/@${handle}`);
   if (html === null) {
@@ -101,7 +162,12 @@ async function fetchTikTok(handle: string): Promise<ProfileResult> {
   if (!resolved) {
     return { ok: false, reason: `There's no public TikTok account called @${handle}.` };
   }
-  return { ok: true, handle: resolved.toLowerCase(), bio: tiktokBio(html) ?? "" };
+  return {
+    ok: true,
+    handle: resolved.toLowerCase(),
+    bio: tiktokBio(html) ?? "",
+    ...tiktokCounts(html),
+  };
 }
 
 async function fetchYouTube(handle: string): Promise<ProfileResult> {
@@ -119,7 +185,7 @@ async function fetchYouTube(handle: string): Promise<ProfileResult> {
       reason: `There's no public YouTube channel called @${handle}.`,
     };
   }
-  return { ok: true, handle: handle.toLowerCase(), bio };
+  return { ok: true, handle: handle.toLowerCase(), bio, ...youtubeCounts(html) };
 }
 
 async function fetchX(handle: string): Promise<ProfileResult> {
@@ -194,6 +260,7 @@ async function fetchInstagramDirect(
     ok: true,
     handle: user.username.toLowerCase(),
     bio: typeof user.biography === "string" ? user.biography : "",
+    ...instagramDirectCounts(user),
   };
 }
 
@@ -253,10 +320,10 @@ async function fetchInstagramViaApify(
     return null;
   }
 
-  const first = (Array.isArray(items) ? items[0] : null) as {
-    username?: unknown;
-    biography?: unknown;
-  } | null;
+  const first = (Array.isArray(items) ? items[0] : null) as Record<
+    string,
+    unknown
+  > | null;
 
   // Apify ran successfully and matched nothing, so the handle really is not a
   // public account rather than our request having been refused.
@@ -271,6 +338,10 @@ async function fetchInstagramViaApify(
     ok: true,
     handle: first.username.toLowerCase(),
     bio: typeof first.biography === "string" ? first.biography : "",
+    followers: parseCount(first.followers_count),
+    // The field was renamed across actor versions, so read both spellings
+    // rather than reporting a zero when only one is present.
+    posts: parseCount(first.media_count ?? first.posts_count),
   };
 }
 

@@ -141,6 +141,13 @@ const schema = defineSchema(
       ),
       /** Set when the bio check actually confirmed the code. */
       connectedAt: v.optional(v.number()),
+      /**
+       * Real follower and post counts, read from the platform at the moment
+       * the bio check succeeded. Null when the platform does not publish them
+       * in the profile we read — we never invent these.
+       */
+      followers: v.optional(v.number()),
+      posts: v.optional(v.number()),
       createdAt: v.number(),
     })
       .index("by_user", ["userId"])

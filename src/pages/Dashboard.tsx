@@ -23,6 +23,7 @@ const CREATOR_SECTIONS: CreatorSection[] = [
 const ADMIN_SECTIONS: AdminSection[] = [
   "overview",
   "creators",
+  "users",
   "payouts",
   "invoices",
   "campaigns",

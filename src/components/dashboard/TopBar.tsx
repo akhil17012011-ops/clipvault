@@ -1,4 +1,5 @@
 import { ClipticLogo } from "@/components/ClipticMark";
+import { ProfileEditor } from "@/components/dashboard/ProfileEditor";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   DropdownMenu,
@@ -11,9 +12,10 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useCliptic } from "@/lib/cliptic-store";
 import { motion, useScroll, useSpring } from "framer-motion";
-import { Clapperboard, Home, LogOut, Megaphone, Menu, RotateCcw, Wallet } from "lucide-react";
+import { Clapperboard, Home, LogOut, Megaphone, Menu, RotateCcw, Settings2, Wallet } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export type DashboardView = "creator" | "admin";
 
@@ -31,6 +33,7 @@ export function TopBar({
   const { user, signOut } = useAuth();
   const { profile } = useCliptic();
   const navigate = useNavigate();
+  const [editingProfile, setEditingProfile] = useState(false);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, {
     stiffness: 160,
@@ -112,9 +115,17 @@ export function TopBar({
                 type="button"
                 className="flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] py-1 pl-1 pr-2.5 transition-colors hover:border-black/15 dark:hover:border-white/25"
               >
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#A855F7] to-[#5B0FA6] text-xs font-bold text-white">
-                  {initials}
-                </span>
+                {profile?.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt=""
+                    className="h-8 w-8 rounded-full object-cover ring-1 ring-white/15"
+                  />
+                ) : (
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#A855F7] to-[#5B0FA6] text-xs font-bold text-white">
+                    {initials}
+                  </span>
+                )}
                 <span className="hidden text-xs font-semibold text-foreground sm:block">
                   {name.split(" ")[0]}
                 </span>
@@ -133,6 +144,16 @@ export function TopBar({
               <DropdownMenuItem onClick={() => navigate("/")}>
                 <Home className="mr-2 h-4 w-4" />
                 Landing page
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  /* Keep the menu from closing over the dialog we just opened. */
+                  event.preventDefault();
+                  setEditingProfile(true);
+                }}
+              >
+                <Settings2 className="mr-2 h-4 w-4" />
+                Edit profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleReset}>
                 <RotateCcw className="mr-2 h-4 w-4" />
@@ -159,6 +180,11 @@ export function TopBar({
       <motion.div
         className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-[#7C3AED] via-[#A855F7] to-[#4C1D95]"
         style={{ scaleX: progress }}
+      />
+
+      <ProfileEditor
+        open={editingProfile}
+        onOpenChange={setEditingProfile}
       />
     </header>
   );

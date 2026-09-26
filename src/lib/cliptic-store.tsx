@@ -10,6 +10,8 @@ import {
 } from "react";
 import {
   earnedOf,
+  type AccountStats,
+  type AdminUser,
   type Campaign,
   type CampaignAsset,
   type ClipMetrics,
@@ -45,6 +47,12 @@ interface ClipticContextValue {
   accounts: LinkedAccount[];
   /** Admin-only: every connected account on the platform. */
   allAccounts: LinkedAccount[];
+  /** Clips, views and earnings for each of my own connected accounts. */
+  accountStats: AccountStats[];
+  /** Admin-only: every user with their accounts and totals. */
+  adminUsers: AdminUser[];
+  /** Change the display name and picture shown across CLIPTIC. */
+  updateProfile: (patch: { name?: string; image?: string }) => Promise<void>;
   campaigns: Campaign[];
   /** Clips belonging to the signed-in creator. */
   submissions: Submission[];
@@ -130,6 +138,8 @@ type AccountRow = {
   status: LinkedAccount["status"];
   connectedAt?: number;
   ownerName?: string;
+  followers?: number | null;
+  posts?: number | null;
 };
 
 const toAccount = (row: AccountRow, mine: boolean): LinkedAccount => ({
@@ -142,6 +152,8 @@ const toAccount = (row: AccountRow, mine: boolean): LinkedAccount => ({
   mine,
   /* Only the brand console's directory rows carry the account's owner. */
   ownerName: row.ownerName,
+  followers: row.followers ?? null,
+  posts: row.posts ?? null,
 });
 
 const toCampaign = (row: {
@@ -253,6 +265,11 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
     api.submissions.listAll,
     isAdmin ? {} : SKIP,
   );
+  const rawAccountStats = useQuery(
+    api.accounts.stats,
+    isAuthenticated ? {} : SKIP,
+  );
+  const rawAdminUsers = useQuery(api.admin.users, isAdmin ? {} : SKIP);
 
   const requestAccount = useMutation(api.accounts.request);
   const removeAccountMutation = useMutation(api.accounts.remove);
@@ -266,6 +283,7 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
   const removeCampaignMutation = useMutation(api.campaigns.remove);
   const reviewMutation = useMutation(api.submissions.review);
   const settleMutation = useMutation(api.submissions.settle);
+  const updateProfileMutation = useMutation(api.users.updateProfile);
 
   /* The profile is the real auth record, not anything the browser can set. */
   const profile: Profile | null = useMemo(() => {
@@ -285,6 +303,23 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
   const allAccounts = useMemo(
     () => (rawAllAccounts ?? []).map((row) => toAccount(row, false)),
     [rawAllAccounts],
+  );
+
+  const accountStats = useMemo(
+    () => (rawAccountStats ?? []) as AccountStats[],
+    [rawAccountStats],
+  );
+
+  const adminUsers = useMemo(
+    () => (rawAdminUsers ?? []) as AdminUser[],
+    [rawAdminUsers],
+  );
+
+  const updateProfile = useCallback(
+    async (patch: { name?: string; image?: string }) => {
+      await updateProfileMutation(patch);
+    },
+    [updateProfileMutation],
   );
 
   const campaigns = useMemo(
@@ -462,6 +497,9 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       isAdmin,
       accounts,
       allAccounts,
+      accountStats,
+      adminUsers,
+      updateProfile,
       campaigns,
       submissions,
       allSubmissions,
@@ -483,6 +521,9 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       isAdmin,
       accounts,
       allAccounts,
+      accountStats,
+      adminUsers,
+      updateProfile,
       campaigns,
       submissions,
       allSubmissions,

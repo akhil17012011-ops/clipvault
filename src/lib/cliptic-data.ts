@@ -67,6 +67,42 @@ export interface LinkedAccount {
   mine?: boolean;
   /** Only present on the brand console's directory rows. */
   ownerName?: string;
+  /** Real counts read from the platform. Null when it does not publish them. */
+  followers?: number | null;
+  posts?: number | null;
+}
+
+/** How much a single connected account has actually produced. */
+export interface AccountStats {
+  accountId: string;
+  clips: number;
+  views: number;
+  /** Dollars earned by this account's clips, using the payout rule. */
+  earned: number;
+  followers: number | null;
+  posts: number | null;
+}
+
+/** One row of the admin users table. */
+export interface AdminUser {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: string;
+  joined: number;
+  accounts: Array<{
+    id: string;
+    platform: Platform;
+    handle: string;
+    status: AccountStatus;
+    followers: number | null;
+    posts: number | null;
+    connectedAt: number | null;
+  }>;
+  clips: number;
+  views: number;
+  earned: number;
 }
 
 export type InvoiceStatus = "draft" | "sent" | "paid";

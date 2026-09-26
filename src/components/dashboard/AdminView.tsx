@@ -1,5 +1,6 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { CreatorsView } from "@/components/dashboard/CreatorsView";
+import { UsersTable } from "@/components/dashboard/UsersTable";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ const DECLINE_REASONS = [
 export type AdminSection =
   | "overview"
   | "creators"
+  | "users"
   | "payouts"
   | "invoices"
   | "campaigns"
@@ -185,6 +187,12 @@ export function AdminView({
       description:
         "Every social account verified on CLIPTIC, and what it has produced.",
     },
+    users: {
+      kicker: "People",
+      title: "Users",
+      description:
+        "Every account on CLIPTIC, the handles they connected, and what they have earned.",
+    },
     invoices: {
       kicker: "Billing",
       title: "Brand invoices",
@@ -298,6 +306,8 @@ export function AdminView({
 
       {section === "creators" && <CreatorsView />}
 
+      {section === "users" && <UsersTable />}
+
       {section === "payouts" && (
         <motion.section
           id="payouts"
@@ -305,7 +315,7 @@ export function AdminView({
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+          className="panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -331,7 +341,7 @@ export function AdminView({
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+          className="scroll-mt-24 panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">

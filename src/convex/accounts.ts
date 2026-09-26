@@ -82,6 +82,68 @@ export const listMine = query({
   },
 });
 
+/**
+ * Clips a creator has published from a given handle, with the money those
+ * clips earned under the same rule the payout screen uses: a clip only earns
+ * once it is past the campaign's view threshold, and rejected clips never pay.
+ */
+function totalsFor(
+  submissions: Array<{
+    views: number;
+    status: string;
+    campaignId: unknown;
+  }>,
+  campaigns: Map<unknown, { minViews: number; ratePer1k: number }>,
+): { clips: number; views: number; earned: number } {
+  let views = 0;
+  let earned = 0;
+  for (const submission of submissions) {
+    views += submission.views;
+    const campaign = campaigns.get(submission.campaignId);
+    if (!campaign) continue;
+    if (submission.status === "rejected") continue;
+    if (submission.views < campaign.minViews) continue;
+    earned += (submission.views / 1000) * campaign.ratePer1k;
+  }
+  return { clips: submissions.length, views, earned };
+}
+
+/**
+ * Per connected account: how many clips came from it, how many views they
+ * have, and what they have earned. Matched on the handle the platform
+ * reported, so only a genuinely connected account can carry views.
+ */
+export const stats = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireUser(ctx);
+    const accounts = await ctx.db
+      .query("connectedAccounts")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const submissions = await ctx.db
+      .query("submissions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const campaignRows = await ctx.db.query("campaigns").collect();
+    const campaigns = new Map(
+      campaignRows.map((c) => [c._id, { minViews: c.minViews, ratePer1k: c.ratePer1k }]),
+    );
+
+    return accounts.map((account) => {
+      const mine = submissions.filter(
+        (s) => s.author.toLowerCase() === account.handle.toLowerCase(),
+      );
+      return {
+        accountId: account._id,
+        ...totalsFor(mine, campaigns),
+        followers: account.followers ?? null,
+        posts: account.posts ?? null,
+      };
+    });
+  },
+});
+
 /** Every connected account on the platform — admin only. */
 export const listAll = query({
   args: {},
@@ -133,12 +195,13 @@ export const request = mutation({
     /* Already verified — nothing to do. */
     if (existing && existing.status === "connected") return existing;
 
-    /* Re-issue a code for an account that has not connected yet. */
-    if (existing) {
-      const code = makeCode();
-      await ctx.db.patch(existing._id, { code, status: "pending" });
-      return { ...existing, code, status: "pending" as const };
-    }
+    /* Keep the code that is already on the row.
+
+       Rotating it on every visit used to hand out a fresh code each time the
+       wizard was opened, which silently invalidated a code the creator had
+       already pasted into their bio. That turned a working setup into a
+       failure that looked like the platform had changed underneath them. */
+    if (existing) return existing;
 
     const accountId = await ctx.db.insert("connectedAccounts", {
       userId: user._id,
@@ -175,6 +238,9 @@ export const setStatus = internalMutation({
       v.literal("connected"),
       v.literal("failed"),
     ),
+    /** Real counts read from the platform, recorded only on success. */
+    followers: v.optional(v.number()),
+    posts: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const account = await ctx.db.get(args.accountId);
@@ -182,6 +248,11 @@ export const setStatus = internalMutation({
     await ctx.db.patch(args.accountId, {
       status: args.status,
       connectedAt: args.status === "connected" ? Date.now() : undefined,
+      // Only refreshed on a successful check, so a blocked lookup can never
+      // wipe numbers we already hold.
+      followers:
+        args.status === "connected" ? args.followers : account.followers,
+      posts: args.status === "connected" ? args.posts : account.posts,
     });
   },
 });
@@ -298,6 +369,8 @@ export const verifyBio = action({
     await ctx.runMutation(internal.accounts.setStatus, {
       accountId: account._id,
       status: found ? "connected" : "failed",
+      followers: profile.followers,
+      posts: profile.posts,
     });
 
     if (found) {

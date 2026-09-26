@@ -1,7 +1,8 @@
 import { v } from "convex/values";
-import { internalAction } from "./_generated/server";
+import { internalAction, query } from "./_generated/server";
 import { createAccount } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
+import { requireAdmin } from "./access";
 
 /**
  * One-time provisioning of the CLIPTIC operator account.
@@ -100,5 +101,77 @@ export const bootstrapAdmin = internalAction({
       created,
       message: "Operator account created.",
     };
+  },
+});
+
+/**
+ * Every user on the platform, with the accounts they connected and what their
+ * clips have actually earned. Admin only.
+ *
+ * Earnings use the same rule the creator's payout screen does: a clip pays
+ * once it is past its campaign's view threshold, and rejected clips never pay.
+ * Reporting it here rather than in the browser keeps one definition of
+ * "earned" from drifting between the two views.
+ */
+export const users = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+
+    const userRows = await ctx.db.query("users").collect();
+    const accountRows = await ctx.db.query("connectedAccounts").collect();
+    const submissionRows = await ctx.db.query("submissions").collect();
+    const campaignRows = await ctx.db.query("campaigns").collect();
+
+    const campaigns = new Map(
+      campaignRows.map((c) => [
+        c._id,
+        { minViews: c.minViews, ratePer1k: c.ratePer1k },
+      ]),
+    );
+
+    const accountsByUser = new Map<string, typeof accountRows>();
+    for (const account of accountRows) {
+      const list = accountsByUser.get(account.userId) ?? [];
+      list.push(account);
+      accountsByUser.set(account.userId, list);
+    }
+
+    return userRows
+      .map((user) => {
+        const mine = submissionRows.filter((s) => s.userId === user._id);
+        let views = 0;
+        let earned = 0;
+        for (const submission of mine) {
+          views += submission.views;
+          const campaign = campaigns.get(submission.campaignId);
+          if (!campaign) continue;
+          if (submission.status === "rejected") continue;
+          if (submission.views < campaign.minViews) continue;
+          earned += (submission.views / 1000) * campaign.ratePer1k;
+        }
+
+        return {
+          userId: user._id,
+          name: user.name ?? user.email?.split("@")[0] ?? "Creator",
+          email: user.email ?? "",
+          image: user.image ?? null,
+          role: user.role ?? "user",
+          joined: user._creationTime,
+          accounts: (accountsByUser.get(user._id) ?? []).map((account) => ({
+            id: account._id,
+            platform: account.platform,
+            handle: account.handle,
+            status: account.status,
+            followers: account.followers ?? null,
+            posts: account.posts ?? null,
+            connectedAt: account.connectedAt ?? null,
+          })),
+          clips: mine.length,
+          views,
+          earned,
+        };
+      })
+      .sort((a, b) => b.joined - a.joined);
   },
 });

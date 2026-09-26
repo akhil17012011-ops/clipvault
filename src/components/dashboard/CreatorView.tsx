@@ -24,6 +24,7 @@ import {
   fmtMoney,
   fmtViews,
   shortMonth,
+  type AccountStats,
   type LinkedAccount,
 } from "@/lib/cliptic-data";
 import { useCliptic, useCreatorStats } from "@/lib/cliptic-store";
@@ -59,8 +60,14 @@ export function CreatorView({
   onConnect: () => void;
   onSubmitClip: () => void;
 }) {
-  const { profile, accounts, campaigns, toggleJoinCampaign, removeAccount } =
-    useCliptic();
+  const {
+    profile,
+    accounts,
+    accountStats,
+    campaigns,
+    toggleJoinCampaign,
+    removeAccount,
+  } = useCliptic();
   /* Clicking a joined campaign takes you inside it. */
   const [openCampaignId, setOpenCampaignId] = useState<string | null>(null);
   const openCampaign = campaigns.find((c) => c.id === openCampaignId);
@@ -280,7 +287,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="scroll-mt-24 panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -489,7 +496,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="scroll-mt-24 panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -521,6 +528,7 @@ export function CreatorView({
                   <AccountRow
                     key={account.id}
                     account={account}
+                    stats={accountStats.find((s) => s.accountId === account.id)}
                     onRemove={() => removeAccount(account.id)}
                   />
                 ))}
@@ -545,7 +553,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="scroll-mt-24 panel-fx rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -616,20 +624,55 @@ export function CreatorView({
 
 function AccountRow({
   account,
+  stats,
   onRemove,
 }: {
   account: LinkedAccount;
+  stats?: AccountStats;
   onRemove: () => void;
 }) {
+  const connected = account.status === "connected";
+  /* Reach is only shown when the platform really published it. A placeholder
+     zero would read as "nobody follows you" rather than "we could not see". */
+  const reach =
+    connected && (account.followers != null || account.posts != null)
+      ? [
+          account.followers != null
+            ? `${fmtViews(account.followers)} followers`
+            : null,
+          account.posts != null ? `${fmtFull(account.posts)} posts` : null,
+        ].filter(Boolean)
+      : [];
+  const output =
+    connected && stats && stats.clips > 0
+      ? `${fmtFull(stats.clips)} ${stats.clips === 1 ? "clip" : "clips"} · ${fmtViews(stats.views)} views`
+      : null;
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3 py-2.5">
+    <li className="panel-fx flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3 py-2.5">
       <PlatformChip platform={account.platform} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold">@{account.handle}</p>
-        <p className="truncate font-mono text-[11px] text-muted-foreground">
-          {account.code}
-        </p>
+        {connected ? (
+          reach.length > 0 || output ? (
+            <p className="truncate text-[11px] text-muted-foreground">
+              {[...reach, output].filter(Boolean).join(" · ")}
+            </p>
+          ) : (
+            <p className="truncate text-[11px] text-muted-foreground">
+              Connected — no clips published yet
+            </p>
+          )
+        ) : (
+          <p className="truncate font-mono text-[11px] text-muted-foreground">
+            {account.code}
+          </p>
+        )}
       </div>
+      {connected && stats && stats.earned > 0 ? (
+        <span className="shrink-0 font-mono text-[13px] font-bold text-neon">
+          {fmtMoney(stats.earned)}
+        </span>
+      ) : null}
       <StatusBadge status={account.status} />
       <button
         type="button"
