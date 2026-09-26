@@ -11,24 +11,18 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useCliptic } from "@/lib/cliptic-store";
 import { motion } from "framer-motion";
-import { Home, LogOut, RotateCcw, Wallet } from "lucide-react";
+import { Clapperboard, Home, LogOut, Megaphone, RotateCcw, Wallet } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export type DashboardView = "creator" | "admin";
 
-const MODES: { id: DashboardView; label: string }[] = [
-  { id: "creator", label: "Creator" },
-  { id: "admin", label: "Admin" },
-];
-
 export function TopBar({
-  view,
-  onViewChange,
+  role,
   onReset,
 }: {
-  view: DashboardView;
-  onViewChange: (view: DashboardView) => void;
+  /** Derived from the email used at sign-in — no manual switch. */
+  role: DashboardView;
   onReset: () => void;
 }) {
   const { user, signOut } = useAuth();
@@ -71,33 +65,18 @@ export function TopBar({
           </span>
         </Link>
 
-        <div className="relative flex rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] p-1">
-          {MODES.map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              onClick={() => onViewChange(mode.id)}
-              aria-pressed={view === mode.id}
-              className="relative rounded-full px-4 py-1.5 text-xs font-bold tracking-wide sm:px-5"
-            >
-              {view === mode.id && (
-                <motion.span
-                  layoutId="cliptic-mode-pill"
-                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                  className="absolute inset-0 rounded-full bg-gradient-to-b from-[#7C5CFF] to-[#5B37E8] shadow-[0_6px_18px_-8px_rgb(109_74_255/0.9)]"
-                />
-              )}
-              <span
-                className={`relative z-10 ${
-                  view === mode.id
-                    ? "text-white"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {mode.label}
-              </span>
-            </button>
-          ))}
+        <div className="hidden items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-brand sm:inline-flex">
+          {role === "admin" ? (
+            <>
+              <Megaphone className="h-3.5 w-3.5" />
+              Brand console
+            </>
+          ) : (
+            <>
+              <Clapperboard className="h-3.5 w-3.5" />
+              Creator dashboard
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

@@ -16,7 +16,6 @@ import {
   fmtMoney,
   fmtRate,
   fmtViews,
-  seedPayoutSeries,
   type InvoiceStatus,
 } from "@/lib/cliptic-data";
 import { useAdminStats, useCliptic } from "@/lib/cliptic-store";
@@ -64,6 +63,28 @@ export function AdminView({
     settleSubmission,
   } = useCliptic();
   const stats = useAdminStats();
+
+  /* Settled payouts over the last 7 days — derived from real approvals only. */
+  const payoutSeries = (() => {
+    const dayMs = 86_400_000;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Array.from({ length: 7 }, (_, i) => {
+      const start = today.getTime() - (6 - i) * dayMs;
+      const value = submissions
+        .filter(
+          (s) =>
+            s.status === "paid" &&
+            s.submittedAt >= start &&
+            s.submittedAt < start + dayMs,
+        )
+        .reduce((sum, s) => sum + earnedOf(s, campaigns), 0);
+      return {
+        day: new Date(start).toLocaleString("en-US", { weekday: "short" }),
+        value,
+      };
+    });
+  })();
 
   const invoices = campaigns.slice(0, 5);
   const invoiceCounts = campaigns.reduce(
@@ -167,7 +188,7 @@ export function AdminView({
               USD
             </span>
           </div>
-          <PayoutChart data={seedPayoutSeries()} />
+          <PayoutChart data={payoutSeries} />
         </section>
 
         <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
@@ -373,6 +394,16 @@ export function AdminView({
             {stats.reviewQueue} in review
           </span>
         </div>
+        {submissions.length === 0 ? (
+          <div className="px-5 py-12 text-center">
+            <ClipboardList className="mx-auto h-6 w-6 text-muted-foreground" />
+            <p className="mt-3 text-sm font-semibold">No submissions yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Clips that creators submit to campaigns will show up here for
+              review.
+            </p>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -495,6 +526,7 @@ export function AdminView({
             </TableBody>
           </Table>
         </div>
+        )}
       </section>
     </div>
   );
@@ -505,6 +537,18 @@ function PayoutChart({
 }: {
   data: { day: string; value: number }[];
 }) {
+  const total = data.reduce((sum, point) => sum + point.value, 0);
+  if (total === 0) {
+    return (
+      <div className="mt-5 flex h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-black/12 dark:border-white/15 text-center">
+        <BarChart3 className="h-7 w-7 text-muted-foreground" />
+        <p className="mt-3 text-sm font-semibold">No settled payouts yet</p>
+        <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+          Approve a clip payout and the last 7 days will chart here.
+        </p>
+      </div>
+    );
+  }
   const max = Math.max(...data.map((d) => d.value));
   return (
     <div className="mt-5 grid h-56 grid-cols-7 items-end gap-2.5">

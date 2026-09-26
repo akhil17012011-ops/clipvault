@@ -67,6 +67,7 @@ function GoogleG({ className = "h-5 w-5" }: { className?: string }) {
 const GOOGLE_ACCOUNTS = [
   { name: "Ava Rivera", email: "ava.rivera@gmail.com", tint: "from-violet-500 to-indigo-600" },
   { name: "Marcus Lee", email: "marcus.clips@gmail.com", tint: "from-fuchsia-500 to-violet-600" },
+  { name: "CLIPTIC Admin", email: "admin@cliptic.com", tint: "from-zinc-900 to-zinc-600" },
 ];
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
@@ -136,7 +137,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       const formData = new FormData(event.currentTarget);
+      const email = String(formData.get("email") ?? "");
       await signIn("email-otp", formData);
+      setProfile({
+        name: email.split("@")[0] || "Creator",
+        email,
+      });
       navigate(redirect);
     } catch (err) {
       console.error("OTP verification error:", err);
@@ -192,9 +198,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
         <div className="relative grid max-w-md grid-cols-3 gap-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] p-5 backdrop-blur">
           {[
-            { v: "$60M+", l: "paid to clippers" },
-            { v: "200+", l: "brand campaigns" },
-            { v: "77K", l: "clippers ready" },
+            { v: "Free", l: "to join" },
+            { v: "3", l: "platforms tracked" },
+            { v: "Weekly", l: "payout cycles" },
           ].map((stat) => (
             <div key={stat.l}>
               <p className="font-mono text-xl font-extrabold tracking-tight">
@@ -377,6 +383,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
+            Demo access · sign in with an{" "}
+            <span className="font-semibold text-foreground">admin@…</span> email
+            for the brand console — any other email is a creator account.
+          </p>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
             Free to join · No following required
           </p>
         </div>

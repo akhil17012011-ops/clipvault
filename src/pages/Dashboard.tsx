@@ -4,24 +4,25 @@ import { CreateCampaignModal } from "@/components/dashboard/CreateCampaignModal"
 import { CreatorView } from "@/components/dashboard/CreatorView";
 import { SubmitClipModal } from "@/components/dashboard/SubmitClipModal";
 import { TopBar, type DashboardView } from "@/components/dashboard/TopBar";
+import { useAuth } from "@/hooks/use-auth";
+import { roleForEmail } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
 
 type ModalKind = "connect" | "submit" | "create" | null;
 
 export default function Dashboard() {
-  const [searchParams] = useSearchParams();
-  const { accounts, resetDemo } = useCliptic();
-  const [view, setView] = useState<DashboardView>(
-    searchParams.get("tab") === "admin" ? "admin" : "creator",
-  );
+  const { accounts, profile, resetDemo } = useCliptic();
+  const { user } = useAuth();
+  /* The email you signed in with decides the dashboard — no manual switch. */
+  const view: DashboardView = roleForEmail(profile?.email ?? user?.email);
   const [modal, setModal] = useState<ModalKind>(null);
   const [onboardingSkipped, setOnboardingSkipped] = useState(false);
   const onboardedOnce = useRef(accounts.length > 0);
 
-  /* First run: walk the creator straight into bio verification. */
+  /* First run: walk creators straight into bio verification. */
   useEffect(() => {
+    if (view !== "creator") return;
     if (onboardedOnce.current) return;
     if (accounts.length > 0) {
       onboardedOnce.current = true;
@@ -33,7 +34,7 @@ export default function Dashboard() {
       750,
     );
     return () => window.clearTimeout(timer);
-  }, [accounts.length, onboardingSkipped]);
+  }, [view, accounts.length, onboardingSkipped]);
 
   const handleConnectOpenChange = (open: boolean) => {
     if (open) {
@@ -48,14 +49,13 @@ export default function Dashboard() {
     resetDemo();
     setOnboardingSkipped(false);
     onboardedOnce.current = false;
-    setView("creator");
   };
 
   return (
     <main className="relative min-h-screen bg-background">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-brand/[0.09] to-transparent" />
 
-      <TopBar view={view} onViewChange={setView} onReset={handleReset} />
+      <TopBar role={view} onReset={handleReset} />
 
       <div className="relative mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
         {view === "creator" ? (

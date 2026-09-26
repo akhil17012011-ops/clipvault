@@ -140,14 +140,10 @@ export function StatusBadge({
 }
 
 const BRAND_GRADIENTS = [
-  "from-violet-500 to-indigo-600",
-  "from-fuchsia-500 to-violet-600",
-  "from-indigo-500 to-blue-600",
-  "from-purple-500 to-pink-600",
-  "from-teal-500 to-cyan-600",
-  "from-amber-500 to-orange-600",
-  "from-rose-500 to-red-600",
-  "from-emerald-500 to-teal-600",
+  "from-[#8358FF] to-[#5B37E8]",
+  "from-[#5B37E8] to-[#2F0FA6]",
+  "from-[#7C3AED] to-[#4C1D95]",
+  "from-[#2F0FA6] to-[#12082E]",
 ];
 
 export function brandGradient(seed: string) {

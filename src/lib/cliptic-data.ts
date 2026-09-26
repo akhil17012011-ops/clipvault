@@ -1,17 +1,21 @@
-/** Shared types, seed data and formatting helpers for the CLIPTIC demo state. */
+/** Shared types, catalog data and formatting helpers for CLIPTIC. */
 
 export type Platform = "tiktok" | "instagram" | "youtube" | "x";
 
 export const PLATFORMS: Platform[] = ["tiktok", "instagram", "youtube", "x"];
 
+/**
+ * Platform chips stay neutral (zinc) on purpose — the palette is reserved for
+ * black + purple, with green/red used only for success/failure states.
+ */
 export const PLATFORM_META: Record<
   Platform,
   { label: string; short: string; color: string }
 > = {
-  tiktok: { label: "TikTok", short: "TT", color: "#25F4EE" },
-  instagram: { label: "Instagram Reels", short: "IG", color: "#E1306C" },
-  youtube: { label: "YouTube Shorts", short: "YT", color: "#FF3D3D" },
-  x: { label: "X", short: "X", color: "#A1A1AA" },
+  tiktok: { label: "TikTok", short: "TT", color: "#52525B" },
+  instagram: { label: "Instagram Reels", short: "IG", color: "#52525B" },
+  youtube: { label: "YouTube Shorts", short: "YT", color: "#52525B" },
+  x: { label: "X", short: "X", color: "#52525B" },
 };
 
 export type AccountStatus = "pending" | "checking" | "connected" | "failed";
@@ -54,11 +58,13 @@ export type SubmissionStatus = "pending" | "active" | "paid" | "rejected";
 export interface Submission {
   id: string;
   campaignId: string;
-  /** Demo identity of the clipper who submitted the clip. */
+  /** Identity of the clipper who submitted the clip. */
   creator: string;
   mine: boolean;
   platform: Platform;
   link: string;
+  /** Hashtags the creator used in the caption (checked against guidelines). */
+  tags?: string[];
   views: number;
   status: SubmissionStatus;
   submittedAt: number;
@@ -78,7 +84,42 @@ export const makeCode = () =>
 
 const DAY = 86_400_000;
 
-/** Live campaigns shown across the landing page, creator feed and admin console. */
+/**
+ * Sign-in decides the dashboard: `admin@…` accounts land on the brand/admin
+ * console, everything else lands on the creator dashboard. No manual switch.
+ */
+export function roleForEmail(
+  email?: string | null,
+): "admin" | "creator" {
+  const local = (email ?? "").split("@")[0].toLowerCase().trim();
+  return local === "admin" || local.startsWith("admin") ? "admin" : "creator";
+}
+
+/** Detect the source platform of a pasted clip URL. */
+export function platformFromLink(link: string): Platform | null {
+  const url = link.toLowerCase();
+  if (url.includes("tiktok.com")) return "tiktok";
+  if (url.includes("instagram.com")) return "instagram";
+  if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
+  if (url.includes("twitter.com") || url.includes("x.com")) return "x";
+  return null;
+}
+
+/** `#hashtags` found in free text — lowercased and deduped. */
+export function extractTags(text: string): string[] {
+  return [
+    ...new Set(
+      (text.match(/#[\w-]+/g) ?? []).map((tag) => tag.toLowerCase()),
+    ),
+  ];
+}
+
+/** Hashtags a campaign's guidelines require in the caption. */
+export function requiredTags(campaign: Campaign): string[] {
+  return extractTags(campaign.guidelines.join(" "));
+}
+
+/** Live campaign catalog shown on the landing page, creator feed and admin console. */
 export const seedCampaigns = (): Campaign[] => [
   {
     id: "cmp-ripple",
@@ -89,16 +130,16 @@ export const seedCampaigns = (): Campaign[] => [
     platforms: ["tiktok", "instagram", "youtube"],
     daysLeft: 50,
     budget: 40_000,
-    spent: 12_480,
-    clippers: 1_284,
+    spent: 0,
+    clippers: 0,
     guidelines: [
       "Show the product within the first 2 seconds",
       "Use #RippleAirPro + #CLIPTIC in the caption",
       "No unboxing-free footage, must show the case",
     ],
     status: "active",
-    invoice: "paid",
-    joined: true,
+    invoice: "draft",
+    joined: false,
     createdAt: Date.now() - 22 * DAY,
   },
   {
@@ -110,16 +151,16 @@ export const seedCampaigns = (): Campaign[] => [
     platforms: ["tiktok", "instagram"],
     daysLeft: 40,
     budget: 120_000,
-    spent: 54_300,
-    clippers: 842,
+    spent: 0,
+    clippers: 0,
     guidelines: [
       "Streetwear try-on or styling angle",
       "Tag @monolith in the caption",
       "Original audio preferred, trending audio allowed",
     ],
     status: "active",
-    invoice: "sent",
-    joined: true,
+    invoice: "draft",
+    joined: false,
     createdAt: Date.now() - 9 * DAY,
   },
   {
@@ -131,8 +172,8 @@ export const seedCampaigns = (): Campaign[] => [
     platforms: ["tiktok", "youtube", "x"],
     daysLeft: 31,
     budget: 25_000,
-    spent: 6_120,
-    clippers: 613,
+    spent: 0,
+    clippers: 0,
     guidelines: [
       "Outdoor / sports setting required",
       "Can must be visible in frame for 3+ seconds",
@@ -140,7 +181,7 @@ export const seedCampaigns = (): Campaign[] => [
     ],
     status: "active",
     invoice: "draft",
-    joined: true,
+    joined: false,
     createdAt: Date.now() - 4 * DAY,
   },
   {
@@ -152,15 +193,15 @@ export const seedCampaigns = (): Campaign[] => [
     platforms: ["youtube", "tiktok"],
     daysLeft: 300,
     budget: 60_000,
-    spent: 18_900,
-    clippers: 2_051,
+    spent: 0,
+    clippers: 0,
     guidelines: [
       "Gameplay highlight with commentary",
       "Disclose #VertexPartner",
       "Clips must be from the current season",
     ],
     status: "active",
-    invoice: "paid",
+    invoice: "draft",
     joined: false,
     createdAt: Date.now() - 60 * DAY,
   },
@@ -173,8 +214,8 @@ export const seedCampaigns = (): Campaign[] => [
     platforms: ["instagram", "youtube", "x"],
     daysLeft: 64,
     budget: 75_000,
-    spent: 9_400,
-    clippers: 468,
+    spent: 0,
+    clippers: 0,
     guidelines: [
       "Behind-the-scenes or studio tour angle",
       "Tag @halostudios",
@@ -194,140 +235,14 @@ export const seedCampaigns = (): Campaign[] => [
     platforms: ["tiktok", "instagram"],
     daysLeft: 12,
     budget: 18_000,
-    spent: 15_760,
-    clippers: 302,
+    spent: 0,
+    clippers: 0,
     guidelines: ["Outdoor trail footage", "Show the product logo clearly"],
     status: "paused",
-    invoice: "sent",
+    invoice: "draft",
     joined: false,
     createdAt: Date.now() - 35 * DAY,
   },
-];
-
-/** The signed-in creator's clip history (drives earnings + view totals). */
-export const seedSubmissions = (): Submission[] => [
-  {
-    id: "sub-1",
-    campaignId: "cmp-ripple",
-    creator: "you",
-    mine: true,
-    platform: "tiktok",
-    link: "https://tiktok.com/@avaclips/video/7401882341",
-    views: 1_284_300,
-    status: "paid",
-    submittedAt: Date.now() - 26 * DAY,
-  },
-  {
-    id: "sub-2",
-    campaignId: "cmp-vertex",
-    creator: "you",
-    mine: true,
-    platform: "youtube",
-    link: "https://youtube.com/shorts/dQw8-cLp2Ks",
-    views: 2_140_900,
-    status: "paid",
-    submittedAt: Date.now() - 19 * DAY,
-  },
-  {
-    id: "sub-3",
-    campaignId: "cmp-monolith",
-    creator: "you",
-    mine: true,
-    platform: "instagram",
-    link: "https://instagram.com/reel/C8mTzqLp2A/",
-    views: 486_200,
-    status: "active",
-    submittedAt: Date.now() - 6 * DAY,
-  },
-  {
-    id: "sub-4",
-    campaignId: "cmp-pulse",
-    creator: "you",
-    mine: true,
-    platform: "youtube",
-    link: "https://youtube.com/shorts/pX9-aZ7nQ1v",
-    views: 92_400,
-    status: "pending",
-    submittedAt: Date.now() - 4_000,
-  },
-  /* Other clippers — visible in the admin moderation queue. */
-  {
-    id: "sub-5",
-    campaignId: "cmp-monolith",
-    creator: "@scrollking",
-    mine: false,
-    platform: "tiktok",
-    link: "https://tiktok.com/@scrollking/video/7402119823",
-    views: 3_910_400,
-    status: "active",
-    submittedAt: Date.now() - 11 * DAY,
-  },
-  {
-    id: "sub-6",
-    campaignId: "cmp-ripple",
-    creator: "@virality.vee",
-    mine: false,
-    platform: "instagram",
-    link: "https://instagram.com/reel/C8xKq2Vv9L/",
-    views: 812_600,
-    status: "active",
-    submittedAt: Date.now() - 8 * DAY,
-  },
-  {
-    id: "sub-7",
-    campaignId: "cmp-vertex",
-    creator: "@maxxedits",
-    mine: false,
-    platform: "youtube",
-    link: "https://youtube.com/shorts/kLm2-Nb4vR8",
-    views: 5_402_700,
-    status: "pending",
-    submittedAt: Date.now() - 3 * DAY,
-  },
-  {
-    id: "sub-8",
-    campaignId: "cmp-pulse",
-    creator: "@clipfiend",
-    mine: false,
-    platform: "tiktok",
-    link: "https://tiktok.com/@clipfiend/video/7403772110",
-    views: 264_800,
-    status: "pending",
-    submittedAt: Date.now() - 1 * DAY,
-  },
-  {
-    id: "sub-9",
-    campaignId: "cmp-northwind",
-    creator: "@outdooroona",
-    mine: false,
-    platform: "instagram",
-    link: "https://instagram.com/reel/C8hRm3Tt1Q/",
-    views: 148_300,
-    status: "rejected",
-    submittedAt: Date.now() - 14 * DAY,
-  },
-  {
-    id: "sub-10",
-    campaignId: "cmp-ripple",
-    creator: "@loop.luca",
-    mine: false,
-    platform: "youtube",
-    link: "https://youtube.com/shorts/wQ4-zT8yM3d",
-    views: 1_052_100,
-    status: "paid",
-    submittedAt: Date.now() - 21 * DAY,
-  },
-];
-
-/** 7-day payout history for the admin analytics chart. */
-export const seedPayoutSeries = () => [
-  { day: "Mon", value: 4_120 },
-  { day: "Tue", value: 5_380 },
-  { day: "Wed", value: 3_960 },
-  { day: "Thu", value: 6_240 },
-  { day: "Fri", value: 7_810 },
-  { day: "Sat", value: 9_140 },
-  { day: "Sun", value: 6_450 },
 ];
 
 export const campaignById = (

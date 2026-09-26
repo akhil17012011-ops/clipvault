@@ -11,7 +11,6 @@ import {
   earnedOf,
   makeCode,
   seedCampaigns,
-  seedSubmissions,
   uid,
   type Campaign,
   type DemoProfile,
@@ -27,7 +26,7 @@ import {
  * story intact.
  */
 
-const STORAGE_KEY = "cliptic.demo.v1";
+const STORAGE_KEY = "cliptic.demo.v2";
 const TICK_MS = 2_800;
 /** A fresh submission stays "in review" for a couple of ticks. */
 const REVIEW_MS = 11_000;
@@ -43,7 +42,7 @@ const initialState = (): ClipticState => ({
   profile: null,
   accounts: [],
   campaigns: seedCampaigns(),
-  submissions: seedSubmissions(),
+  submissions: [],
 });
 
 function loadState(): ClipticState {
@@ -76,6 +75,7 @@ interface ClipticContextValue extends ClipticState {
     campaignId: string;
     platform: Platform;
     link: string;
+    tags: string[];
   }) => void;
   createCampaign: (input: {
     brand: string;
@@ -194,22 +194,34 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const submitClip = useCallback(
-    (input: { campaignId: string; platform: Platform; link: string }) => {
-      const submission: Submission = {
-        id: uid(),
-        campaignId: input.campaignId,
-        creator: "you",
-        mine: true,
-        platform: input.platform,
-        link: input.link,
-        views: Math.floor(Math.random() * 900) + 120,
-        status: "pending",
-        submittedAt: Date.now(),
-      };
-      setState((prev) => ({
-        ...prev,
-        submissions: [submission, ...prev.submissions],
-      }));
+    (input: {
+      campaignId: string;
+      platform: Platform;
+      link: string;
+      tags: string[];
+    }) => {
+      setState((prev) => {
+        const campaign = prev.campaigns.find(
+          (c) => c.id === input.campaignId,
+        );
+        /* The platform must be one the campaign actually accepts. */
+        if (!campaign || !campaign.platforms.includes(input.platform)) {
+          return prev;
+        }
+        const submission: Submission = {
+          id: uid(),
+          campaignId: input.campaignId,
+          creator: "you",
+          mine: true,
+          platform: input.platform,
+          link: input.link,
+          tags: input.tags,
+          views: Math.floor(Math.random() * 900) + 120,
+          status: "pending",
+          submittedAt: Date.now(),
+        };
+        return { ...prev, submissions: [submission, ...prev.submissions] };
+      });
     },
     [],
   );

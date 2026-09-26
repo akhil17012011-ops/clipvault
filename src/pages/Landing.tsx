@@ -4,15 +4,14 @@ import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { CampaignCard } from "@/components/CampaignCard";
 import { ClipticLogo, ClipticMark } from "@/components/ClipticMark";
-import { BrandAvatar, PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI";
+import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { fmtMoney, fmtRate, fmtViews, type Platform } from "@/lib/cliptic-data";
+import { fmtRate, type Platform } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { useAuth } from "@/hooks/use-auth";
 import {
   ArrowRight,
-  BadgeCheck,
   Check,
   CircleDollarSign,
   Clock3,
@@ -23,16 +22,18 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
-  TrendingUp,
   Wallet,
   Zap,
 } from "lucide-react";
 
 const fadeUp = {
-  initial: { opacity: 0, y: 26 },
-  whileInView: { opacity: 1, y: 0 },
+  initial: { opacity: 0, y: 30, filter: "blur(8px)" },
+  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
   viewport: { once: true, margin: "-70px" },
-  transition: { duration: 0.55, ease: "easeOut" as const },
+  transition: {
+    duration: 0.7,
+    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -74,9 +75,6 @@ function SiteNav() {
           <a href="#campaigns" className="transition-colors hover:text-foreground">
             Campaigns
           </a>
-          <a href="#brands" className="transition-colors hover:text-foreground">
-            Brands
-          </a>
           <a href="#creators" className="transition-colors hover:text-foreground">
             For creators
           </a>
@@ -114,125 +112,6 @@ function SiteNav() {
         />
       </nav>
     </header>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Hero + live product preview                                         */
-/* ------------------------------------------------------------------ */
-
-function HeroPreview() {
-  const [views, setViews] = useState(4_812_400);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setViews((v) => v + Math.floor(Math.random() * 2_400) + 700);
-    }, 1_500);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const earned = (views / 1000) * 0.9;
-  const rows: { platform: Platform; campaign: string; views: number }[] = [
-    { platform: "tiktok", campaign: "Ripple Air Pro Launch", views: Math.round(views * 0.52) },
-    { platform: "instagram", campaign: "Monolith Drop Season 04", views: Math.round(views * 0.31) },
-    { platform: "youtube", campaign: "Pulse Summer Circuit", views: Math.round(views * 0.17) },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 44 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-      className="relative mx-auto mt-16 max-w-4xl"
-    >
-      <div className="float-a absolute -left-4 top-14 z-10 hidden md:block">
-        <div className="flex items-center gap-2 rounded-xl border border-neon/25 bg-white/85 dark:bg-[#14111E]/85 px-3 py-2 text-xs font-semibold text-neon shadow-xl backdrop-blur">
-          <BadgeCheck className="h-4 w-4" />
-          @avaclips verified
-        </div>
-      </div>
-      <div className="float-b absolute -right-4 bottom-20 z-10 hidden md:block">
-        <div className="flex items-center gap-2 rounded-xl border border-brand/35 bg-white/85 dark:bg-[#14111E]/85 px-3 py-2 text-xs font-semibold text-brand shadow-xl backdrop-blur">
-          <TrendingUp className="h-4 w-4" />
-          +{fmtViews(48_210)} views today
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-black/10 dark:border-white/10 bg-white/85 dark:bg-[#14111E]/85 shadow-[0_50px_140px_-60px_rgb(91_55_232/0.5)] backdrop-blur-xl">
-        <div className="flex items-center gap-3 border-b border-black/8 dark:border-white/10 px-4 py-3">
-          <span className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
-          </span>
-          <span className="flex-1 rounded-md bg-black/[0.03] dark:bg-white/[0.05] px-3 py-1 text-center font-mono text-[11px] text-muted-foreground">
-            app.cliptic.com/dashboard
-          </span>
-        </div>
-
-        <div className="grid gap-4 p-4 sm:grid-cols-5 sm:p-5">
-          <div className="space-y-2.5 sm:col-span-3">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Your clips
-              </p>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-neon/25 bg-neon/10 px-2 py-0.5 text-[10px] font-bold text-neon">
-                <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-neon text-neon" />
-                LIVE
-              </span>
-            </div>
-            {rows.map((row) => (
-              <div
-                key={row.campaign}
-                className="flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-3 py-2.5"
-              >
-                <PlatformChip platform={row.platform} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[12.5px] font-semibold text-foreground">
-                    {row.campaign}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {fmtViews(row.views)} views
-                  </p>
-                </div>
-                <p className="font-mono text-[13px] font-bold text-neon">
-                  {fmtMoney((row.views / 1000) * 0.9, true)}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-3 sm:col-span-2">
-            <div className="rounded-xl border border-brand/25 bg-gradient-to-b from-brand/15 to-transparent p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Total earnings
-              </p>
-              <p className="mt-1.5 font-mono text-3xl font-extrabold tracking-tight text-foreground">
-                {fmtMoney(earned, true)}
-              </p>
-              <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-neon">
-                <TrendingUp className="h-3.5 w-3.5" /> +18.2% this week
-              </p>
-            </div>
-            <div className="rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] p-4">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground">Next payout</span>
-                <span className="font-semibold text-foreground">in 3 days</span>
-              </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
-                <div className="h-full w-[72%] rounded-full bg-gradient-to-r from-brand to-neon" />
-              </div>
-              <div className="mt-3 flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground">Accounts</span>
-                <span className="inline-flex items-center gap-1 font-semibold text-neon">
-                  <ShieldCheck className="h-3.5 w-3.5" /> 3 of 3 verified
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
   );
 }
 
@@ -306,8 +185,8 @@ function ParallaxClipCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 46 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 46, filter: "blur(10px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ duration: 0.7, delay: card.delay, ease: "easeOut" }}
       className={index === 1 ? "z-10 -mt-6" : ""}
     >
@@ -409,7 +288,15 @@ function ClipCluster() {
 
 function Hero() {
   const { isAuthenticated } = useAuth();
+  const { campaigns } = useCliptic();
   const ctaTarget = isAuthenticated ? "/dashboard" : "/auth";
+  const activeCampaigns = campaigns.filter(
+    (c) => c.status === "active",
+  ).length;
+  const topRate = campaigns.reduce(
+    (max, c) => Math.max(max, c.ratePer1k),
+    0,
+  );
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -442,8 +329,8 @@ function Hero() {
         <div className="grid items-center gap-10 pt-6 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
         <div className="text-center lg:text-left">
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="inline-flex items-center gap-2.5 rounded-full border border-brand/35 bg-brand/10 px-4 py-1.5 text-[12.5px] font-semibold text-brand"
         >
@@ -452,8 +339,8 @@ function Hero() {
         </motion.div>
 
         <motion.h1
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.6, delay: 0.08, ease: "easeOut" }}
           className="mt-7 max-w-4xl text-balance text-5xl font-extrabold leading-[1.03] tracking-[-0.045em] sm:text-6xl lg:mx-0 lg:text-7xl"
         >
@@ -461,8 +348,8 @@ function Hero() {
         </motion.h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.6, delay: 0.16, ease: "easeOut" }}
           className="mt-6 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0"
         >
@@ -472,8 +359,8 @@ function Hero() {
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.6, delay: 0.24, ease: "easeOut" }}
           className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start"
         >
@@ -496,8 +383,8 @@ function Hero() {
             <Link
               to={
                 isAuthenticated
-                  ? "/dashboard?tab=admin"
-                  : "/auth?returnTo=/dashboard?tab=admin"
+                  ? "/dashboard"
+                  : "/auth?returnTo=/dashboard"
               }
             >
               <Megaphone className="mr-2 h-4 w-4" />
@@ -512,9 +399,9 @@ function Hero() {
 
         <dl className="mx-auto mt-12 grid w-full max-w-2xl grid-cols-3 divide-x divide-black/10 dark:divide-white/10 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06] py-5 backdrop-blur lg:mx-0">
           {[
-            { value: "$60M+", label: "paid to clippers" },
-            { value: "77,000+", label: "clippers ready" },
-            { value: "200+", label: "brand campaigns" },
+            { value: `${activeCampaigns}`, label: "live campaigns" },
+            { value: fmtRate(topRate), label: "top rate / 1K views" },
+            { value: "3", label: "platforms tracked" },
           ].map((stat) => (
             <div key={stat.label} className="px-3">
               <dt className="font-mono text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
@@ -533,57 +420,6 @@ function Hero() {
         </motion.div>
         </div>
 
-        <HeroPreview />
-      </div>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Brand marquee                                                       */
-/* ------------------------------------------------------------------ */
-
-function BrandMarquee() {
-  const brands = [
-    "MONOLITH",
-    "Ripple",
-    "PULSE",
-    "VERTEX",
-    "HÄLO",
-    "NORTHWIND",
-    "KOVA",
-    "LUMA",
-    "ARCADIA",
-    "BRIGHTSIDE",
-  ];
-  return (
-    <section id="brands" className="scroll-mt-24 border-y border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.03] py-10">
-      <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
-        Trusted by top brands
-      </p>
-      <div
-        className="relative mt-6 overflow-hidden"
-        style={{
-          maskImage:
-            "linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
-          WebkitMaskImage:
-            "linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
-        }}
-      >
-        <div className="marquee">
-          {[0, 1].map((set) => (
-            <div key={set} className="flex shrink-0 gap-14 pr-14" aria-hidden={set === 1}>
-              {brands.map((brand) => (
-                <span
-                  key={brand}
-                  className="whitespace-nowrap text-2xl font-extrabold tracking-tight text-muted-foreground transition-colors duration-300 hover:text-foreground"
-                >
-                  {brand}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -1057,6 +893,7 @@ function HowItWorks() {
             <motion.div
               key={step.n}
               {...fadeUp}
+              transition={{ ...fadeUp.transition, delay: i * 0.09 }}
               className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16"
             >
               <div className={i % 2 === 1 ? "lg:order-2" : undefined}>
@@ -1133,8 +970,18 @@ function CampaignsSection() {
         </motion.div>
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {preview.map((campaign) => (
-            <motion.div key={campaign.id} {...fadeUp}>
+          {preview.map((campaign, i) => (
+            <motion.div
+              key={campaign.id}
+              initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
+              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              viewport={{ once: true, margin: "-70px" }}
+              transition={{
+                duration: 0.7,
+                delay: i * 0.09,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
               <CampaignCard
                 campaign={campaign}
                 onJoin={() => handleJoin(campaign.id, campaign.brand)}
@@ -1153,114 +1000,11 @@ function CampaignsSection() {
             <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
               {isAuthenticated
                 ? "Open your campaign feed"
-                : "Browse all 200+ campaigns"}
+                : `Browse all ${campaigns.length} campaigns`}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Two sides + final CTA                                               */
-/* ------------------------------------------------------------------ */
-
-/* ------------------------------------------------------------------ */
-/* Social proof — "Used by industry leaders"                           */
-/* ------------------------------------------------------------------ */
-
-function IndustryLeaders() {
-  const leaders = [
-    {
-      name: "Kick Studios",
-      role: "Brand",
-      quote:
-        "We ran three bounties and cleared 40M verified views in a single month — without touching ad tooling once.",
-      stat: "40M views",
-    },
-    {
-      name: "H3RB CLIPZ",
-      role: "Clipper",
-      quote:
-        "Clipping paid my rent before my main channel ever did. I post the same edits, I just pick better campaigns.",
-      stat: "$12.4K earned",
-    },
-    {
-      name: "Monolith Records",
-      role: "Label",
-      quote:
-        "Every clip is attributed back to its creator automatically. Finance stopped chasing spreadsheets.",
-      stat: "211 campaigns",
-    },
-    {
-      name: "Ava Rivera",
-      role: "Clipper",
-      quote:
-        "Joined on Monday, first payout on Friday. No application, no follower minimum, no catch.",
-      stat: "$1,820 first cycle",
-    },
-    {
-      name: "Pulse Esports",
-      role: "Brand",
-      quote:
-        "We only pay for views that survive bot filtering. The reporting matches our analytics exactly.",
-      stat: "4.9B reach",
-    },
-    {
-      name: "Dee The Great",
-      role: "Clipper",
-      quote:
-        "The rates are published up front, so I always know what a view is worth before I even start cutting.",
-      stat: "2.4M views/mo",
-    },
-  ];
-
-  return (
-    <section className="py-24">
-      <div className="mx-auto max-w-6xl px-5">
-        <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-brand" />
-            Used by industry leaders
-          </span>
-          <h2 className="mt-5 text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
-            The creators and brands behind the campaigns.
-          </h2>
-          <p className="mt-4 text-balance text-muted-foreground">
-            Streamers, labels, and brands run campaigns here. Their clips are
-            the ones your network gets paid to post.
-          </p>
-        </motion.div>
-
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {leaders.map((leader) => (
-            <motion.figure
-              key={leader.name}
-              {...fadeUp}
-              className="group flex flex-col rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_60px_-34px_rgb(91_55_232/0.5)]"
-            >
-              <div className="flex items-center gap-3">
-                <BrandAvatar name={leader.name} className="h-11 w-11 text-sm" />
-                <div>
-                  <figcaption className="text-sm font-bold tracking-tight">
-                    {leader.name}
-                  </figcaption>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    {leader.role}
-                  </p>
-                </div>
-                <span className="ml-auto rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-[11px] font-bold text-brand">
-                  {leader.stat}
-                </span>
-              </div>
-              <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
-                “{leader.quote}”
-              </blockquote>
-            </motion.figure>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -1298,8 +1042,8 @@ function TwoSides() {
       ],
       cta: isAuthenticated ? "Open admin console" : "Start a campaign",
       to: isAuthenticated
-        ? "/dashboard?tab=admin"
-        : "/auth?returnTo=/dashboard?tab=admin",
+        ? "/dashboard"
+        : "/auth?returnTo=/dashboard",
       accent: "from-neon/15 to-transparent",
       iconColor: "text-neon bg-neon/10 border-neon/25",
     },
@@ -1321,10 +1065,11 @@ function TwoSides() {
         </motion.div>
 
         <div className="mt-14 grid gap-6 md:grid-cols-2">
-          {cards.map((card) => (
+          {cards.map((card, i) => (
             <motion.div
               key={card.title}
               {...fadeUp}
+              transition={{ ...fadeUp.transition, delay: i * 0.1 }}
               className={`group relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/10 bg-gradient-to-b ${card.accent} p-8 transition-all duration-300 hover:border-black/15 dark:border-white/15 dark:hover:border-white/25`}
             >
               <span
@@ -1384,11 +1129,11 @@ function FinalCTA() {
           <ClipticMark className="mx-auto h-14 w-14" />
           <h2 className="mx-auto mt-6 max-w-2xl text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
             Your next clip could be worth{" "}
-            <span className="text-neon">$1,820</span>.
+            <span className="text-neon">real money</span>.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-balance text-muted-foreground">
-            Join 77,000+ clippers turning short-form video into income. It takes
-            two minutes to connect an account and join your first campaign.
+            Connect an account, join a campaign and watch every verified view
+            turn into earnings. It takes about two minutes to get started.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
@@ -1410,8 +1155,8 @@ function FinalCTA() {
               <Link
                 to={
                   isAuthenticated
-                    ? "/dashboard?tab=admin"
-                    : "/auth?returnTo=/dashboard?tab=admin"
+                    ? "/dashboard"
+                    : "/auth?returnTo=/dashboard"
                 }
               >
                 {isAuthenticated ? "Admin console" : "Start campaign"}
@@ -1491,10 +1236,8 @@ export default function Landing() {
       <SiteNav />
       <main>
         <Hero />
-        <BrandMarquee />
         <HowItWorks />
         <CampaignsSection />
-        <IndustryLeaders />
         <TwoSides />
         <FinalCTA />
       </main>
