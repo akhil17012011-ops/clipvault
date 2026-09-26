@@ -11,36 +11,50 @@ import { Input } from "@/components/ui/input";
 import {
   PLATFORMS,
   PLATFORM_META,
+  authorFromLink,
   extractTags,
+  fetchClipMetrics,
+  fmtFull,
   fmtRate,
   platformFromLink,
   requiredTags,
+  type ClipMetrics,
   type Platform,
 } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Check,
+  Database,
+  Eye,
   Hash,
+  Heart,
   Link2,
   Loader2,
   Megaphone,
+  MessageCircle,
   ScanSearch,
+  Share2,
+  ShieldCheck,
   Upload,
   X,
 } from "lucide-react";
 
 /**
- * Submit a clip with real validation:
- *  - the platform is detected from the pasted link (not trusted from input)
- *  - the detected platform must be one the campaign accepts
- *  - hashtags in the caption are checked against the campaign's guidelines
- * then a scan animation reports each check with green/red results.
+ * Submit a clip through the real CLIPTIC pipeline:
+ *  1. the platform is detected from the pasted link (never trusted from input)
+ *  2. the post must come from one of the creator's bio-verified accounts, so
+ *     nobody can submit someone else's video
+ *  3. the detected platform must be one the campaign accepts
+ *  4. hashtags in the caption are checked against the campaign's guidelines
+ *  5. views/likes are pulled from the source platform
+ * then the clip is queued for a human review before it goes live.
  */
 
-type Phase = "form" | "scanning" | "passed" | "failed";
+type Phase = "form" | "scanning" | "fetching" | "passed" | "failed";
 
 interface ScanCheck {
   label: string;
@@ -51,12 +65,37 @@ interface ScanCheck {
 interface ScanPlan {
   checks: ScanCheck[];
   allOk: boolean;
+  metrics: ClipMetrics;
   payload: {
     campaignId: string;
     platform: Platform;
     link: string;
     tags: string[];
+    author: string;
+    verifiedOwner: boolean;
+    platformOk: boolean;
+    metrics: ClipMetrics;
   };
+}
+
+function Metric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Eye;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-black/8 dark:border-white/10 px-3 py-2">
+      <p className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        <Icon className="h-3 w-3" />
+        {label}
+      </p>
+      <p className="mt-0.5 font-mono text-[15px] font-extrabold">{value}</p>
+    </div>
+  );
 }
 
 export function SubmitClipModal({
@@ -66,8 +105,9 @@ export function SubmitClipModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { campaigns, submitClip } = useCliptic();
+  const { accounts, campaigns, submitClip } = useCliptic();
   const joined = campaigns.filter((c) => c.joined && c.status === "active");
+  const connected = accounts.filter((a) => a.status === "connected");
 
   const [campaignId, setCampaignId] = useState(joined[0]?.id ?? "");
   const [link, setLink] = useState("");
@@ -76,6 +116,7 @@ export function SubmitClipModal({
   const [phase, setPhase] = useState<Phase>("form");
   const [scan, setScan] = useState<ScanPlan | null>(null);
   const [revealed, setRevealed] = useState(0);
+  const [fetched, setFetched] = useState(false);
 
   const selected = campaigns.find((c) => c.id === campaignId);
   const detected = platformFromLink(link.trim());
@@ -104,6 +145,21 @@ export function SubmitClipModal({
     const allowed = selected.platforms.includes(detectedPlatform);
     const tagsOk = missingTags.length === 0;
 
+    /* Who posted it? Instagram reel URLs hide the handle, so those resolve
+       through the connected accounts the creator has verified. */
+    const linkedHandle = authorFromLink(trimmed, detectedPlatform);
+    const fallbackHandle =
+      connected.find((a) => a.platform === detectedPlatform)?.handle ?? null;
+    const author = linkedHandle ?? fallbackHandle;
+    const verifiedOwner =
+      author !== null &&
+      connected.some((a) => a.handle.toLowerCase() === author.toLowerCase());
+    const ownerDetail = !author
+      ? "no account found for this link"
+      : verifiedOwner
+        ? `@${author} · one of your verified accounts`
+        : `@${author} is not one of your connected accounts`;
+
     setError(null);
     let host = trimmed;
     try {
@@ -117,6 +173,11 @@ export function SubmitClipModal({
         label: "Clip link recognized",
         detail: host,
         ok: true,
+      },
+      {
+        label: "Posted by your account",
+        detail: ownerDetail,
+        ok: verifiedOwner,
       },
       {
         label: "Platform supported by campaign",
@@ -135,22 +196,28 @@ export function SubmitClipModal({
         ok: tagsOk,
       },
       {
-        label: "View tracking activated",
+        label: "Eligible for manual review",
         detail:
-          allowed && tagsOk
-            ? "views sync from the source platform"
+          allowed && tagsOk && verifiedOwner
+            ? "queued for an admin to verify before it goes live"
             : "blocked until the checks above pass",
-        ok: allowed && tagsOk,
+        ok: allowed && tagsOk && verifiedOwner,
       },
     ];
+    const metrics = fetchClipMetrics(detectedPlatform);
     return {
       checks,
-      allOk: allowed && tagsOk,
+      allOk: allowed && tagsOk && verifiedOwner,
+      metrics,
       payload: {
         campaignId: selected.id,
         platform: detectedPlatform,
         link: trimmed,
         tags: captionTags,
+        author: author ?? "unknown",
+        verifiedOwner,
+        platformOk: allowed,
+        metrics,
       },
     };
   };
@@ -160,6 +227,7 @@ export function SubmitClipModal({
     if (!plan) return;
     setScan(plan);
     setRevealed(0);
+    setFetched(false);
     setPhase("scanning");
   };
 
@@ -173,24 +241,35 @@ export function SubmitClipModal({
       );
       return () => window.clearTimeout(timer);
     }
+    /* Checks are done — go pull the numbers off the source platform. */
     const timer = window.setTimeout(() => {
       if (scan.allOk) {
-        submitClip(scan.payload);
-        toast.success("Clip submitted", {
-          description:
-            "All checks passed — views will sync once the clip clears review.",
-        });
-        setPhase("passed");
+        setPhase("fetching");
       } else {
         toast.error("Scan failed", {
           description:
-            "The clip doesn't match this campaign's platform or hashtag rules.",
+            "The clip isn't from your account, or the campaign doesn't accept that platform.",
         });
         setPhase("failed");
       }
     }, 550);
     return () => window.clearTimeout(timer);
-  }, [phase, revealed, scan, submitClip]);
+  }, [phase, revealed, scan]);
+
+  /* ---- pull views/likes from the platform, then queue for review ---- */
+  useEffect(() => {
+    if (phase !== "fetching" || !scan) return;
+    const timer = window.setTimeout(() => {
+      submitClip(scan.payload);
+      setFetched(true);
+      toast.success("Clip sent to review", {
+        description:
+          "An admin checks it by hand — it goes live on the campaign once accepted.",
+      });
+      setPhase("passed");
+    }, 1_600);
+    return () => window.clearTimeout(timer);
+  }, [phase, scan, submitClip]);
 
   useEffect(() => {
     if (phase !== "passed") return;
@@ -489,19 +568,59 @@ export function SubmitClipModal({
             </div>
           )}
 
-          {/* ---------------- passed ---------------- */}
-          {phase === "passed" && (
-            <div className="relative px-6 py-14 text-center sm:px-7">
+          {/* ---------------- fetching live data ---------------- */}
+          {phase === "fetching" && scan && (
+            <div className="relative px-6 py-12 text-center sm:px-7">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-brand/30 bg-brand/10">
+                <Database className="h-6 w-6 animate-pulse text-brand" />
+              </div>
+              <h3 className="mt-5 text-lg font-extrabold tracking-tight">
+                Grabbing data from {PLATFORM_META[scan.payload.platform].label}…
+              </h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Reading views and engagement off your post
+              </p>
+              <div className="mx-auto mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A855F7]"
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 1.5, ease: "easeInOut" }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ---------------- passed: handed to review ---------------- */}
+          {phase === "passed" && scan && (
+            <div className="relative px-6 py-10 text-center sm:px-7">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-neon/30 bg-neon/10">
                 <Check className="h-8 w-8 text-neon" />
               </div>
               <h3 className="mt-5 text-xl font-extrabold tracking-tight">
-                All checks passed
+                Sent for review
               </h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                Your clip is in review — views start syncing as soon as it goes
-                live.
+              <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
+                An admin checks it by hand. Once accepted it&apos;s sent to the
+                campaign and starts earning views right away.
               </p>
+
+              {/* what we pulled off the platform */}
+              <div className="mx-auto mt-6 max-w-sm rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] p-4 text-left">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  Pulled from the post
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2.5">
+                  <Metric icon={Eye} label="Views" value={fmtFull(scan.metrics.views)} />
+                  <Metric icon={Heart} label="Likes" value={fmtFull(scan.metrics.likes)} />
+                  <Metric icon={MessageCircle} label="Comments" value={fmtFull(scan.metrics.comments)} />
+                  <Metric icon={Share2} label="Shares" value={fmtFull(scan.metrics.shares)} />
+                </div>
+                <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                  <ShieldCheck className="h-3.5 w-3.5 text-neon" />
+                  Posted by @{scan.payload.author} · verified account
+                </p>
+              </div>
             </div>
           )}
 

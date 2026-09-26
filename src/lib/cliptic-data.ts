@@ -55,6 +55,15 @@ export interface Campaign {
 
 export type SubmissionStatus = "pending" | "active" | "paid" | "rejected";
 
+/** Data pulled from the source platform once a clip passes validation. */
+export interface ClipMetrics {
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  fetchedAt: number;
+}
+
 export interface Submission {
   id: string;
   campaignId: string;
@@ -65,9 +74,19 @@ export interface Submission {
   link: string;
   /** Hashtags the creator used in the caption (checked against guidelines). */
   tags?: string[];
+  /** Handle the clip was published from, resolved from the link. */
+  author: string;
+  /** That handle is one of the creator's bio-verified accounts. */
+  verifiedOwner: boolean;
+  /** The campaign accepts clips from this platform. */
+  platformOk: boolean;
+  /** Snapshot grabbed from the source platform at submission time. */
+  metrics?: ClipMetrics;
   views: number;
   status: SubmissionStatus;
   submittedAt: number;
+  /** Why the reviewer declined it, shown back to the creator. */
+  reviewNote?: string;
 }
 
 export interface DemoProfile {
@@ -103,6 +122,49 @@ export function platformFromLink(link: string): Platform | null {
   if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
   if (url.includes("twitter.com") || url.includes("x.com")) return "x";
   return null;
+}
+
+/**
+ * The handle a clip was published from, when the link exposes one.
+ * TikTok, YouTube and X include the handle in the path; Instagram reel URLs
+ * do not, so those resolve to `null` and are looked up against the creator's
+ * connected accounts instead.
+ */
+export function authorFromLink(
+  link: string,
+  platform: Platform,
+): string | null {
+  try {
+    const url = new URL(
+      link.startsWith("http") ? link : `https://${link.trim()}`,
+    );
+    const first = url.pathname.split("/").filter(Boolean)[0] ?? "";
+    if (first.startsWith("@") && first.length > 1) {
+      return first.slice(1).toLowerCase();
+    }
+    if (platform === "x" && first && first !== "status" && first !== "i") {
+      return first.toLowerCase();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Stand-in for the platform API call that pulls a clip's numbers. The real
+ * product hits each platform's public oEmbed/Graph endpoints here; the demo
+ * returns a plausible snapshot so the review queue has something to check.
+ */
+export function fetchClipMetrics(platform: Platform): ClipMetrics {
+  const views = Math.floor(Math.random() * 42_000) + 800;
+  return {
+    views,
+    likes: Math.floor(views * (0.02 + Math.random() * 0.07)),
+    comments: Math.floor(views * (0.002 + Math.random() * 0.008)),
+    shares: Math.floor(views * (0.001 + Math.random() * 0.006)),
+    fetchedAt: Date.now(),
+  };
 }
 
 /** `#hashtags` found in free text — lowercased and deduped. */

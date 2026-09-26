@@ -373,10 +373,15 @@ export function CreatorView({
                             </span>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
-                            <PlatformChip
-                              platform={submission.platform}
-                              size="sm"
-                            />
+                            <div className="flex items-center gap-2">
+                              <PlatformChip
+                                platform={submission.platform}
+                                size="sm"
+                              />
+                              <span className="text-[11.5px] text-muted-foreground">
+                                @{submission.author}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <span className="font-mono text-[13px] font-semibold">
@@ -385,13 +390,33 @@ export function CreatorView({
                             {submission.status === "active" && (
                               <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-neon align-middle live-dot text-neon" />
                             )}
+                            {submission.metrics && submission.status === "pending" && (
+                              <span className="block text-[10.5px] text-muted-foreground">
+                                {fmtFull(submission.metrics.likes)} likes
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={submission.status} />
+                            {submission.status === "rejected" &&
+                              submission.reviewNote && (
+                                <span className="mt-1 block max-w-[150px] text-[10.5px] leading-snug text-muted-foreground">
+                                  {submission.reviewNote}
+                                </span>
+                              )}
+                            {submission.status === "pending" && (
+                              <span className="mt-1 block text-[10.5px] text-muted-foreground">
+                                Admin checking
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right font-mono text-[13px] font-bold text-brand">
                             {submission.status === "rejected" ? (
                               <span className="text-muted-foreground">—</span>
+                            ) : submission.status === "pending" ? (
+                              <span className="text-[11px] font-medium text-muted-foreground">
+                                on approval
+                              </span>
                             ) : qualifying ? (
                               fmtMoney(earned, true)
                             ) : (

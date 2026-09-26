@@ -3,6 +3,12 @@ import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Table,
   TableBody,
   TableCell,
@@ -51,6 +57,14 @@ const INVOICE_TONE: Record<InvoiceStatus, string> = {
 
 const STATUS_ORDER = { pending: 0, active: 1, paid: 2, rejected: 3 } as const;
 
+/** Why a reviewer turned a clip down — shown back to the creator. */
+const DECLINE_REASONS = [
+  "Not posted from a verified account",
+  "Platform isn't accepted by this campaign",
+  "Missing the required hashtags",
+  "Content doesn't match the campaign brief",
+] as const;
+
 /** Each sidebar entry is its own page under /dashboard/:section. */
 export type AdminSection =
   | "overview"
@@ -72,6 +86,7 @@ export function AdminView({
     setCampaignStatus,
     cycleInvoice,
     settleSubmission,
+    reviewSubmission,
   } = useCliptic();
   const stats = useAdminStats();
 
@@ -121,6 +136,28 @@ export function AdminView({
     settleSubmission(id, "rejected");
     toast.error("Clip rejected", {
       description: `${submission.creator}'s clip was removed from the campaign.`,
+    });
+  };
+
+  /** Accept a reviewed clip — it is sent to the campaign and goes live. */
+  const acceptClip = (id: string) => {
+    const submission = submissions.find((s) => s.id === id);
+    if (!submission) return;
+    const campaign = campaignById(campaigns, submission.campaignId);
+    reviewSubmission(id, "accept");
+    toast.success("Sent to campaign", {
+      description: `@${submission.author}'s clip is live on ${
+        campaign?.brand ?? "the campaign"
+      } and earning views.`,
+    });
+  };
+
+  const declineClip = (id: string, reason: string) => {
+    const submission = submissions.find((s) => s.id === id);
+    if (!submission) return;
+    reviewSubmission(id, "decline", reason);
+    toast.error("Clip declined", {
+      description: `${submission.creator} was told: ${reason}`,
     });
   };
 
@@ -495,7 +532,8 @@ export function AdminView({
               Submissions &amp; payouts
             </h2>
             <p className="text-xs text-muted-foreground">
-              Approve payouts once views are verified
+              Check each clip by hand — accepted clips are sent to the campaign
+              and start earning
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold text-amber-600 dark:text-amber-300">
@@ -550,11 +588,19 @@ export function AdminView({
                           ? "you"
                           : submission.creator}
                       </span>
-                      {submission.mine && (
-                        <span className="block text-[10.5px] text-muted-foreground">
-                          your account
-                        </span>
-                      )}
+                      <span className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+                        @{submission.author}
+                        {submission.verifiedOwner ? (
+                          <span className="inline-flex items-center gap-0.5 text-neon">
+                            <ShieldCheck className="h-3 w-3" />
+                            verified
+                          </span>
+                        ) : (
+                          <span className="text-red-500 dark:text-red-400">
+                            unverified
+                          </span>
+                        )}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -586,6 +632,11 @@ export function AdminView({
                     </TableCell>
                     <TableCell className="text-right font-mono text-[13px] font-semibold">
                       {fmtFull(submission.views)}
+                      {submission.metrics && (
+                        <span className="block text-[10.5px] font-medium text-muted-foreground">
+                          {fmtFull(submission.metrics.likes)} likes
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={submission.status} />
@@ -598,25 +649,48 @@ export function AdminView({
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {submission.status === "pending" ||
-                      submission.status === "active" ? (
+                      {submission.status === "pending" ? (
                         <div className="flex justify-end gap-1.5">
                           <Button
                             size="sm"
-                            className="h-7 gap-1 bg-neon/15 text-neon hover:bg-neon/25 border border-neon/25"
+                            className="h-8 gap-1 bg-neon/15 text-neon hover:bg-neon/25 border border-neon/25"
+                            onClick={() => acceptClip(submission.id)}
+                          >
+                            <Rocket className="h-3 w-3" />
+                            Accept &amp; send
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 gap-1 text-red-600 dark:text-red-300 hover:bg-red-400/10 hover:text-red-700 dark:hover:text-red-200"
+                              >
+                                <XCircle className="h-3 w-3" />
+                                Decline
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-64">
+                              {DECLINE_REASONS.map((reason) => (
+                                <DropdownMenuItem
+                                  key={reason}
+                                  onClick={() => declineClip(submission.id, reason)}
+                                >
+                                  {reason}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      ) : submission.status === "active" ? (
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            className="h-8 gap-1 bg-neon/15 text-neon hover:bg-neon/25 border border-neon/25"
                             onClick={() => approve(submission.id)}
                           >
                             <ShieldCheck className="h-3 w-3" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 gap-1 text-red-600 dark:text-red-300 hover:bg-red-400/10 hover:text-red-700 dark:hover:text-red-200"
-                            onClick={() => reject(submission.id)}
-                          >
-                            <XCircle className="h-3 w-3" />
-                            Reject
+                            Approve payout
                           </Button>
                         </div>
                       ) : submission.status === "paid" ? (
@@ -624,8 +698,11 @@ export function AdminView({
                           Settled
                         </span>
                       ) : (
-                        <span className="text-[11.5px] font-semibold text-red-600 dark:text-red-300/70">
-                          Rejected
+                        <span
+                          className="text-[11.5px] font-semibold text-red-600 dark:text-red-300/70"
+                          title={submission.reviewNote}
+                        >
+                          {submission.reviewNote ?? "Declined"}
                         </span>
                       )}
                     </TableCell>

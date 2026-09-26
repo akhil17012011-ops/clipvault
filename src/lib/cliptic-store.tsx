@@ -13,6 +13,7 @@ import {
   seedCampaigns,
   uid,
   type Campaign,
+  type ClipMetrics,
   type DemoProfile,
   type LinkedAccount,
   type Platform,
@@ -26,7 +27,7 @@ import {
  * story intact.
  */
 
-const STORAGE_KEY = "cliptic.demo.v2";
+const STORAGE_KEY = "cliptic.demo.v3";
 const TICK_MS = 2_800;
 /** A fresh submission stays "in review" for a couple of ticks. */
 const REVIEW_MS = 11_000;
@@ -76,6 +77,10 @@ interface ClipticContextValue extends ClipticState {
     platform: Platform;
     link: string;
     tags: string[];
+    author: string;
+    verifiedOwner: boolean;
+    platformOk: boolean;
+    metrics: ClipMetrics;
   }) => void;
   createCampaign: (input: {
     brand: string;
@@ -90,6 +95,15 @@ interface ClipticContextValue extends ClipticState {
   setCampaignStatus: (id: string, status: Campaign["status"]) => void;
   cycleInvoice: (id: string) => void;
   settleSubmission: (id: string, status: "paid" | "rejected") => void;
+  /**
+   * Admin moderation: accepting sends the clip to the campaign (it goes live
+   * and starts earning), declining removes it and tells the creator why.
+   */
+  reviewSubmission: (
+    id: string,
+    decision: "accept" | "decline",
+    note?: string,
+  ) => void;
   resetDemo: () => void;
 }
 
@@ -115,17 +129,20 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
         const submissions = prev.submissions.map((sub) => {
           if (sub.status === "paid" || sub.status === "rejected") return sub;
           changed = true;
-          let status = sub.status;
-          if (status === "pending" && now - sub.submittedAt > REVIEW_MS) {
-            status = "active";
-          }
-          if (status === "active") {
+          /* Only clips an admin has accepted go live and start earning. */
+          if (sub.status === "active") {
             const growth =
               Math.floor(Math.random() * 3_600) + 400 +
               Math.floor(sub.views * 0.004);
-            return { ...sub, status, views: sub.views + growth };
+            return {
+              ...sub,
+              views: sub.views + growth,
+              metrics: sub.metrics
+                ? { ...sub.metrics, views: sub.metrics.views + growth }
+                : undefined,
+            };
           }
-          return status === sub.status ? sub : { ...sub, status };
+          return sub;
         });
         return changed ? { ...prev, submissions } : prev;
       });
@@ -199,13 +216,23 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       platform: Platform;
       link: string;
       tags: string[];
+      author: string;
+      verifiedOwner: boolean;
+      platformOk: boolean;
+      metrics: ClipMetrics;
     }) => {
       setState((prev) => {
         const campaign = prev.campaigns.find(
           (c) => c.id === input.campaignId,
         );
-        /* The platform must be one the campaign actually accepts. */
-        if (!campaign || !campaign.platforms.includes(input.platform)) {
+        /* The platform must be one the campaign actually accepts, and the
+           clip must come from one of the creator's verified accounts. */
+        if (
+          !campaign ||
+          !input.platformOk ||
+          !campaign.platforms.includes(input.platform) ||
+          !input.verifiedOwner
+        ) {
           return prev;
         }
         const submission: Submission = {
@@ -216,7 +243,12 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
           platform: input.platform,
           link: input.link,
           tags: input.tags,
-          views: Math.floor(Math.random() * 900) + 120,
+          author: input.author,
+          verifiedOwner: input.verifiedOwner,
+          platformOk: input.platformOk,
+          metrics: input.metrics,
+          views: input.metrics.views,
+          /* Queued for a human — it only goes live once an admin accepts. */
           status: "pending",
           submittedAt: Date.now(),
         };
@@ -276,6 +308,37 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const reviewSubmission = useCallback(
+    (id: string, decision: "accept" | "decline", note?: string) => {
+      setState((prev) => {
+        const target = prev.submissions.find((s) => s.id === id);
+        if (!target || target.status !== "pending") return prev;
+        const accepted = decision === "accept";
+        return {
+          ...prev,
+          submissions: prev.submissions.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  status: accepted ? ("active" as const) : ("rejected" as const),
+                  reviewNote: accepted ? undefined : (note ?? "Didn't meet the campaign brief."),
+                }
+              : s,
+          ),
+          /* An accepted clip joins the campaign it was sent to. */
+          campaigns: accepted
+            ? prev.campaigns.map((c) =>
+                c.id === target.campaignId
+                  ? { ...c, clippers: c.clippers + 1 }
+                  : c,
+              )
+            : prev.campaigns,
+        };
+      });
+    },
+    [],
+  );
+
   const settleSubmission = useCallback(
     (id: string, status: "paid" | "rejected") => {
       setState((prev) => ({
@@ -310,6 +373,7 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       setCampaignStatus,
       cycleInvoice,
       settleSubmission,
+      reviewSubmission,
       resetDemo,
     }),
     [
@@ -324,6 +388,7 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       setCampaignStatus,
       cycleInvoice,
       settleSubmission,
+      reviewSubmission,
       resetDemo,
     ],
   );

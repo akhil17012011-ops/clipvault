@@ -87,15 +87,15 @@ const SUBMISSION_BADGES: Record<
 > = {
   paid: { label: "Paid", className: "bg-neon/15 text-neon border-neon/25" },
   active: {
-    label: "Active",
+    label: "Live",
     className: "bg-brand/15 text-brand border-brand/30",
   },
   pending: {
-    label: "Pending",
+    label: "In review",
     className: "bg-amber-400/10 text-amber-600 dark:text-amber-300 border-amber-400/25",
   },
   rejected: {
-    label: "Rejected",
+    label: "Declined",
     className: "bg-red-400/10 text-red-600 dark:text-red-300 border-red-400/25",
   },
 };
