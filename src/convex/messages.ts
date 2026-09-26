@@ -100,6 +100,48 @@ export const sendToCreator = mutation({
 });
 
 /**
+ * Sends the same message to every user on the platform. Admin only.
+ *
+ * Broadcast is deliberately its own path rather than a loop over the direct
+ * send, so it is obvious in the code and in review that this writes N rows and
+ * costs N messages. It is also capped, because a broadcast to a large list is
+ * the easiest way in this product to be expensive by accident.
+ */
+export const broadcast = mutation({
+  args: {
+    body: v.string(),
+    title: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const body = args.body.trim();
+    if (!body) throw new Error("Write something before sending.");
+    if (body.length > 2000) throw new Error("That message is too long.");
+
+    const users = await ctx.db.query("users").collect();
+    if (users.length > 500) {
+      throw new Error(
+        "That's more than 500 people. Send it in smaller groups instead.",
+      );
+    }
+    if (users.length === 0) throw new Error("There is nobody to send it to.");
+
+    const now = Date.now();
+    const title = args.title?.trim() || "News from CLIPTIC";
+    for (const user of users) {
+      await ctx.db.insert("messages", {
+        userId: user._id,
+        kind: KINDS.ADMIN,
+        title,
+        body,
+        createdAt: now,
+      });
+    }
+    return users.length;
+  },
+});
+
+/**
  * Writes a system notice. Internal, so no client can announce something to a
  * creator that did not actually happen.
  */

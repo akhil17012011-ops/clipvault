@@ -6,7 +6,6 @@ import { CampaignCard } from "@/components/CampaignCard";
 import { ClipticLogo, ClipticMark } from "@/components/ClipticMark";
 import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipticUI";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { fmtRate, type Platform } from "@/lib/cliptic-data";
 import { useCliptic } from "@/lib/cliptic-store";
 import { useAuth } from "@/hooks/use-auth";
@@ -62,8 +61,8 @@ function SiteNav() {
       <nav
         className={`relative mx-auto flex h-16 max-w-6xl items-center justify-between overflow-hidden rounded-2xl px-4 transition-all duration-300 sm:px-5 ${
           scrolled
-            ? "glass shadow-[0_20px_50px_-26px_rgb(76_29_149/0.45)]"
-            : "border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] backdrop-blur-xl"
+            ? "liquid-glass"
+            : "border border-white/10 bg-white/[0.05] backdrop-blur-xl"
         }`}
       >
         <Link to="/" className="shrink-0">
@@ -81,7 +80,7 @@ function SiteNav() {
           </a>
         </div>
         <div className="flex items-center gap-2">
-          <ThemeToggle className="hidden sm:inline-flex" />
+
           {isAuthenticated ? (
             <Button
               asChild

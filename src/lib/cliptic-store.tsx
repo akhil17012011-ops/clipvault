@@ -12,6 +12,7 @@ import {
   earnedOf,
   type AccountStats,
   type AdminUser,
+  type AdminMessage,
   type CreatorMessage,
   type PayoutCurrency,
   type Campaign,
@@ -68,6 +69,12 @@ interface ClipticContextValue {
   confirmViews: (id: string, views: number) => Promise<void>;
   /** Admin-only: every user with their accounts and totals. */
   adminUsers: AdminUser[];
+  /** Admin-only: every message sent on the platform. */
+  adminMessages: AdminMessage[];
+  /** Admin-only: message one creator. */
+  sendToCreator: (userId: string, title: string, body: string) => Promise<void>;
+  /** Admin-only: message every creator. Returns how many inboxes it wrote. */
+  broadcast: (title: string, body: string) => Promise<number>;
   /** Change the display name and picture shown across CLIPTIC. */
   updateProfile: (patch: { name?: string; image?: string }) => Promise<void>;
   campaigns: Campaign[];
@@ -141,6 +148,7 @@ const ClipticContext = createContext<ClipticContextValue | null>(null);
 const campaignId = (id: string) => id as GenericId<"campaigns">;
 const accountId = (id: string) => id as GenericId<"connectedAccounts">;
 const submissionId = (id: string) => id as GenericId<"submissions">;
+const userId = (id: string) => id as GenericId<"users">;
 
 /** Tells `useQuery` not to run a query at all. */
 const SKIP = "skip" as const;
@@ -298,6 +306,9 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
   const markAllReadMutation = useMutation(api.messages.markAllRead);
   const updatePayoutMutation = useMutation(api.users.updatePayout);
   const confirmViewsMutation = useMutation(api.submissions.confirmViews);
+  const rawAdminMessages = useQuery(api.messages.listAll, isAdmin ? {} : SKIP);
+  const sendToCreatorMutation = useMutation(api.messages.sendToCreator);
+  const broadcastMutation = useMutation(api.messages.broadcast);
 
   const requestAccount = useMutation(api.accounts.request);
   const removeAccountMutation = useMutation(api.accounts.remove);
@@ -366,6 +377,24 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       await confirmViewsMutation({ submissionId: submissionId(id), views });
     },
     [confirmViewsMutation],
+  );
+
+  const adminMessages = useMemo(
+    () => (rawAdminMessages ?? []) as AdminMessage[],
+    [rawAdminMessages],
+  );
+
+  const sendToCreator = useCallback(
+    async (target: string, title: string, body: string) => {
+      await sendToCreatorMutation({ userId: userId(target), title, body });
+    },
+    [sendToCreatorMutation],
+  );
+
+  const broadcast = useCallback(
+    async (title: string, body: string) =>
+      (await broadcastMutation({ title, body })) as number,
+    [broadcastMutation],
   );
 
   const updateProfile = useCallback(
@@ -552,6 +581,9 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       allAccounts,
       accountStats,
       adminUsers,
+      adminMessages,
+      sendToCreator,
+      broadcast,
       updateProfile,
       messages,
       unreadCount: rawUnread ?? 0,
@@ -581,6 +613,9 @@ export function ClipticProvider({ children }: { children: ReactNode }) {
       allAccounts,
       accountStats,
       adminUsers,
+      adminMessages,
+      sendToCreator,
+      broadcast,
       updateProfile,
       messages,
       rawUnread,

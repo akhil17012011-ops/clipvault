@@ -85,6 +85,18 @@ export interface CreatorMessage {
   read: boolean;
 }
 
+/** A message row as the admin console sees it. */
+export interface AdminMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  kind: MessageKind;
+  title: string | null;
+  body: string;
+  createdAt: number;
+  read: boolean;
+}
+
 export type PayoutCurrency = "sol" | "ltc";
 
 /** How much a single connected account has actually produced. */

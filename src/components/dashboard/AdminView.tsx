@@ -2,6 +2,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { CreatorsView } from "@/components/dashboard/CreatorsView";
 import { UsersTable } from "@/components/dashboard/UsersTable";
 import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
+import { AdminMessages } from "@/components/dashboard/AdminMessages";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipticUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,7 @@ export type AdminSection =
   | "overview"
   | "creators"
   | "users"
+  | "messages"
   | "payouts"
   | "invoices"
   | "campaigns"
@@ -91,6 +93,10 @@ export function AdminView({
   const {
     campaigns,
     submissions,
+    adminUsers,
+    adminMessages,
+    sendToCreator,
+    broadcast,
     setCampaignStatus,
     cycleInvoice,
     settleSubmission,
@@ -195,6 +201,12 @@ export function AdminView({
       title: "Users",
       description:
         "Every account on CLIPTIC, the handles they connected, and what they have earned.",
+    },
+    messages: {
+      kicker: "Reach out",
+      title: "Messages",
+      description:
+        "Send one creator a note, or announce something to everyone.",
     },
     invoices: {
       kicker: "Billing",
@@ -313,6 +325,15 @@ export function AdminView({
       {section === "creators" && <CreatorsView />}
 
       {section === "users" && <UsersTable />}
+
+      {section === "messages" && (
+        <AdminMessages
+          users={adminUsers}
+          history={adminMessages}
+          onSendToUser={sendToCreator}
+          onBroadcast={broadcast}
+        />
+      )}
 
       {section === "payouts" && (
         <motion.section

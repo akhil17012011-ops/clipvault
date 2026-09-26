@@ -54,6 +54,7 @@ const NAV: Record<DashboardView, NavItem[]> = {
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/dashboard/creators", label: "Creators", icon: UserRound },
     { to: "/dashboard/users", label: "Users", icon: Users },
+    { to: "/dashboard/messages", label: "Messages", icon: MessageSquare },
     { to: "/dashboard/payouts", label: "Payouts", icon: Wallet },
     { to: "/dashboard/invoices", label: "Invoices", icon: ReceiptText },
     { to: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone },
@@ -77,7 +78,7 @@ export function Sidebar({
   return (
     <>
       {/* Desktop rail — fixed liquid-glass column */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-black/8 bg-white/70 dark:border-white/10 dark:bg-[#0C0A14]/70 backdrop-blur-2xl lg:flex">
+      <aside className="liquid-glass fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-white/10 lg:flex">
         <SidebarBody layoutKey="nav-desktop" role={role} />
       </aside>
 
