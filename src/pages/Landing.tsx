@@ -208,7 +208,7 @@ function ParallaxClipCard({
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-white backdrop-blur">
               <PlatformIcon platform={card.platform} className="h-4 w-4" />
             </span>
-            <span className="rounded-full bg-black/45 px-2 py-0.5 text-[8.5px] font-bold tracking-[0.14em] text-white backdrop-blur">
+            <span className="rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white backdrop-blur">
               TRACKING
             </span>
           </div>
@@ -454,7 +454,7 @@ function MockFrame({
       style={tilt.style}
       onMouseMove={tilt.onMouseMove}
       onMouseLeave={tilt.onMouseLeave}
-      className="panel-fx rounded-2xl border border-black/10 dark:border-white/10 bg-card/70 p-5 shadow-[0_36px_90px_-45px_rgb(139_63_226/0.9)]"
+      className="panel-fx rounded-2xl border border-black/10 dark:border-white/10 bg-card p-5 shadow-[0_36px_90px_-45px_rgb(139_63_226/0.9)]"
     >
       {title && (
         <p className="relative z-[2] mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">

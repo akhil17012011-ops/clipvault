@@ -172,7 +172,7 @@ function SidebarBody({
         <Link to="/" className="flex items-center gap-2.5">
           <ClipticMark className="h-9 w-9" />
           <span className="leading-none">
-            <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
               Beta
             </span>
             <span className="block text-[15px] font-extrabold tracking-tight">
@@ -189,7 +189,7 @@ function SidebarBody({
               description: "Campaign alerts and payout receipts show up here.",
             })
           }
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] text-muted-foreground transition-colors hover:border-brand/35 hover:bg-brand/10 hover:text-brand dark:border-white/10 dark:bg-white/[0.05]"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] text-muted-foreground transition-colors hover:border-brand/35 hover:bg-brand/10 hover:text-brand dark:border-white/10 dark:bg-white/[0.05] lg:h-9 lg:w-9"
           aria-label="Notifications"
         >
           <Bell className="h-4 w-4" />
@@ -229,7 +229,7 @@ function SidebarBody({
                 duration: 0.45,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold"
+              className="group relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[13.5px] font-semibold lg:py-2.5"
             >
               {isActive && (
                 <motion.span
@@ -240,9 +240,7 @@ function SidebarBody({
               )}
               <Icon
                 className={`relative h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110 ${
-                  isActive
-                    ? "text-brand"
-                    : "text-muted-foreground group-hover:text-foreground"
+                  isActive ? "text-brand" : "text-brand/70"
                 }`}
               />
               <span
@@ -277,7 +275,7 @@ function SidebarBody({
                 "Demo build — nothing is sent. Production opens your mail client.",
             })
           }
-          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground transition-all hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06]"
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06] lg:py-2"
         >
           <Bug className="h-4 w-4 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
           Report Bug
@@ -290,7 +288,7 @@ function SidebarBody({
                 "Demo build — nothing is sent. Production opens the roadmap form.",
             })
           }
-          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground transition-all hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06]"
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06] lg:py-2"
         >
           <Lightbulb className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
           Request Feature
@@ -302,7 +300,7 @@ function SidebarBody({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="glass flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-shadow duration-300 hover:shadow-[0_14px_34px_-14px_rgb(139_63_226/0.55)]"
+            className="flex w-full items-center gap-2.5 rounded-2xl border border-black/8 bg-black/[0.03] p-2 text-left transition-colors hover:bg-black/[0.05] dark:border-white/10 dark:bg-white/[0.05] dark:hover:bg-white/[0.08]"
           >
             <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B3FE2] to-[#5B0FA6] text-xs font-bold text-white">
               {initials}

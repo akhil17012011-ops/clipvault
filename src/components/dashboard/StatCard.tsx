@@ -23,7 +23,7 @@ export function StatCard({
   tone?: Tone;
 }) {
   return (
-    <div className="panel-fx group rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
+    <div className="panel-fx group rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5">
       <div className="flex items-start justify-between gap-3">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
           {label}

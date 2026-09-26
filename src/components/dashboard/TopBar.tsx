@@ -73,7 +73,7 @@ export function TopBar({
             whileHover={{ scale: 1.06 }}
             whileTap={{ scale: 0.92 }}
             onClick={onMenu}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] text-muted-foreground transition-colors hover:border-brand/35 hover:bg-brand/10 hover:text-brand dark:border-white/10 dark:bg-white/[0.05] lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] text-muted-foreground transition-colors hover:border-brand/35 hover:bg-brand/10 hover:text-brand dark:border-white/10 dark:bg-white/[0.05] lg:hidden"
             aria-label="Open navigation"
           >
             <Menu className="h-4.5 w-4.5" />
@@ -152,6 +152,10 @@ export function TopBar({
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Scroll edge: content fades out as it passes under the bar
+          instead of colliding with it. */}
+      <div className="pointer-events-none absolute inset-x-0 top-full h-6 bg-gradient-to-b from-background/85 to-transparent" />
 
       {/* Reading progress — fills as you scroll the dashboard */}
       <motion.div

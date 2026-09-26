@@ -33,7 +33,7 @@ export function ShortcutGrid({ cards }: { cards: Shortcut[] }) {
         >
           <Link
             to={card.to}
-            className="panel-fx group block h-full rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
+            className="panel-fx group block h-full rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand transition-transform duration-300 group-hover:scale-110">

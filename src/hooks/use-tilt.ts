@@ -1,6 +1,7 @@
 import {
   useMotionTemplate,
   useMotionValue,
+  useReducedMotion,
   useSpring,
   useTransform,
 } from "framer-motion";
@@ -17,6 +18,8 @@ import { useCallback, type MouseEvent as ReactMouseEvent } from "react";
 export function useTilt(max = 7) {
   const px = useMotionValue(50);
   const py = useMotionValue(50);
+  /* HIG: Reduce Motion drops morphing/refraction animation entirely. */
+  const reduceMotion = useReducedMotion();
 
   const rotateX = useSpring(useTransform(py, [0, 100], [max, -max]), {
     stiffness: 190,
@@ -31,11 +34,12 @@ export function useTilt(max = 7) {
 
   const onMouseMove = useCallback(
     (event: ReactMouseEvent<HTMLElement>) => {
+      if (reduceMotion) return;
       const rect = event.currentTarget.getBoundingClientRect();
       px.set(((event.clientX - rect.left) / rect.width) * 100);
       py.set(((event.clientY - rect.top) / rect.height) * 100);
     },
-    [px, py],
+    [px, py, reduceMotion],
   );
 
   const onMouseLeave = useCallback(() => {
@@ -44,8 +48,10 @@ export function useTilt(max = 7) {
   }, [px, py]);
 
   return {
-    style: { rotateX, rotateY, transformPerspective: 1000 } as const,
-    glare,
+    style: reduceMotion
+      ? {}
+      : { rotateX, rotateY, transformPerspective: 1000 },
+    glare: reduceMotion ? undefined : glare,
     onMouseMove,
     onMouseLeave,
   };

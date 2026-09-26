@@ -394,7 +394,7 @@ html.lenis body {
   background: linear-gradient(
     100deg,
     transparent,
-    rgb(255 255 255 / 0.55),
+    rgb(255 255 255 / 0.38),
     transparent
   );
   transform: skewX(-16deg);
@@ -413,7 +413,7 @@ html.lenis body {
   opacity: 1;
 }
 .panel-fx:hover::after {
-  animation: cliptic-panel-sweep 1.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: cliptic-panel-sweep 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 @keyframes cliptic-panel-sweep {
   0% {
@@ -457,6 +457,52 @@ html.lenis body {
   );
   background-size: 200% 100%;
   animation: cliptic-shimmer 2.4s linear infinite;
+}
+
+/* ---------- Accessibility fallbacks (HIG: glass must still read) ---------- */
+
+/* Reduce Transparency (Chromium) — swap the material for an opaque surface. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-soft {
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: var(--border);
+  }
+  .dark .glass,
+  .dark .glass-soft {
+    background: var(--card);
+    border-color: var(--border);
+  }
+  .panel-fx::before,
+  .panel-fx::after {
+    display: none;
+  }
+}
+
+/* Increase Contrast — stronger fills, firmer borders, no translucency. */
+@media (prefers-contrast: more) {
+  .glass,
+  .glass-soft {
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: var(--foreground);
+  }
+  .panel-fx {
+    border-color: var(--foreground);
+  }
+  .panel-fx::after {
+    display: none;
+  }
+  .text-muted-foreground {
+    color: var(--foreground);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

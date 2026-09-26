@@ -22,7 +22,7 @@ export function CampaignCard({
   );
 
   return (
-    <article className="panel-fx group relative flex flex-col gap-4 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5">
+    <article className="panel-fx group relative flex flex-col gap-4 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5">
       <div className="flex items-start gap-3.5">
         <BrandAvatar name={campaign.brand} />
         <div className="min-w-0 flex-1">

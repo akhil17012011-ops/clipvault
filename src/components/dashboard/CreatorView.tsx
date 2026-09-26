@@ -257,7 +257,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -291,7 +291,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70"
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card"
           >
             <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
               <div>
@@ -423,7 +423,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -479,7 +479,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card/70 p-5"
+            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
