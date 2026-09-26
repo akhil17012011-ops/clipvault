@@ -143,7 +143,7 @@ export function CreatorsView() {
         initial={{ opacity: 0, y: 24, filter: "blur(6px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         transition={{ duration: 0.6, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
-        className="overflow-hidden rounded-2xl border border-black/8 bg-card dark:border-white/10"
+        className="glass-panel overflow-hidden rounded-2xl"
       >
         {rows.length === 0 ? (
           <div className="px-5 py-14 text-center">
@@ -258,7 +258,7 @@ function SummaryCard({
   sub: string;
 }) {
   return (
-    <div className="panel-fx rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10">
+    <div className="panel-fx glass-panel rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
           {label}

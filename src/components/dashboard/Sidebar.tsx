@@ -78,7 +78,7 @@ export function Sidebar({
   return (
     <>
       {/* Desktop rail — fixed column */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-black/8 bg-white/70 dark:border-white/10 dark:bg-[#0C0A14]/70 backdrop-blur-2xl lg:flex">
+      <aside className="glass-rail fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-white/[0.07] lg:flex">
         <SidebarBody layoutKey="nav-desktop" role={role} />
       </aside>
 
@@ -96,7 +96,7 @@ export function Sidebar({
             />
             <motion.aside
               key="sidebar-drawer"
-              className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-black/10 bg-white/85 dark:border-white/10 dark:bg-[#0C0A14]/90 backdrop-blur-2xl lg:hidden"
+              className="glass-rail fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-white/10 lg:hidden"
               initial={{ x: -300, opacity: 0.5 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
@@ -193,7 +193,7 @@ function SidebarBody({
               description: "Campaign alerts and payout receipts show up here.",
             })
           }
-          className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] text-muted-foreground transition-colors hover:border-brand/35 hover:bg-brand/10 hover:text-brand dark:border-white/10 dark:bg-white/[0.05] lg:h-9 lg:w-9"
+          className="glass-chip inline-flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:text-[#C9AEFF] lg:h-9 lg:w-9"
           aria-label="Notifications"
         >
           <Bell className="h-4 w-4" />
@@ -207,7 +207,7 @@ function SidebarBody({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search"
-          className="w-full rounded-xl border border-black/10 bg-black/[0.03] py-2.5 pl-9 pr-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-brand/45 focus:bg-brand/[0.06] focus:ring-2 focus:ring-brand/20 dark:border-white/10 dark:bg-white/[0.05] dark:focus:border-brand/50"
+          className="glass-chip w-full rounded-xl py-2.5 pl-9 pr-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-[#A855F7]/50 focus:ring-2 focus:ring-[#A855F7]/20"
         />
       </label>
 
@@ -233,24 +233,24 @@ function SidebarBody({
                 duration: 0.45,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="group relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[13.5px] font-semibold lg:py-2.5"
+              className="group relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[13.5px] font-semibold transition-colors lg:py-2.5"
             >
               {isActive && (
                 <motion.span
                   layoutId={`${layoutKey}-active`}
-                  className="absolute inset-0 rounded-xl border border-brand/30 bg-brand/15 shadow-[0_8px_24px_-8px_rgb(168_85_247/0.7)]"
+                  className="absolute inset-0 rounded-xl border border-[#A855F7]/35 bg-gradient-to-r from-[#7C3AED]/25 to-[#A855F7]/10 shadow-[0_10px_30px_-12px_rgb(168_85_247/0.75)]"
                   transition={{ type: "spring", stiffness: 430, damping: 34 }}
                 />
               )}
               <Icon
                 className={`relative h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110 ${
-                  isActive ? "text-brand" : "text-brand/70"
+                  isActive ? "text-[#C9AEFF]" : "text-[#A855F7]/60"
                 }`}
               />
               <span
                 className={`relative transition-colors ${
                   isActive
-                    ? "text-brand"
+                    ? "text-[#E4D6FF]"
                     : "text-muted-foreground group-hover:text-foreground"
                 }`}
               >
@@ -267,14 +267,14 @@ function SidebarBody({
       </nav>
 
       {/* Feedback */}
-      <div className="space-y-1 border-t border-black/8 pt-3 dark:border-white/10">
+      <div className="space-y-1 border-t border-white/[0.07] pt-3">
         <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
           Feedback
         </p>
         <button
           type="button"
           onClick={() => openFeedback("Bug report")}
-          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06] lg:py-2"
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-white/[0.06] hover:text-foreground lg:py-2"
         >
           <Bug className="h-4 w-4 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
           Report Bug
@@ -282,7 +282,7 @@ function SidebarBody({
         <button
           type="button"
           onClick={() => openFeedback("Feature request")}
-          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06] lg:py-2"
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-white/[0.06] hover:text-foreground lg:py-2"
         >
           <Lightbulb className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
           Request Feature
@@ -294,11 +294,19 @@ function SidebarBody({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex w-full items-center gap-2.5 rounded-2xl border border-black/8 bg-black/[0.03] p-2 text-left transition-colors hover:bg-black/[0.05] dark:border-white/10 dark:bg-white/[0.05] dark:hover:bg-white/[0.08]"
+            className="glass-panel flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-colors hover:border-white/20"
           >
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt=""
+                className="h-9 w-9 shrink-0 rounded-xl object-cover ring-1 ring-white/20"
+              />
+            ) : (
             <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B3FE2] to-[#5B0FA6] text-xs font-bold text-white">
               {initials}
             </span>
+            )}
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[13px] font-bold">
                 {name}

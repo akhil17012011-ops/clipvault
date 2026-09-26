@@ -129,7 +129,7 @@ export function CampaignModeration({ campaign }: { campaign: Campaign }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className="rounded-xl border border-black/8 bg-black/[0.02] px-3.5 py-3 dark:border-white/10 dark:bg-white/[0.03]"
+                className="glass-chip rounded-xl px-3.5 py-3"
               >
                 <div className="flex flex-wrap items-center gap-2.5">
                   <PlatformChip platform={clip.platform} size="sm" />
@@ -267,7 +267,7 @@ export function CampaignModeration({ campaign }: { campaign: Campaign }) {
                 )}
 
                 {clip.reviewNote && tab !== "pending" ? (
-                  <p className="mt-2.5 rounded-lg bg-black/[0.03] px-2.5 py-1.5 text-[11.5px] text-muted-foreground dark:bg-white/[0.05]">
+                  <p className="glass-chip mt-2.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-muted-foreground">
                     <span className="font-bold text-foreground/80">
                       Reason sent:{" "}
                     </span>

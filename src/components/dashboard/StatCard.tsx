@@ -2,11 +2,20 @@ import type { LucideIcon } from "lucide-react";
 
 type Tone = "violet" | "neon" | "amber" | "plain";
 
+/* Icon tint only — the chip surface itself comes from `.glass-chip`. */
 const TONES: Record<Tone, string> = {
-  violet: "border-brand/30 bg-brand/10 text-brand",
-  neon: "border-brand/40 bg-brand/15 text-brand",
-  amber: "border-amber-400/25 bg-amber-400/10 text-amber-600 dark:text-amber-300",
-  plain: "border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] text-muted-foreground",
+  violet: "text-[#C9AEFF]",
+  neon: "text-[#7DF0B4]",
+  amber: "text-amber-300",
+  plain: "text-muted-foreground",
+};
+
+/* Matching dot colour for the sub-line, so the status reads at a glance. */
+const DOTS: Record<Tone, string> = {
+  violet: "bg-[#C9AEFF]",
+  neon: "bg-[#7DF0B4]",
+  amber: "bg-amber-300",
+  plain: "bg-muted-foreground",
 };
 
 export function StatCard({
@@ -23,21 +32,30 @@ export function StatCard({
   tone?: Tone;
 }) {
   return (
-    <div className="panel-fx group rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+    <div className="panel-fx glass-panel glass-sheen group relative overflow-hidden rounded-2xl p-5">
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <p className="pt-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           {label}
         </p>
         <span
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110 ${TONES[tone]}`}
+          className={`glass-chip inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-105 ${TONES[tone]}`}
         >
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-3 font-mono text-[26px] font-extrabold leading-none tracking-tight text-foreground">
+
+      <p className="relative z-10 mt-4 font-mono text-[30px] font-extrabold leading-none tracking-[-0.04em] text-foreground">
         {value}
       </p>
-      <p className="mt-2 text-xs leading-snug text-muted-foreground">{sub}</p>
+
+      <div className="relative z-10 mt-3.5 flex items-center gap-2 border-t border-white/[0.06] pt-3">
+        <span
+          className={`h-1 w-1 shrink-0 rounded-full opacity-80 ${DOTS[tone]}`}
+        />
+        <p className="truncate text-[11.5px] leading-snug text-muted-foreground">
+          {sub}
+        </p>
+      </div>
     </div>
   );
 }

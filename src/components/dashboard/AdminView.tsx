@@ -57,7 +57,7 @@ const INVOICE_LABEL: Record<InvoiceStatus, string> = {
 };
 
 const INVOICE_TONE: Record<InvoiceStatus, string> = {
-  draft: "border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] text-muted-foreground",
+  draft: "glass-chip text-muted-foreground",
   sent: "border-amber-400/25 bg-amber-400/10 text-amber-600 dark:text-amber-300",
   paid: "border-neon/25 bg-neon/10 text-neon",
 };
@@ -263,22 +263,26 @@ export function AdminView({
   return (
     <div className="space-y-6">
       {/* header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            {page.kicker}
-          </p>
-          <h1 className="mt-1.5 text-3xl font-extrabold tracking-[-0.03em]">
-            {page.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {page.description}
-          </p>
+      <div className="glass-panel relative overflow-hidden rounded-3xl p-6">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-[#7C3AED]/25" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="glass-chip inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9AEFF]">
+              <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#C9AEFF]" />
+              {page.kicker}
+            </span>
+            <h1 className="mt-3 text-[32px] font-extrabold leading-none tracking-[-0.035em]">
+              {page.title}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {page.description}
+            </p>
+          </div>
+          <Button className="gap-1.5 glow-primary" onClick={onCreateCampaign}>
+            <Plus className="h-4 w-4" />
+            Create campaign
+          </Button>
         </div>
-        <Button className="gap-1.5 glow-primary" onClick={onCreateCampaign}>
-          <Plus className="h-4 w-4" />
-          Create campaign
-        </Button>
       </div>
 
       {/* stats */}
@@ -342,7 +346,7 @@ export function AdminView({
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+          className="glass-panel rounded-2xl p-5"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -353,7 +357,7 @@ export function AdminView({
                 Amounts settled to clippers over the last 7 days
               </p>
             </div>
-            <span className="rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+            <span className="glass-chip rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
               USD
             </span>
           </div>
@@ -368,11 +372,11 @@ export function AdminView({
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+          className="glass-panel scroll-mt-24 rounded-2xl p-5"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
+              <span className="glass-chip inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#C9AEFF]">
                 <FileText className="h-4 w-4" />
               </span>
               <h2 className="text-[15px] font-bold tracking-tight">
@@ -388,7 +392,7 @@ export function AdminView({
             {invoices.map((campaign) => (
               <li
                 key={campaign.id}
-                className="flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3 py-2.5"
+                className="glass-chip flex items-center gap-3 rounded-xl px-3 py-2.5"
               >
                 <BrandAvatar name={campaign.brand} className="h-8 w-8 text-[11px]" />
                 <div className="min-w-0 flex-1">
@@ -426,9 +430,9 @@ export function AdminView({
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true, margin: "-60px" }}
         transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-        className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card"
+        className="glass-panel scroll-mt-24 rounded-2xl"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-4">
           <div>
             <h2 className="text-[15px] font-bold tracking-tight">
               Campaign management
@@ -502,7 +506,7 @@ export function AdminView({
                           </span>
                           <span>{pct}%</span>
                         </div>
-                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-brand to-[#a78bfa]"
                             style={{ width: `${pct}%` }}
@@ -538,7 +542,7 @@ export function AdminView({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-1.5 border-black/12 bg-black/[0.03] text-[12px] hover:bg-black/[0.05] dark:border-white/15 dark:bg-white/[0.05] dark:hover:bg-white/[0.08]"
+                        className="glass-chip gap-1.5 text-[12px] hover:border-white/20"
                         onClick={() =>
                           setReviewing(
                             openReviewId === campaign.id ? null : campaign.id,
@@ -554,7 +558,7 @@ export function AdminView({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="gap-1.5 border-black/12 bg-black/[0.03] text-[12px] hover:bg-black/[0.05] dark:border-white/15 dark:bg-white/[0.05] dark:hover:bg-white/[0.08]"
+                          className="glass-chip gap-1.5 text-[12px] hover:border-white/20"
                           onClick={() =>
                             setCampaignStatus(
                               campaign.id,
@@ -612,7 +616,7 @@ export function AdminView({
                   <TableRow key={`${campaign.id}-review`}>
                     <TableCell
                       colSpan={7}
-                      className="bg-black/[0.02] dark:bg-white/[0.02]"
+                      className="bg-white/[0.02]"
                     >
                       <CampaignModeration campaign={campaign} />
                     </TableCell>
@@ -633,9 +637,9 @@ export function AdminView({
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true, margin: "-60px" }}
         transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-        className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card"
+        className="glass-panel scroll-mt-24 rounded-2xl"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-4">
           <div>
             <h2 className="text-[15px] font-bold tracking-tight">
               Submissions &amp; payouts

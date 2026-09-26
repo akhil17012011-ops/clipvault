@@ -123,10 +123,10 @@ export function CampaignDetail({
     >
       {/* ----------------------------- left: the brief ----------------------------- */}
       <div className="space-y-5">
-        <div className="panel-fx rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10">
+        <div className="panel-fx glass-panel rounded-2xl p-5">
           <div className="flex items-start gap-4">
             {campaign.logo ? (
-              <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-black/10 bg-black/[0.03] text-2xl dark:border-white/10 dark:bg-white/[0.05]">
+              <span className="glass-chip inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl">
                 {campaign.logo.startsWith("http") ? (
                   <img
                     src={campaign.logo}
@@ -184,7 +184,7 @@ export function CampaignDetail({
         </div>
 
         {campaign.brief && (
-          <div className="rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10">
+          <div className="glass-panel rounded-2xl p-5">
             <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5 text-brand" />
               The brief
@@ -197,7 +197,7 @@ export function CampaignDetail({
 
         {/* source footage — the clips people actually cut from */}
         {campaign.sourceFiles.length > 0 && (
-          <div className="rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10">
+          <div className="glass-panel rounded-2xl p-5">
             <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               <HardDriveDownload className="h-3.5 w-3.5 text-brand" />
               Source footage &amp; files
@@ -212,7 +212,7 @@ export function CampaignDetail({
                     href={file.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="group flex items-center gap-3 rounded-xl border border-black/8 bg-black/[0.02] px-3.5 py-3 transition-colors hover:border-brand/40 hover:bg-brand/[0.06] dark:border-white/10 dark:bg-white/[0.03]"
+                    className="glass-chip group flex items-center gap-3 rounded-xl px-3.5 py-3 transition-colors hover:border-[#A855F7]/40"
                   >
                     <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
                       <Download className="h-4 w-4" />
@@ -238,7 +238,7 @@ export function CampaignDetail({
         {/* references + rules */}
         <div className="grid gap-5 sm:grid-cols-2">
           {campaign.referenceLinks.length > 0 && (
-            <div className="rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10">
+            <div className="glass-panel rounded-2xl p-5">
               <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 <Link2 className="h-3.5 w-3.5 text-brand" />
                 References
@@ -260,7 +260,7 @@ export function CampaignDetail({
             </div>
           )}
 
-          <div className="rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10">
+          <div className="glass-panel rounded-2xl p-5">
             <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               <ListChecks className="h-3.5 w-3.5 text-brand" />
               Rules
@@ -295,8 +295,8 @@ export function CampaignDetail({
 
       {/* ----------------------------- right: submit your clip ----------------------------- */}
       <div className="lg:sticky lg:top-24 lg:self-start">
-        <div className="panel-fx overflow-hidden rounded-2xl border border-black/8 bg-card dark:border-white/10">
-          <div className="border-b border-black/8 px-5 py-4 dark:border-white/10">
+        <div className="panel-fx glass-panel overflow-hidden rounded-2xl">
+          <div className="border-b border-white/[0.07] px-5 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Your clip
             </p>
@@ -413,7 +413,7 @@ function Stat({
   hint: string;
 }) {
   return (
-    <div className="rounded-xl border border-black/8 bg-black/[0.02] px-3.5 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+    <div className="glass-chip rounded-xl px-3.5 py-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </p>

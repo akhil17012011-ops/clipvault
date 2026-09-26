@@ -33,7 +33,7 @@ export function MessagesInbox() {
       initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl border border-black/8 bg-card p-5 dark:border-white/10"
+      className="glass-panel rounded-2xl p-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -90,7 +90,7 @@ function MessagesInboxRow({
       }}
       className={`rounded-xl border px-4 py-3 transition-colors ${
         message.read
-          ? "border-black/8 bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.03]"
+          ? "glass-chip"
           : "border-brand/35 bg-brand/[0.07]"
       }`}
     >

@@ -68,7 +68,7 @@ export function PayoutSettings() {
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-4 dark:border-white/10 dark:bg-white/[0.03]"
+      className="glass-panel rounded-xl px-4 py-4"
     >
       <div className="flex items-center gap-2.5">
         <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">

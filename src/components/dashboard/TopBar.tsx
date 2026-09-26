@@ -66,7 +66,7 @@ export function TopBar({
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/8 dark:border-white/10 bg-white/75 dark:bg-[#0C0A14]/80 backdrop-blur-xl">
+    <header className="glass-bar sticky top-0 z-40 border-b border-white/[0.07]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2.5">
           <motion.button
@@ -74,7 +74,7 @@ export function TopBar({
             whileHover={{ scale: 1.06 }}
             whileTap={{ scale: 0.92 }}
             onClick={onMenu}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] text-muted-foreground transition-colors hover:border-brand/35 hover:bg-brand/10 hover:text-brand dark:border-white/10 dark:bg-white/[0.05] lg:hidden"
+            className="glass-chip inline-flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:text-[#C9AEFF] lg:hidden"
             aria-label="Open navigation"
           >
             <Menu className="h-4.5 w-4.5" />
@@ -82,13 +82,13 @@ export function TopBar({
 
           <Link to="/" className="flex shrink-0 items-center gap-2.5">
             <ClipticLogo markClassName="h-8 w-8" textClassName="text-base" />
-            <span className="hidden rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand sm:inline-block">
+            <span className="glass-chip hidden rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#C9AEFF] sm:inline-block">
               Beta
             </span>
           </Link>
         </div>
 
-        <div className="hidden items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-brand sm:inline-flex">
+        <div className="glass-chip hidden items-center gap-2 rounded-full px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#C9AEFF] sm:inline-flex">
           {role === "admin" ? (
             <>
               <Megaphone className="h-3.5 w-3.5" />
@@ -104,7 +104,7 @@ export function TopBar({
 
         <div className="flex items-center gap-3">
           <NotificationBell />
-          <span className="hidden items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand md:inline-flex">
+          <span className="glass-chip hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground md:inline-flex">
             <Wallet className="h-3.5 w-3.5" />
             Payouts every Friday
           </span>
@@ -113,13 +113,13 @@ export function TopBar({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] py-1 pl-1 pr-2.5 transition-colors hover:border-black/15 dark:hover:border-white/25"
+                className="glass-chip flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:border-white/20"
               >
                 {profile?.avatarUrl ? (
                   <img
                     src={profile.avatarUrl}
                     alt=""
-                    className="h-8 w-8 rounded-full object-cover ring-1 ring-white/15"
+                    className="h-8 w-8 rounded-full object-cover ring-1 ring-white/20"
                   />
                 ) : (
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#A855F7] to-[#5B0FA6] text-xs font-bold text-white">
@@ -174,11 +174,11 @@ export function TopBar({
 
       {/* Scroll edge: content fades out as it passes under the bar
           instead of colliding with it. */}
-      <div className="pointer-events-none absolute inset-x-0 top-full h-6 bg-gradient-to-b from-background/85 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-full h-6 bg-gradient-to-b from-[#0C0A14]/70 to-transparent" />
 
       {/* Reading progress — fills as you scroll the dashboard */}
       <motion.div
-        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-[#7C3AED] via-[#A855F7] to-[#4C1D95]"
+        className="absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-[#7C3AED] via-[#C084FC] to-[#4C1D95]"
         style={{ scaleX: progress }}
       />
 

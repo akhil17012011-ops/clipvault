@@ -181,31 +181,35 @@ export function CreatorView({
   return (
     <div className="space-y-6">
       {/* header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            {page.kicker}
-          </p>
-          <h1 className="mt-1.5 text-3xl font-extrabold tracking-[-0.03em]">
-            {page.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {page.description}
-          </p>
-        </div>
-        <div className="flex gap-2.5">
-          <Button
-            variant="outline"
-            className="gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
-            onClick={onConnect}
-          >
-            <Link2 className="h-4 w-4" />
-            Connect account
-          </Button>
-          <Button className="gap-1.5 glow-primary" onClick={onSubmitClip}>
-            <Upload className="h-4 w-4" />
-            Submit a clip
-          </Button>
+      <div className="glass-panel relative overflow-hidden rounded-3xl p-6">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-[#7C3AED]/25" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="glass-chip inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9AEFF]">
+              <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#C9AEFF]" />
+              {page.kicker}
+            </span>
+            <h1 className="mt-3 text-[32px] font-extrabold leading-none tracking-[-0.035em]">
+              {page.title}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {page.description}
+            </p>
+          </div>
+          <div className="flex gap-2.5">
+            <Button
+              variant="outline"
+              className="glass-chip gap-1.5 text-foreground hover:border-white/20 hover:bg-white/[0.07]"
+              onClick={onConnect}
+            >
+              <Link2 className="h-4 w-4" />
+              Connect account
+            </Button>
+            <Button className="gap-1.5 glow-primary" onClick={onSubmitClip}>
+              <Upload className="h-4 w-4" />
+              Submit a clip
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -301,7 +305,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="glass-panel scroll-mt-24 rounded-2xl p-5"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -312,7 +316,7 @@ export function CreatorView({
                   Published rates — join in one tap
                 </p>
               </div>
-              <span className="rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+              <span className="glass-chip rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                 {feed.length} live
               </span>
             </div>
@@ -353,9 +357,9 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card"
+            className="glass-panel scroll-mt-24 rounded-2xl"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-black/8 dark:border-white/10 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-4">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight">
                   Submissions &amp; earnings
@@ -367,7 +371,7 @@ export function CreatorView({
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+                className="glass-chip gap-1.5 hover:border-white/20"
                 onClick={onSubmitClip}
               >
                 <Upload className="h-3.5 w-3.5" />
@@ -512,7 +516,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="glass-panel scroll-mt-24 rounded-2xl p-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -523,7 +527,7 @@ export function CreatorView({
                   My connected accounts
                 </h2>
               </div>
-              <span className="rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+              <span className="glass-chip rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                 {accounts.filter((a) => a.status === "connected").length}/
                 {accounts.length || 0} verified
               </span>
@@ -553,7 +557,7 @@ export function CreatorView({
 
             <Button
               variant="outline"
-              className="mt-4 w-full gap-1.5 border-black/12 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+              className="mt-4 w-full glass-chip gap-1.5 hover:border-white/20"
               onClick={onConnect}
             >
               <Link2 className="h-4 w-4" />
@@ -569,7 +573,7 @@ export function CreatorView({
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="scroll-mt-24 rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="glass-panel scroll-mt-24 rounded-2xl p-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -635,14 +639,14 @@ export function CreatorView({
             </h3>
             <ul className="mt-2 space-y-2">
               {paidCycles.length === 0 ? (
-                <li className="rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-4 py-4 text-center text-xs text-muted-foreground">
+                <li className="glass-chip rounded-xl px-4 py-4 text-center text-xs text-muted-foreground">
                   Paid cycles will show up here.
                 </li>
               ) : (
                 paidCycles.map((cycle) => (
                   <li
                     key={cycle.id}
-                    className="flex items-center justify-between rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-4 py-2.5"
+                    className="flex items-center justify-between glass-chip rounded-xl px-4 py-2.5"
                   >
                     <div>
                       <p className="text-[13px] font-medium">{cycle.label}</p>
@@ -695,7 +699,7 @@ function AccountRow({
       ? `${fmtFull(stats.clips)} ${stats.clips === 1 ? "clip" : "clips"} · ${fmtViews(stats.views)} views`
       : null;
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3 py-2.5">
+    <li className="flex items-center gap-3 glass-chip rounded-xl px-3 py-2.5">
       <PlatformChip platform={account.platform} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold">@{account.handle}</p>

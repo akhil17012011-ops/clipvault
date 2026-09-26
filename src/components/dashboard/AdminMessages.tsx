@@ -100,7 +100,7 @@ export function AdminMessages({
       initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl border border-white/8 bg-card/60 p-5 backdrop-blur-2xl"
+      className="glass-panel rounded-2xl p-5"
     >
       <div className="flex items-center gap-2.5">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
@@ -222,7 +222,7 @@ export function AdminMessages({
         onChange={(e) => setBody(e.target.value)}
         rows={3}
         placeholder="What do you want to say?"
-        className="mt-2 w-full resize-y rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-[12.5px] leading-relaxed outline-none transition-colors placeholder:text-muted-foreground focus:border-brand/50"
+        className="glass-chip mt-2 w-full resize-y rounded-lg px-3 py-2.5 text-[12.5px] leading-relaxed outline-none transition-colors placeholder:text-muted-foreground focus:border-[#A855F7]/50"
       />
 
       {error && <p className="mt-2 text-[12px] text-red-400">{error}</p>}
@@ -254,7 +254,7 @@ export function AdminMessages({
             {history.slice(0, 12).map((message) => (
               <li
                 key={message.id}
-                className="rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2.5"
+                className="glass-chip rounded-lg px-3 py-2.5"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-[12.5px] font-bold">

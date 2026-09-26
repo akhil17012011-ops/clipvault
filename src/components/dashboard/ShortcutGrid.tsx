@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 
 export type Shortcut = {
@@ -14,8 +14,8 @@ export type Shortcut = {
 
 /**
  * Overview page shortcut cards — one per sidebar section, each linking to that
- * section's own page. Cards use the shared panel hover treatment (lift, violet
- * bloom, sheen sweep) and stagger in on mount.
+ * section's own page. Cards use the shared glass panel treatment (lift, violet
+ * bloom, hover specular band) and stagger in on mount.
  */
 export function ShortcutGrid({ cards }: { cards: Shortcut[] }) {
   return (
@@ -33,19 +33,22 @@ export function ShortcutGrid({ cards }: { cards: Shortcut[] }) {
         >
           <Link
             to={card.to}
-            className="panel-fx group block h-full rounded-2xl border border-black/8 dark:border-white/10 bg-card p-5"
+            className="panel-fx glass-panel glass-sheen group relative block h-full overflow-hidden rounded-2xl p-5"
           >
-            <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand transition-transform duration-300 group-hover:scale-110">
+            <div className="relative z-10 flex items-center justify-between gap-2">
+              <span className="glass-chip inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#C9AEFF] transition-transform duration-300 group-hover:scale-105">
                 <card.icon className="h-4 w-4" />
               </span>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5" />
+              <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#C9AEFF]" />
             </div>
-            <p className="mt-3 font-mono text-xl font-extrabold tracking-tight text-foreground">
+
+            <p className="relative z-10 mt-4 font-mono text-[22px] font-extrabold leading-none tracking-[-0.03em] text-foreground">
               {card.value}
             </p>
-            <p className="mt-1 text-[13px] font-semibold">{card.label}</p>
-            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+            <p className="relative z-10 mt-2 text-[13px] font-semibold tracking-tight">
+              {card.label}
+            </p>
+            <p className="relative z-10 mt-1 text-[11.5px] leading-snug text-muted-foreground">
               {card.hint}
             </p>
           </Link>
