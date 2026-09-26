@@ -110,7 +110,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setBusy(true);
     setError(null);
     try {
-      await signIn("google", { redirectTo: window.location.href });
+      /**
+       * `redirectTo` must resolve against the Convex site, because that is the
+       * OAuth origin — an absolute app URL is rejected by Convex Auth. So we
+       * ask to be handed back to a path on the app, and the Convex site's
+       * /back-to-app route sends the browser home. `redirect` is already a
+       * validated same-app path, so only the path is carried.
+       */
+      await signIn("google", {
+        redirectTo: `/back-to-app?to=${encodeURIComponent(redirect)}`,
+      });
     } catch (err) {
       console.error("Google sign-in error:", err);
       setError(readableError(err));
