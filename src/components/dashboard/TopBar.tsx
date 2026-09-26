@@ -159,7 +159,7 @@ export function TopBar({
 
       {/* Reading progress — fills as you scroll the dashboard */}
       <motion.div
-        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-brand via-[#a78bfa] to-brand"
+        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-[#7C3AED] via-[#A855F7] to-[#4C1D95]"
         style={{ scaleX: progress }}
       />
     </header>

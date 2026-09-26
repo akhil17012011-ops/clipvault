@@ -15,7 +15,15 @@ export function ensureSmoothScroll() {
   ) {
     return;
   }
-  lenis = new Lenis({ lerp: 0.108, smoothWheel: true });
+  lenis = new Lenis({
+    lerp: 0.12,
+    smoothWheel: true,
+    /* Momentum on touch devices so phones get the same glide as desktop. */
+    syncTouch: true,
+    syncTouchLerp: 0.085,
+    touchMultiplier: 1.6,
+    wheelMultiplier: 1.05,
+  });
   const raf = (time: number) => {
     lenis?.raf(time);
     requestAnimationFrame(raf);
@@ -38,7 +46,12 @@ export function scrollToSection(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   if (lenis) {
-    lenis.scrollTo(el, { offset: -96, duration: 1.15 });
+    lenis.scrollTo(el, {
+      offset: -96,
+      duration: 1.25,
+      /* Ease-out-expo-ish glide rather than a linear ramp. */
+      easing: (t: number) => 1 - Math.pow(1 - t, 4),
+    });
   } else {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }

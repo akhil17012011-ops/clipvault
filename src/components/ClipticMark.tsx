@@ -13,6 +13,7 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
       viewBox="0 0 96 96"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      style={{ filter: "drop-shadow(0 4px 14px rgb(139 92 246 / 0.45))" }}
       aria-hidden="true"
     >
       <defs>
@@ -24,9 +25,22 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
           y2="94"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#8358FF" />
-          <stop offset="0.5" stopColor="#8B3FE2" />
-          <stop offset="1" stopColor="#5B0FA6" />
+          <stop stopColor="#7C3AED" />
+          <stop offset="0.45" stopColor="#5B21B6" />
+          <stop offset="1" stopColor="#2E0A5E" />
+        </linearGradient>
+        {/* Electric violet rim, as on the reference mark. */}
+        <linearGradient
+          id={id("rim")}
+          x1="14"
+          y1="6"
+          x2="82"
+          y2="92"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#C084FC" stopOpacity="0.85" />
+          <stop offset="0.5" stopColor="#A855F7" stopOpacity="0.2" />
+          <stop offset="1" stopColor="#7C3AED" stopOpacity="0.75" />
         </linearGradient>
         <linearGradient
           id={id("gloss")}
@@ -47,8 +61,8 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
           y2="88"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#F3EFFF" />
-          <stop offset="1" stopColor="#8B6BFA" />
+          <stop stopColor="#DDD6FE" />
+          <stop offset="1" stopColor="#7C3AED" />
         </linearGradient>
         <linearGradient
           id={id("bar")}
@@ -58,11 +72,21 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
           y2="44"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#E4DCFF" />
-          <stop offset="1" stopColor="#A78BFA" />
+          <stop stopColor="#C4B5FD" />
+          <stop offset="1" stopColor="#7C3AED" />
         </linearGradient>
       </defs>
       <rect x="2" y="2" width="92" height="92" rx="26" fill={`url(#${id("body")})`} />
+      <rect
+        x="2.75"
+        y="2.75"
+        width="90.5"
+        height="90.5"
+        rx="25.5"
+        fill="none"
+        stroke={`url(#${id("rim")})`}
+        strokeWidth="1.5"
+      />
       <rect x="2" y="2" width="92" height="92" rx="26" fill={`url(#${id("gloss")})`} />
       <g transform="skewX(-16)" fill={`url(#${id("bar")})`}>
         <rect x="36" y="14" width="15" height="26" rx="6.5" />
@@ -72,7 +96,7 @@ export function ClipticMark({ className = "h-9 w-9" }: { className?: string }) {
       <rect x="16" y="46" width="64" height="38" rx="15" fill={`url(#${id("shine")})`} />
       <path
         d="M43 55.5c0-1.6 1.7-2.6 3.1-1.8l15.4 8.3c1.4.8 1.4 2.8 0 3.6L46.1 74c-1.4.8-3.1-.2-3.1-1.8V55.5Z"
-        fill="#2E1C84"
+        fill="#2A0A5C"
       />
     </svg>
   );

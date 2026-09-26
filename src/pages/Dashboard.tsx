@@ -88,7 +88,8 @@ export default function Dashboard() {
 
   return (
     <main className="relative min-h-screen bg-background">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-brand/[0.09] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-gradient-to-b from-[#7C3AED]/25 via-[#5B21B6]/10 to-transparent" />
+      <div className="pointer-events-none absolute -top-32 left-1/4 h-72 w-[520px] rounded-full bg-[#6D28D9]/25 blur-[130px]" />
 
       <Sidebar
         role={view}

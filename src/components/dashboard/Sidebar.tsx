@@ -234,7 +234,7 @@ function SidebarBody({
               {isActive && (
                 <motion.span
                   layoutId={`${layoutKey}-active`}
-                  className="absolute inset-0 rounded-xl border border-brand/25 bg-brand/10 shadow-[0_8px_20px_-10px_rgb(139_63_226/0.55)]"
+                  className="absolute inset-0 rounded-xl border border-brand/30 bg-brand/15 shadow-[0_8px_24px_-8px_rgb(168_85_247/0.7)]"
                   transition={{ type: "spring", stiffness: 430, damping: 34 }}
                 />
               )}

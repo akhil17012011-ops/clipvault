@@ -65,7 +65,7 @@
   --card-foreground: oklch(0.155 0.014 300);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.155 0.014 300);
-  --primary: oklch(0.523 0.245 302);
+  --primary: oklch(0.478 0.272 300);
   --primary-foreground: oklch(0.985 0.006 300);
   --secondary: oklch(0.955 0.005 300);
   --secondary-foreground: oklch(0.2 0.014 300);
@@ -76,26 +76,26 @@
   --destructive: oklch(0.577 0.191 22.216);
   --border: oklch(0.14 0.012 300 / 0.09);
   --input: oklch(0.14 0.012 300 / 0.13);
-  --ring: oklch(0.523 0.245 302);
-  --chart-1: oklch(0.523 0.245 302);
+  --ring: oklch(0.478 0.272 300);
+  --chart-1: oklch(0.478 0.272 300);
   --chart-2: oklch(0.6 0.155 152);
   --chart-3: oklch(0.65 0.19 303);
   --chart-4: oklch(0.7 0.16 70);
   --chart-5: oklch(0.6 0.2 24);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.155 0.014 300);
-  --sidebar-primary: oklch(0.523 0.245 302);
+  --sidebar-primary: oklch(0.478 0.272 300);
   --sidebar-primary-foreground: oklch(0.985 0.006 300);
   --sidebar-accent: oklch(0.955 0.005 300);
   --sidebar-accent-foreground: oklch(0.2 0.014 300);
   --sidebar-border: oklch(0.14 0.012 300 / 0.09);
-  --sidebar-ring: oklch(0.523 0.245 302);
+  --sidebar-ring: oklch(0.478 0.272 300);
 
   /* Brand palette (shared across themes) — taken from the CLIPTIC logo */
-  --brand: oklch(0.523 0.245 302);
-  --brand-strong: oklch(0.46 0.26 302);
+  --brand: oklch(0.478 0.272 300);
+  --brand-strong: oklch(0.418 0.285 300);
   --brand-foreground: oklch(0.985 0.005 300);
-  --brand-soft: oklch(0.523 0.245 302 / 0.1);
+  --brand-soft: oklch(0.478 0.272 300 / 0.1);
   --neon: oklch(0.6 0.15 152);
   --neon-foreground: oklch(0.32 0.07 152);
 
@@ -103,43 +103,43 @@
 }
 
 .dark {
-  --background: oklch(0.11 0.01 300);
+  --background: oklch(0.085 0.021 295);
   --foreground: oklch(0.965 0.006 300);
-  --card: oklch(0.145 0.012 300);
+  --card: oklch(0.155 0.03 297);
   --card-foreground: oklch(0.965 0.006 300);
-  --popover: oklch(0.155 0.012 300);
+  --popover: oklch(0.175 0.032 297);
   --popover-foreground: oklch(0.965 0.006 300);
-  --primary: oklch(0.66 0.235 302);
+  --primary: oklch(0.575 0.278 300);
   --primary-foreground: oklch(0.985 0.006 300);
-  --secondary: oklch(0.21 0.014 300);
+  --secondary: oklch(0.215 0.032 297);
   --secondary-foreground: oklch(0.965 0.006 300);
-  --muted: oklch(0.19 0.013 300);
+  --muted: oklch(0.2 0.03 297);
   --muted-foreground: oklch(0.67 0.017 300);
-  --accent: oklch(0.23 0.016 300);
+  --accent: oklch(0.25 0.04 297);
   --accent-foreground: oklch(0.965 0.006 300);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.7 0.23 302);
-  --chart-1: oklch(0.7 0.23 302);
+  --ring: oklch(0.62 0.265 300);
+  --chart-1: oklch(0.62 0.265 300);
   --chart-2: oklch(0.8 0.17 140);
   --chart-3: oklch(0.72 0.18 303);
   --chart-4: oklch(0.75 0.16 70);
   --chart-5: oklch(0.68 0.2 24);
-  --sidebar: oklch(0.13 0.011 300);
+  --sidebar: oklch(0.115 0.024 297);
   --sidebar-foreground: oklch(0.965 0.006 300);
-  --sidebar-primary: oklch(0.66 0.235 302);
+  --sidebar-primary: oklch(0.575 0.278 300);
   --sidebar-primary-foreground: oklch(0.985 0.006 300);
-  --sidebar-accent: oklch(0.21 0.014 300);
+  --sidebar-accent: oklch(0.215 0.032 297);
   --sidebar-accent-foreground: oklch(0.965 0.006 300);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.7 0.23 302);
+  --sidebar-ring: oklch(0.62 0.265 300);
 
   /* Brand palette on black — brighter logo violet + neon */
-  --brand: oklch(0.74 0.205 302);
-  --brand-strong: oklch(0.68 0.225 302);
-  --brand-foreground: oklch(0.12 0.03 302);
-  --brand-soft: oklch(0.74 0.205 302 / 0.16);
+  --brand: oklch(0.625 0.262 300);
+  --brand-strong: oklch(0.545 0.29 300);
+  --brand-foreground: oklch(0.985 0.006 300);
+  --brand-soft: oklch(0.625 0.262 300 / 0.18);
   --neon: oklch(0.87 0.19 133);
   --neon-foreground: oklch(0.28 0.055 133);
 
@@ -202,10 +202,10 @@ html.lenis body {
 .text-grad {
   background-image: linear-gradient(
     100deg,
-    #7a2ff2 0%,
-    #9b4dff 42%,
-    #8b2fe0 70%,
-    #5b1099 100%
+    #4c1d95 0%,
+    #7c3aed 38%,
+    #6d28d9 68%,
+    #2e1065 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -214,12 +214,17 @@ html.lenis body {
 
 /* iOS-style liquid glass panels */
 .glass {
-  background: rgb(255 255 255 / 0.72);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.78),
+    rgb(243 233 255 / 0.62)
+  );
+  backdrop-filter: blur(26px) saturate(190%);
+  -webkit-backdrop-filter: blur(26px) saturate(190%);
   border: 1px solid rgb(255 255 255 / 0.75);
   box-shadow:
-    0 14px 40px -18px rgb(52 20 88 / 0.28),
+    0 14px 40px -18px rgb(76 29 149 / 0.3),
+    0 0 26px -14px rgb(124 58 237 / 0.35),
     inset 0 1px 0 rgb(255 255 255 / 0.95);
 }
 
@@ -273,8 +278,21 @@ html.lenis body {
 
 .glow-primary {
   box-shadow:
-    0 14px 34px -12px rgb(139 63 226 / 0.55),
+    0 14px 34px -12px rgb(124 58 237 / 0.6),
+    0 0 26px -8px rgb(168 85 247 / 0.5),
     0 0 0 1px rgb(255 255 255 / 0.35) inset;
+}
+
+/* Electric violet aura — the rim glow from the CLIPTIC mark. */
+.aurora {
+  box-shadow:
+    0 0 38px -10px rgb(139 92 246 / 0.55),
+    0 0 90px -24px rgb(124 58 237 / 0.5);
+}
+.dark .aurora {
+  box-shadow:
+    0 0 42px -8px rgb(168 85 247 / 0.6),
+    0 0 100px -22px rgb(147 51 234 / 0.55);
 }
 
 .grid-fade {
@@ -530,11 +548,18 @@ html.lenis body {
 /* ---------- Dark mode: black + logo violet ---------- */
 
 .dark .glass {
-  background: rgb(22 12 32 / 0.66);
-  border-color: rgb(255 255 255 / 0.08);
+  background: linear-gradient(
+    180deg,
+    rgb(46 24 84 / 0.62),
+    rgb(26 14 52 / 0.72)
+  );
+  border-color: rgb(196 181 253 / 0.14);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
   box-shadow:
-    0 14px 40px -18px rgb(0 0 0 / 0.7),
-    inset 0 1px 0 rgb(255 255 255 / 0.07);
+    0 14px 40px -18px rgb(0 0 0 / 0.8),
+    0 0 30px -12px rgb(124 58 237 / 0.4),
+    inset 0 1px 0 rgb(196 181 253 / 0.18);
 }
 
 .dark .glass-soft {
@@ -555,17 +580,18 @@ html.lenis body {
 .dark .text-grad {
   background-image: linear-gradient(
     100deg,
-    #d9b8ff 0%,
-    #c084fc 45%,
-    #b06bff 70%,
-    #f0e2ff 100%
+    #b794ff 0%,
+    #9d5cff 42%,
+    #7c3aed 70%,
+    #a78bfa 100%
   );
 }
 
 .dark .glow-primary {
   box-shadow:
-    0 16px 40px -12px rgb(160 90 255 / 0.7),
-    0 0 0 1px rgb(255 255 255 / 0.12) inset;
+    0 16px 40px -12px rgb(147 51 234 / 0.75),
+    0 0 30px -8px rgb(168 85 247 / 0.6),
+    0 0 0 1px rgb(196 181 253 / 0.16) inset;
 }
 
 .dark .grid-fade {

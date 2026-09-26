@@ -62,7 +62,7 @@ function SiteNav() {
       <nav
         className={`relative mx-auto flex h-16 max-w-6xl items-center justify-between overflow-hidden rounded-2xl px-4 transition-all duration-300 sm:px-5 ${
           scrolled
-            ? "glass shadow-[0_20px_50px_-28px_rgb(52_20_88/0.4)]"
+            ? "glass shadow-[0_20px_50px_-26px_rgb(76_29_149/0.45)]"
             : "border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] backdrop-blur-xl"
         }`}
       >
@@ -259,7 +259,7 @@ function ClipCluster() {
 
   return (
     <div className="relative mx-auto w-full max-w-md">
-      <div className="pointer-events-none absolute -inset-6 rounded-[40px] bg-[#8B3FE2]/15 blur-3xl" />
+      <div className="pointer-events-none absolute -inset-6 rounded-[40px] bg-[#7C3AED]/20 blur-3xl" />
       <div
         onPointerMove={handleMove}
         onPointerLeave={reset}
@@ -324,15 +324,15 @@ function Hero() {
     >
       <motion.div
         style={{ y: blobY1 }}
-        className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#8B3FE2]/25 blur-[150px]"
+        className="pointer-events-none absolute -top-52 left-1/2 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-[#6D28D9]/35 blur-[150px]"
       />
       <motion.div
         style={{ y: blobY2 }}
-        className="pointer-events-none absolute -left-40 top-64 h-[380px] w-[380px] rounded-full bg-[#8B5CF6]/15 blur-[130px]"
+        className="pointer-events-none absolute -left-40 top-64 h-[380px] w-[380px] rounded-full bg-[#A855F7]/20 blur-[130px]"
       />
       <motion.div
         style={{ y: blobY3 }}
-        className="pointer-events-none absolute -right-40 top-96 h-[340px] w-[340px] rounded-full bg-[#4C1D95]/15 blur-[120px]"
+        className="pointer-events-none absolute -right-40 top-96 h-[340px] w-[340px] rounded-full bg-[#3B0F7A]/30 blur-[120px]"
       />
       <div className="grid-fade pointer-events-none absolute inset-0" />
 
@@ -1147,7 +1147,7 @@ function FinalCTA() {
         {...fadeUp}
         className="panel-fx relative overflow-hidden rounded-3xl border border-brand/25 bg-gradient-to-b from-brand/20 to-brand/[0.03] px-6 py-16 text-center sm:py-20"
       >
-        <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[560px] -translate-x-1/2 rounded-full bg-[#8B3FE2]/40 blur-[110px]" />
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[560px] -translate-x-1/2 rounded-full bg-[#6D28D9]/45 blur-[110px]" />
         <div className="relative">
           <ClipticMark className="mx-auto h-14 w-14" />
           <h2 className="mx-auto mt-6 max-w-2xl text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
