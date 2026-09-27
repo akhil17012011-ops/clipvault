@@ -22,16 +22,15 @@ import { auth } from "./auth";
  * The origin the app itself is served from, used to hand the browser back after
  * an OAuth round trip.
  *
- * `SITE_URL` is the variable the hosting platform publishes, so it is read
- * first — preferring `APP_URL` over it would mean an override that nobody sets
- * silently shadows the value that is actually configured, and the hand-back
- * would quietly fall through to the compiled-in default. `APP_URL` stays
- * supported as an explicit override for self-hosting.
+ * Deliberately does NOT fall back to `SITE_URL`: the hosting platform sets that
+ * to the Convex *site* URL, which is the OAuth origin and serves no app at all.
+ * Redirecting there lands the visitor on "No matching routes found" the moment
+ * the code is deployed anywhere the variable is set. `APP_URL` is the only
+ * variable that means "where the frontend lives", and it has to be set
+ * explicitly in the deployment environment.
  */
 const APP_URL = (
-  process.env.APP_URL ??
-  process.env.SITE_URL ??
-  "https://clipvaultclipping.freebuff.app"
+  process.env.APP_URL ?? "https://clipvaultclipping.freebuff.app"
 ).replace(/\/+$/, "");
 
 const http = httpRouter();
