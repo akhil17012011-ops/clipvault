@@ -509,17 +509,20 @@ html.lenis body {
  * rule stayed visible for thousands of pixels on a long page and read as a
  * full-page grid. Fixed stops make the same visual falloff on every page.
  */
+/*
+ * The page backdrop: one sparse lattice, strongest at the top, gone by the
+ * first screenful.
+ *
+ * A single 112px grid. It used to layer a second, finer 28px grid on top, which
+ * put a small square inside every large square and read as clutter — the eye
+ * locks onto the busy pitch rather than the structure. One pitch is calmer and
+ * gives the cards something to sit against without competing with them.
+ */
 .grid-page {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.055) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.055) 1px, transparent 1px),
-    linear-gradient(to right, rgb(255 255 255 / 0.022) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.022) 1px, transparent 1px);
-  background-size:
-    112px 112px,
-    112px 112px,
-    28px 28px,
-    28px 28px;
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 112px 112px, 112px 112px;
   /* Held at full strength only across the first screenful, then eased away. */
   -webkit-mask-image: linear-gradient(
     to bottom,
@@ -586,11 +589,10 @@ html.lenis body {
  * console rather than a second grid pretending to be one.
  */
 .glass-panel {
-  /* Translucent on purpose. The card utility paints an opaque `bg-card`, which
-     would hide the page grid behind the panel and undo the point of the glass
-     treatment; this alpha sits under the same stacking order and lets the
-     backdrop read through as one continuous surface. */
-  background-color: rgb(20 14 38 / 0.55);
+  /* Opaque. The backdrop grid belongs *behind* the cards, not through them —
+     letting it show through put a lattice on top of every panel's highlights
+     and made the whole console shimmer. One solid surface per card. */
+  background-color: rgb(19 13 36);
   background-image:
     radial-gradient(
       130% 100% at 0% 0%,
