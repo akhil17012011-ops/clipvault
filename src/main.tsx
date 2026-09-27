@@ -5,6 +5,7 @@ import { RequireVerified } from "@/components/VerifyEmailGate";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ClipVaultProvider } from "@/lib/clip-vault-store";
+import { startDeployWatch } from "@/lib/deploy-watch";
 import {
   ensureSmoothScroll,
   resetScroll,
@@ -96,6 +97,17 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 
 
+/**
+ * Reloads the tab when a new build is deployed, so nobody is left clicking
+ * through a UI the server has already moved on from. Renders nothing.
+ */
+function DeployWatcher() {
+  useEffect(() => {
+    startDeployWatch();
+  }, []);
+  return null;
+}
+
 function RouteSyncer() {
   const location = useLocation();
   const lastPath = useRef<string | null>(null);
@@ -134,6 +146,7 @@ function RouteSyncer() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <DeployWatcher />
     <RootErrorBoundary>
       <ToolbarErrorBoundary>
         <VlyToolbar />
