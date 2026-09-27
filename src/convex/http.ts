@@ -19,7 +19,7 @@ import { auth } from "./auth";
  * URL — so this cannot be used to bounce people to an attacker's site.
  */
 const APP_URL = (
-  process.env.APP_URL ?? "https://clipvaultclipping.com"
+  process.env.APP_URL ?? "https://clipvaultclipping.freebuff.app"
 ).replace(/\/+$/, "");
 
 const http = httpRouter();
