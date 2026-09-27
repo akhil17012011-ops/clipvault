@@ -510,19 +510,24 @@ html.lenis body {
  * full-page grid. Fixed stops make the same visual falloff on every page.
  */
 /*
- * The page backdrop: one sparse lattice, strongest at the top, gone by the
+ * The page backdrop: one very large lattice, strongest at the top, gone by the
  * first screenful.
  *
- * A single 112px grid. It used to layer a second, finer 28px grid on top, which
- * put a small square inside every large square and read as clutter — the eye
- * locks onto the busy pitch rather than the structure. One pitch is calmer and
- * gives the cards something to sit against without competing with them.
+ * A single 260px pitch, and deliberately coarse. This started at 28px with a
+ * 112px layer over it, and every reduction left the screen reading as a thicket
+ * of little squares — the eye counts cells rather than reading the layout. At
+ * 260px there are only a few columns across a screen, so the grid reads as
+ * structure behind the content instead of competing with it.
+ *
+ * The line is kept faint on purpose. A large cell only works if the line is
+ * quiet; the same opacity that read as subtle at 28px turns into a hard
+ * scaffold at this scale.
  */
 .grid-page {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
-  background-size: 112px 112px, 112px 112px;
+    linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+  background-size: 260px 260px, 260px 260px;
   /* Held at full strength only across the first screenful, then eased away. */
   -webkit-mask-image: linear-gradient(
     to bottom,
