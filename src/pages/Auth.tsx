@@ -328,10 +328,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             ) : (
               <>
                 <h2 className="text-center text-2xl font-extrabold tracking-tight">
-                  Welcome to Clip Vault
+                  Sign in to Clip Vault
                 </h2>
                 <p className="mt-2 text-center text-sm text-muted-foreground">
-                  Sign in or create an account — it takes less than a minute.
+                  New here? Google creates your account automatically.
                 </p>
 
                 <button
