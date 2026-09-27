@@ -136,7 +136,7 @@ const NAV: Record<DashboardView, NavItem[]> = {
 };
 
 /** Where feedback and bug reports are sent. */
-const SUPPORT_EMAIL = "support@clipvault.app";
+const SUPPORT_EMAIL = "support@clipvaultclipping.com";
 
 export function Sidebar({
   role,

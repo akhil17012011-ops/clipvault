@@ -4,7 +4,7 @@ import { useId, useState } from "react";
  * The supplied brand artwork, used exactly as given. It lives in `public/` so
  * the browser fetches and caches the real file — nothing here redraws it.
  */
-const MARK_SRC = "/clip-vault-logo.png";
+const MARK_SRC = "/assets/1000007882.jpg";
 
 /**
  * The Clip Vault mark, used across nav, auth, the dashboard and the footer.

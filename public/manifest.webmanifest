@@ -1,16 +1,17 @@
 {
-  "name": "CLIPTIC — Clip. Post. Get Paid.",
-  "short_name": "CLIPTIC",
+  "name": "Clip Vault — Clip. Post. Get Paid.",
+  "short_name": "Clip Vault",
   "description": "The UGC clipping network connecting brands and creators. Earn per verified view on TikTok, Instagram Reels and YouTube Shorts.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f7f7fa",
-  "theme_color": "#f7f7fa",
+  "background_color": "#0C0A14",
+  "theme_color": "#160B33",
   "icons": [
     {
-      "src": "/logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/assets/1000007882.jpg",
+      "sizes": "938x938",
+      "type": "image/jpeg",
       "purpose": "any"
     }
   ]

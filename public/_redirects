@@ -1,0 +1,10 @@
+# Clip Vault is a client-routed SPA (react-router BrowserRouter), so every
+# deep link such as /dashboard/payments or /auth?returnTo=/dashboard is a real
+# URL that must resolve to index.html. Without this rule those links 404 on a
+# cold load or refresh while in-app navigation keeps working.
+#
+# Honoured by Netlify and Cloudflare Pages. The asset extension check keeps real
+# files (images, css, js) from being rewritten — some hosts otherwise serve
+# index.html in place of a missing asset, which turns a 404 into a confusing
+# parse error in the console.
+/*  /index.html  200
