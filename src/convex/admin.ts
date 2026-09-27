@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalAction, internalMutation, query } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, query } from "./_generated/server";
 import {
   createAccount,
   modifyAccountCredentials,
@@ -271,6 +271,85 @@ export const rotateAdminCredentials = internalAction({
     return {
       ok: true,
       message: `Rotated to ${to}. ${renamed.sessionsRevoked} existing session(s) revoked; sign in again with the new credentials.`,
+    };
+  },
+});
+
+/**
+ * Whether the auth `users` table holds any row at all. Used only by
+ * {@link claimEmptyDeployment} to prove a deployment has never been signed in to.
+ */
+export const anyUserExists = internalQuery({
+  args: {},
+  handler: async (ctx): Promise<boolean> => {
+    return (await ctx.db.query("users").first()) !== null;
+  },
+});
+
+/**
+ * TEMPORARY — one-shot operator bootstrap for a freshly published deployment.
+ *
+ * Convex gives every deployment its own database, so publishing the app for the
+ * first time lands on a prod backend with no users at all, and the operator has
+ * no way in: the CLI that can create the account is bound to the dev
+ * deployment, and the hosting UI exposes no terminal.
+ *
+ * This is the narrowest door that solves it. It will only ever run on a
+ * deployment where **the users table is completely empty**, which is the exact
+ * condition that makes bootstrapping necessary and, the moment an account
+ * exists, permanently impossible. There is no second window: once this succeeds
+ * — or once anyone signs up through the app — every subsequent call throws.
+ *
+ * That emptiness check, not the shared secret, is the real control. The secret
+ * only stops an unrelated visitor from winning the race against the operator on
+ * the few seconds between publishing and bootstrapping.
+ *
+ * Delete this function and republish once the operator account exists.
+ */
+export const claimEmptyDeployment = action({
+  args: {
+    email: v.string(),
+    password: v.string(),
+    secret: v.string(),
+  },
+  handler: async (
+    ctx,
+    args: { email: string; password: string; secret: string },
+  ): Promise<{ ok: boolean; message: string }> => {
+    if (args.secret !== "cv-claim-9f3a71c4") {
+      throw new Error("Invalid claim secret.");
+    }
+
+    const alreadyUsed = await ctx.runQuery(internal.admin.anyUserExists, {});
+    if (alreadyUsed) {
+      throw new Error(
+        "This deployment already has accounts, so it cannot be claimed. Nothing was changed.",
+      );
+    }
+
+    const email = args.email.trim().toLowerCase();
+    if (args.password.length < 8) {
+      throw new Error("Password must be at least 8 characters.");
+    }
+
+    const { user } = await createAccount(ctx, {
+      provider: "password",
+      account: { id: email, secret: args.password },
+      profile: {
+        email,
+        emailVerificationTime: Date.now(),
+        role: "admin",
+      },
+    });
+
+    const role = user.role;
+    if (role !== "admin") {
+      throw new Error("Account was created but the admin role did not apply.");
+    }
+
+    return {
+      ok: true,
+      message: `Operator account created for ${email}. This deployment can never be claimed again.`,
     };
   },
 });
