@@ -121,18 +121,18 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   /* Whether the typed address already has an account. Held as a subscription
      rather than a one-shot fetch so the hint appears and disappears as the
-     address is edited, with no request per keystroke. */
+     address is edited, with no request per keystroke.
+
+     `useQuery` takes the literal string "skip" as the entire args value to
+     stand the query down — `skip` is not a field inside the args object, and
+     passing it as one reaches the server as an unexpected argument. */
   const knownEmail = email.trim().toLowerCase();
-  const emailStatus = useQuery(api.roles.emailInUse, {
-    email: knownEmail,
-    /* Skip a half-typed address, and skip entirely unless it matters — the
-       hint is only ever shown on the sign-up form. */
-    ...(mode === "password" &&
-    flow === "signUp" &&
-    knownEmail.includes("@")
-      ? {}
-      : { skip: true as const }),
-  });
+  const shouldCheckEmail =
+    mode === "password" && flow === "signUp" && knownEmail.includes("@");
+  const emailStatus = useQuery(
+    api.roles.emailInUse,
+    shouldCheckEmail ? { email: knownEmail } : "skip",
+  );
 
   /* The same check again as a mutation, run at submit time. The live query
      above is a hint and can be a beat behind or skipped; this one is the gate
