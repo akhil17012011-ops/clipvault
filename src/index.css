@@ -323,23 +323,6 @@ html.lenis body {
     0 0 100px -22px rgb(147 51 234 / 0.55);
 }
 
-.grid-fade {
-  background-image:
-    linear-gradient(to right, rgb(28 10 44 / 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(28 10 44 / 0.05) 1px, transparent 1px);
-  background-size: 56px 56px;
-  -webkit-mask-image: radial-gradient(
-    ellipse 75% 65% at 50% 0%,
-    black 25%,
-    transparent 78%
-  );
-  mask-image: radial-gradient(
-    ellipse 75% 65% at 50% 0%,
-    black 25%,
-    transparent 78%
-  );
-}
-
 /* Scroll reveal — pairs with framer-motion whileInView sections */
 .reveal {
   opacity: 0;
@@ -468,35 +451,7 @@ html.lenis body {
    Grids are painted as plain repeating gradients rather than SVG or an
    image, so they cost one paint and never reflow. */
 
-.grid-fine {
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-.grid-micro {
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.032) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.032) 1px, transparent 1px);
-  background-size: 16px 16px;
-}
-
-/* Two-scale blueprint: a structural 112px lattice over a 28px weave. */
-.grid-blueprint {
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.055) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.055) 1px, transparent 1px),
-    linear-gradient(to right, rgb(255 255 255 / 0.022) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.022) 1px, transparent 1px);
-  background-size:
-    112px 112px,
-    112px 112px,
-    28px 28px,
-    28px 28px;
-}
-
-/* Page-scale grid: same lattice, faded out before it reaches the fold. */
+/* Page-scale grid: the one lattice in the product. */
 /*
  * The page backdrop: a crisp grid across the top that dissolves as you read
  * down, so it frames the opening of a page instead of running under the entire
@@ -547,20 +502,16 @@ html.lenis body {
   );
 }
 
-.grid-dots {
-  background-image: radial-gradient(
-    rgb(255 255 255 / 0.09) 1px,
-    transparent 1px
-  );
-  background-size: 14px 14px;
-}
-
+/* The sticky top bar. The faint vertical pinstripe it used to carry was a
+   28px grid, which put a second lattice against the page backdrop and read as
+   clutter on the one surface that is always on screen. Now a plain gradient. */
 .glass-bar {
   background-color: rgb(13 10 24 / 0.78);
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.028) 1px, transparent 1px),
-    linear-gradient(180deg, rgb(22 14 42 / 0.86) 0%, rgb(13 10 24 / 0.78) 100%);
-  background-size: 28px 100%, auto;
+  background-image: linear-gradient(
+    180deg,
+    rgb(22 14 42 / 0.86) 0%,
+    rgb(13 10 24 / 0.78) 100%
+  );
   backdrop-filter: blur(30px) saturate(190%);
   -webkit-backdrop-filter: blur(30px) saturate(190%);
   box-shadow:
@@ -568,12 +519,15 @@ html.lenis body {
     inset 0 -1px 0 0 rgb(0 0 0 / 0.4);
 }
 
+/* The sidebar rail, same story as the top bar — its horizontal pinstripe was a
+   28px grid. A plain horizontal gradient instead. */
 .glass-rail {
   background-color: rgb(14 11 26 / 0.78);
-  background-image:
-    linear-gradient(to bottom, rgb(255 255 255 / 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(20 12 40 / 0.9) 0%, rgb(12 10 22 / 0.74) 100%);
-  background-size: 100% 28px, auto;
+  background-image: linear-gradient(
+    90deg,
+    rgb(20 12 40 / 0.9) 0%,
+    rgb(12 10 22 / 0.74) 100%
+  );
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   box-shadow:
@@ -810,15 +764,7 @@ html.lenis body {
     0 16px 40px -12px rgb(147 51 234 / 0.75),
     0 0 30px -8px rgb(168 85 247 / 0.6),
     0 0 0 1px rgb(196 181 253 / 0.16) inset;
-}
-
-.dark .grid-fade {
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
-}
-
-.dark ::selection {
+}.dark ::selection {
   background: rgb(176 107 255 / 0.4);
 }
 

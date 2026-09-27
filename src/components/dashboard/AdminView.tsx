@@ -260,7 +260,6 @@ export function AdminView({
     <div className="space-y-6">
       {/* header */}
       <div className="glass-panel relative overflow-hidden rounded-3xl p-6">
-        <div className="grid-micro pointer-events-none absolute inset-0 opacity-70" />
         <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-[#7C3AED]/25" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>

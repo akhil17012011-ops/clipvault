@@ -44,7 +44,6 @@ export function PayoutPulse({
   return (
     <section className="glass-panel relative flex h-full flex-col overflow-hidden rounded-2xl p-5">
       <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#7C3AED]/20" />
-      <div className="grid-dots pointer-events-none absolute inset-0 opacity-60" />
 
       <header className="relative flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -280,7 +279,6 @@ export function SettlementPulse({
   return (
     <section className="glass-panel relative flex h-full flex-col overflow-hidden rounded-2xl p-5">
       <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#7C3AED]/20" />
-      <div className="grid-dots pointer-events-none absolute inset-0 opacity-60" />
 
       <header className="relative flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
