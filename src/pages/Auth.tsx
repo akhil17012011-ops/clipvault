@@ -153,12 +153,23 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       /**
        * `redirectTo` must resolve against the Convex site, because that is the
        * OAuth origin — an absolute app URL is rejected by Convex Auth. So we
-       * ask to be handed back to a path on the app, and the Convex site's
-       * /back-to-app route sends the browser home. `redirect` is already a
-       * validated same-app path, so only the path is carried.
+       * ask to be handed back to a path on the Convex site, and its
+       * /back-to-app route sends the browser home.
+       *
+       * `app` carries this page's own origin so the hand-back returns to
+       * *this* app. Without it the route only has the deployment's configured
+       * APP_URL to work with, so signing in from a preview would bounce to the
+       * production app — which cannot redeem a code the preview's deployment
+       * issued, and Google sign-in then fails everywhere except the one origin
+       * nobody is testing. The server allowlists the value; anything it does
+       * not recognise falls back to APP_URL.
        */
+      const params = new URLSearchParams({
+        app: window.location.origin,
+        to: redirect,
+      });
       await signIn("google", {
-        redirectTo: `/back-to-app?to=${encodeURIComponent(redirect)}`,
+        redirectTo: `/back-to-app?${params.toString()}`,
       });
     } catch (err) {
       console.error("Google sign-in error:", err);
