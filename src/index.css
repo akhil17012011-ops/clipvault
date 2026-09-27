@@ -497,28 +497,45 @@ html.lenis body {
 }
 
 /* Page-scale grid: same lattice, faded out before it reaches the fold. */
+/*
+ * The page backdrop: a crisp grid across the top that dissolves as you read
+ * down, so it frames the opening of a page instead of running under the entire
+ * document.
+ *
+ * The fade is expressed in pixels rather than percentages on purpose. A
+ * percentage mask is relative to the height of whatever it sits in, and this
+ * element is `absolute inset-0` on containers that range from a 100vh sign-in
+ * screen to a several-thousand-pixel landing page — so a "fades out by 88%"
+ * rule stayed visible for thousands of pixels on a long page and read as a
+ * full-page grid. Fixed stops make the same visual falloff on every page.
+ */
 .grid-page {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-    linear-gradient(to right, rgb(255 255 255 / 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.02) 1px, transparent 1px);
+    linear-gradient(to right, rgb(255 255 255 / 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.055) 1px, transparent 1px),
+    linear-gradient(to right, rgb(255 255 255 / 0.022) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.022) 1px, transparent 1px);
   background-size:
     112px 112px,
     112px 112px,
     28px 28px,
     28px 28px;
+  /* Held at full strength only across the first screenful, then eased away. */
   -webkit-mask-image: linear-gradient(
     to bottom,
-    black 0%,
-    rgb(0 0 0 / 0.55) 45%,
-    transparent 88%
+    black 0,
+    black 180px,
+    rgb(0 0 0 / 0.6) 420px,
+    rgb(0 0 0 / 0.22) 720px,
+    transparent 1000px
   );
   mask-image: linear-gradient(
     to bottom,
-    black 0%,
-    rgb(0 0 0 / 0.55) 45%,
-    transparent 88%
+    black 0,
+    black 180px,
+    rgb(0 0 0 / 0.6) 420px,
+    rgb(0 0 0 / 0.22) 720px,
+    transparent 1000px
   );
 }
 
