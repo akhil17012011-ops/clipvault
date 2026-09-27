@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -134,9 +135,6 @@ const NAV: Record<DashboardView, NavItem[]> = {
     },
   ],
 };
-
-/** Where feedback and bug reports are sent. */
-const SUPPORT_EMAIL = "support@clipvaultclipping.com";
 
 export function Sidebar({
   role,
@@ -347,10 +345,10 @@ function SidebarBody({
         )}
       </nav>
 
-      {/* Feedback */}
+      {/* Community + feedback */}
       <div className="space-y-1 border-t border-white/[0.07] pt-3">
         <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-          Feedback
+          Community
         </p>
         <button
           type="button"
@@ -368,6 +366,15 @@ function SidebarBody({
           <Lightbulb className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
           Request Feature
         </button>
+        <a
+          href={DISCORD_INVITE}
+          target="_blank"
+          rel="noreferrer"
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-white/[0.06] hover:text-foreground lg:py-2"
+        >
+          <MessageSquare className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
+          Join the Discord
+        </a>
       </div>
 
       {/* Account card */}

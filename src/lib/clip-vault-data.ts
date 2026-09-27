@@ -8,6 +8,15 @@
 
 export type Platform = "tiktok" | "instagram" | "youtube" | "x";
 
+/**
+ * The community. Every "come talk to us" link in the product points here, so
+ * the invite lives in one place instead of being pasted into each surface.
+ */
+export const DISCORD_INVITE = "https://discord.gg/6cj5kYujD4";
+
+/** Where a person reaches a human when Discord is not the right channel. */
+export const SUPPORT_EMAIL = "support@clipvaultclipping.com";
+
 export const PLATFORMS: Platform[] = ["tiktok", "instagram", "youtube", "x"];
 
 /**

@@ -1,12 +1,17 @@
 import { motion, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { CampaignCard } from "@/components/CampaignCard";
 import { ClipVaultLogo, ClipVaultMark } from "@/components/ClipVaultMark";
 import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
-import { fmtRate, type Platform } from "@/lib/clip-vault-data";
+import {
+  DISCORD_INVITE,
+  SUPPORT_EMAIL,
+  fmtRate,
+  type Platform,
+} from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { EASE } from "@/lib/motion";
 import { useAuth } from "@/hooks/use-auth";
@@ -18,6 +23,7 @@ import {
   Clock3,
   ExternalLink,
   Megaphone,
+  MessagesSquare,
   MousePointerClick,
   Play,
   Search,
@@ -76,12 +82,24 @@ function SiteNav() {
           <a href="#campaigns" className="transition-colors hover:text-foreground">
             Campaigns
           </a>
+          <a href="#pricing" className="transition-colors hover:text-foreground">
+            Pricing
+          </a>
           <a href="#creators" className="transition-colors hover:text-foreground">
             For creators
           </a>
         </div>
         <div className="flex items-center gap-2">
-
+          <a
+            href={DISCORD_INVITE}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Join the Clip Vault Discord server"
+            title="Join the Clip Vault Discord server"
+            className="hidden h-9 w-9 items-center justify-center rounded-full border border-black/8 text-muted-foreground transition-colors hover:border-brand/40 hover:text-foreground dark:border-white/10 sm:inline-flex"
+          >
+            <MessagesSquare className="h-4 w-4" />
+          </a>
           {isAuthenticated ? (
             <Button
               asChild
@@ -554,9 +572,8 @@ function MockAccounts() {
 
 function MockPayout() {
   const methods = [
-    { name: "PayPal", note: "Fast, no fees" },
-    { name: "USDC", note: "Ethereum" },
-    { name: "USDT", note: "Ethereum" },
+    { name: "Solana", note: "Fast, low fees" },
+    { name: "Litecoin", note: "Direct to wallet" },
   ];
   return (
     <MockFrame title="Payout method">
@@ -692,7 +709,7 @@ const STEPS = [
     n: "03",
     kicker: "Set up",
     title: "Add your payout method",
-    body: "Choose how you want to get paid — PayPal or crypto (USDC and USDT on Ethereum) — so your earnings land automatically when a cycle closes.",
+    body: "Choose how you want to get paid — a Solana or Litecoin wallet — so your earnings land automatically when a cycle closes.",
     mock: <MockPayout />,
   },
   {
@@ -1069,7 +1086,7 @@ function TwoSides() {
       bullets: [
         "Per-view payouts, published up front",
         "No follower minimum, no application",
-        "Weekly cycles, PayPal or crypto",
+        "Weekly cycles, paid to your wallet",
       ],
       cta: isAuthenticated ? "Open dashboard" : "Start clipping",
       to: isAuthenticated ? "/dashboard" : "/auth",
@@ -1161,6 +1178,182 @@ function TwoSides() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Pricing, payouts and the questions creators actually ask. Every     */
+/* footer link that promises an answer points at one of these blocks   */
+/* rather than at the top of the page.                                  */
+/* ------------------------------------------------------------------ */
+
+const FAQ_ITEMS = [
+  {
+    q: "Do I need a following or an application?",
+    a: "No. Join any open campaign, post the clip and it counts. There is no follower minimum, no application and no fee to join.",
+  },
+  {
+    q: "How are views verified?",
+    a: "A Clip Vault operator checks every clip by hand before it goes live. We use the numbers the platform publishes, and a clip only starts earning once it passes its campaign's minimum view threshold.",
+  },
+  {
+    q: "When do I get paid?",
+    a: "Earnings run on weekly cycles and pay out on Friday, straight to the wallet you add in Payout settings.",
+  },
+  {
+    q: "What if a clip is rejected?",
+    a: "It never enters the earning pool, and the reviewer's reason sits next to the clip so you can fix it and resubmit.",
+  },
+];
+
+function PricingSection() {
+  const { campaigns } = useClipVault();
+
+  /* Rates are read from the campaigns that are live right now rather than
+     hard-coded tiers, so this section can never quietly start lying about
+     what a view pays. */
+  const live = campaigns.filter((c) => c.status === "active");
+  const rates = live.map((c) => c.ratePer1k).filter((r) => r > 0);
+  const low = rates.length ? Math.min(...rates) : null;
+  const high = rates.length ? Math.max(...rates) : null;
+
+  return (
+    <section id="pricing" className="scroll-mt-24 py-24">
+      <div className="mx-auto max-w-6xl px-5">
+        <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.05] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
+            <CircleDollarSign className="h-3.5 w-3.5 text-brand" />
+            Pricing
+          </span>
+          <h2 className="mt-5 text-balance text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">
+            What a view is actually worth.
+          </h2>
+          <p className="mt-4 text-balance text-muted-foreground">
+            No tiers to decode and nothing held back. Every campaign publishes
+            its own rate and the view count it has to pass, and you see both
+            before you join.
+          </p>
+        </motion.div>
+
+        <motion.div
+          {...fadeUp}
+          className="panel-fx relative mt-12 overflow-hidden rounded-3xl border border-brand/25 bg-gradient-to-b from-brand/15 to-brand/[0.03] p-8 text-center sm:p-10"
+        >
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-56 w-[480px] -translate-x-1/2 rounded-full bg-[#8B3FE2]/30 blur-[100px]" />
+          <div className="relative">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Live campaigns right now
+            </p>
+            <p className="mt-4 font-mono text-5xl font-extrabold tracking-tight sm:text-6xl">
+              {low !== null && high !== null ? (
+                low === high ? (
+                  fmtRate(low)
+                ) : (
+                  <>
+                    {fmtRate(low)}
+                    <span className="mx-2 text-muted-foreground">–</span>
+                    {fmtRate(high)}
+                  </>
+                )
+              ) : (
+                <span className="text-3xl sm:text-4xl">Opening soon</span>
+              )}
+            </p>
+            {low !== null && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                per 1,000 verified views · across {live.length} open{" "}
+                {live.length === 1 ? "campaign" : "campaigns"}
+              </p>
+            )}
+            <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="liquid glow-primary h-12 w-full bg-gradient-to-b from-[#A855F7] to-[#8B3FE2] px-7 hover:from-[#8B6BFF] hover:to-[#6642EE] sm:w-auto"
+              >
+                <Link to="#campaigns">
+                  Browse campaigns
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Joining is free · you only need a verified account
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Payout methods */}
+        <motion.div id="payouts" className="mt-20 scroll-mt-24">
+          <div className="text-center">
+            <h3 className="text-2xl font-extrabold tracking-[-0.03em] sm:text-3xl">
+              Paid every Friday
+            </h3>
+            <p className="mx-auto mt-3 max-w-xl text-balance text-sm leading-relaxed text-muted-foreground">
+              Add a wallet once and every closed cycle pays out to it
+              automatically. No payout request, no minimum transfer, no chasing.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {[
+              {
+                name: "Solana",
+                note: "Fast finality, the lowest fee of the two. Paste the wallet address that starts with 1, 3 or 4.",
+                icon: Zap,
+              },
+              {
+                name: "Litecoin",
+                note: "A single address that starts with L or M. Lands in a couple of confirmations.",
+                icon: Wallet,
+              },
+            ].map((method) => (
+              <div
+                key={method.name}
+                className="flex items-start gap-4 rounded-2xl border border-black/8 bg-black/[0.02] p-5 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand">
+                  <method.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-extrabold tracking-tight">
+                    {method.name}
+                  </p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                    {method.note}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* FAQ */}
+        <motion.div id="faq" className="mt-20 scroll-mt-24">
+          <div className="text-center">
+            <h3 className="text-2xl font-extrabold tracking-[-0.03em] sm:text-3xl">
+              Questions creators ask first
+            </h3>
+          </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {FAQ_ITEMS.map((item) => (
+              <div
+                key={item.q}
+                className="rounded-2xl border border-black/8 bg-black/[0.02] p-5 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <p className="flex items-start gap-2.5 text-sm font-bold leading-snug">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                  {item.q}
+                </p>
+                <p className="mt-2.5 pl-6.5 text-[13px] leading-relaxed text-muted-foreground">
+                  {item.a}
+                </p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 function FinalCTA() {
   const { isAuthenticated } = useAuth();
   return (
@@ -1217,12 +1410,58 @@ function FinalCTA() {
   );
 }
 
+type FooterLink = { label: string; to: string; external?: boolean };
+
 function SiteFooter() {
-  const columns: { title: string; links: string[] }[] = [
-    { title: "Product", links: ["How it works", "Campaigns", "Payouts", "Pricing"] },
-    { title: "Creators", links: ["Start clipping", "Verify accounts", "Payout methods", "Creator FAQ"] },
-    { title: "Brands", links: ["Start a campaign", "Campaign rules", "Brand invoicing", "Case studies"] },
-    { title: "Company", links: ["About", "Careers", "Privacy", "Terms"] },
+  const { hash } = useLocation();
+  /* Footer links use "/#section" so they resolve from any route; scroll here
+     because a client-side navigation does not move the viewport by itself. */
+  useEffect(() => {
+    if (!hash) return;
+    const target = document.getElementById(hash.slice(1));
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [hash]);
+
+  const columns: { title: string; links: FooterLink[] }[] = [
+    {
+      title: "Product",
+      links: [
+        { label: "How it works", to: "/#how" },
+        { label: "Live campaigns", to: "/#campaigns" },
+        { label: "Pricing & rates", to: "/#pricing" },
+        { label: "Payout methods", to: "/#payouts" },
+        { label: "FAQ", to: "/#faq" },
+      ],
+    },
+    {
+      title: "Creators",
+      links: [
+        { label: "Start clipping", to: "/auth?returnTo=/dashboard" },
+        { label: "My clips", to: "/dashboard/clips" },
+        { label: "Verify accounts", to: "/dashboard/accounts" },
+        { label: "Payment history", to: "/dashboard/payments" },
+        { label: "Creator FAQ", to: "/#faq" },
+      ],
+    },
+    {
+      title: "Brands",
+      links: [
+        { label: "Start a campaign", to: "/auth?returnTo=/dashboard/campaigns" },
+        { label: "Campaign rules", to: "/#how" },
+        { label: "Creator payouts", to: "/#creators" },
+        { label: "Brand invoicing", to: "/dashboard/invoices" },
+        { label: "Brand FAQ", to: "/#pricing" },
+      ],
+    },
+    {
+      title: "Community",
+      links: [
+        { label: "Discord server", to: DISCORD_INVITE, external: true },
+        { label: "Support email", to: `mailto:${SUPPORT_EMAIL}` },
+        { label: "Sign in", to: "/auth" },
+        { label: "Open dashboard", to: "/dashboard" },
+      ],
+    },
   ];
   return (
     <footer className="border-t border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04]">
@@ -1233,6 +1472,29 @@ function SiteFooter() {
             The UGC clipping platform connecting brands with creators. Clip ·
             Post · Get Paid.
           </p>
+          <a
+            href={DISCORD_INVITE}
+            target="_blank"
+            rel="noreferrer"
+            className="group mt-5 flex items-center gap-3 rounded-xl border border-brand/30 bg-brand/10 px-3 py-2.5 transition-colors hover:bg-brand/20"
+          >
+            <MessagesSquare className="h-4 w-4 shrink-0 text-brand" />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-foreground">
+                Join our Discord server
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                Campaigns, tips &amp; support
+              </span>
+            </span>
+            <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </a>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="mt-3 block text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            {SUPPORT_EMAIL}
+          </a>
           <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-[11px] font-bold text-brand">
             <MousePointerClick className="h-3.5 w-3.5" />
             Demo build
@@ -1245,13 +1507,32 @@ function SiteFooter() {
             </p>
             <ul className="mt-4 space-y-2.5">
               {column.links.map((link) => (
-                <li key={link}>
-                  <a
-                    href="#how"
-                    className="text-sm text-foreground/70 transition-colors hover:text-foreground"
-                  >
-                    {link}
-                  </a>
+                <li key={link.label}>
+                  {link.external ? (
+                    <a
+                      href={link.to}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-foreground/70 transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                      <ExternalLink className="h-3 w-3 opacity-60" />
+                    </a>
+                  ) : link.to.startsWith("mailto:") ? (
+                    <a
+                      href={link.to}
+                      className="text-sm text-foreground/70 transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      to={link.to}
+                      className="text-sm text-foreground/70 transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -1259,10 +1540,10 @@ function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-black/8 dark:border-white/10 py-5">
-        <p className="mx-auto max-w-6xl px-5 text-center text-xs text-muted-foreground">
-          © 2026 Clip Vault · Clip. Post. Get Paid. · Demo interface, simulated
-          data.
-        </p>
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-5 text-center text-xs text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
+          <p>© 2026 Clip Vault · Clip. Post. Get Paid.</p>
+          <p>Demo interface, simulated data.</p>
+        </div>
       </div>
     </footer>
   );
@@ -1283,6 +1564,7 @@ export default function Landing() {
         <Hero />
         <HowItWorks />
         <CampaignsSection />
+        <PricingSection />
         <TwoSides />
         <FinalCTA />
       </main>
