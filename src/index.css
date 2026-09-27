@@ -446,10 +446,13 @@ html.lenis body {
 
 /* ---------- Grid system ----------
 
-   The console is built on an engineering grid. Every surface carries some
-   scale of it: page backdrop (coarse), bars (fine), cards (finer still).
-   Grids are painted as plain repeating gradients rather than SVG or an
-   image, so they cost one paint and never reflow. */
+   One grid, and only on the page backdrop. The console used to carry a scale of
+   grids per surface — 16px inside header cards, 28px in the top bar and
+   sidebar, 22px in every panel, 112px over 28px behind — which put several
+   lattices on screen at once. Crossing pitches beat against each other and read
+   as a rendering fault rather than texture. Cards and chrome are now plain
+   surfaces; `.grid-page` is the single lattice, background only. Painted as a
+   plain repeating gradient rather than an image, so it costs one paint. */
 
 /* Page-scale grid: the one lattice in the product. */
 /*
@@ -505,83 +508,123 @@ html.lenis body {
 /* The sticky top bar. The faint vertical pinstripe it used to carry was a
    28px grid, which put a second lattice against the page backdrop and read as
    clutter on the one surface that is always on screen. Now a plain gradient. */
+/* The sticky top bar. Genuinely translucent with a real backdrop blur, because
+   content scrolls underneath it. The vertical pinstripe it used to carry was a
+   28px grid that fought the page backdrop; now a vertical falloff plus a lit
+   lower edge, which is what separates a floating bar from the content below. */
 .glass-bar {
-  background-color: rgb(13 10 24 / 0.78);
+  background-color: rgb(13 10 24 / 0.72);
   background-image: linear-gradient(
     180deg,
-    rgb(22 14 42 / 0.86) 0%,
-    rgb(13 10 24 / 0.78) 100%
+    rgb(30 20 56 / 0.9) 0%,
+    rgb(13 10 24 / 0.72) 100%
   );
   backdrop-filter: blur(30px) saturate(190%);
   -webkit-backdrop-filter: blur(30px) saturate(190%);
   box-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 0.07),
-    inset 0 -1px 0 0 rgb(0 0 0 / 0.4);
+    inset 0 1px 0 0 rgb(255 255 255 / 0.08),
+    /* The lit bottom edge — reads as the bar catching light on its lower rim. */
+    inset 0 -1px 0 0 rgb(167 139 250 / 0.14),
+    0 10px 30px -18px rgb(0 0 0 / 0.9);
 }
 
-/* The sidebar rail, same story as the top bar — its horizontal pinstripe was a
-   28px grid. A plain horizontal gradient instead. */
+/* The sidebar rail. Mirrors the top bar: horizontal falloff across its width,
+   and a lit right edge where it meets the content it sits beside. Its old
+   horizontal pinstripe was a 28px grid, removed for the same reason. */
 .glass-rail {
-  background-color: rgb(14 11 26 / 0.78);
+  background-color: rgb(14 11 26 / 0.72);
   background-image: linear-gradient(
     90deg,
-    rgb(20 12 40 / 0.9) 0%,
-    rgb(12 10 22 / 0.74) 100%
+    rgb(26 17 48 / 0.92) 0%,
+    rgb(12 10 22 / 0.72) 100%
   );
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   box-shadow:
-    inset -1px 0 0 0 rgb(255 255 255 / 0.05),
-    inset 1px 0 0 0 rgb(0 0 0 / 0.35);
+    /* Lit right edge, dark left edge. */
+    inset -1px 0 0 0 rgb(167 139 250 / 0.13),
+    inset 1px 0 0 0 rgb(0 0 0 / 0.4),
+    10px 0 30px -18px rgb(0 0 0 / 0.9);
 }
 
-/* Micro-grid, corner bloom and a vertical falloff, in that order. */
 /*
- * The frosted surface behind cards, dialogs and panels.
+ * The surface behind cards, dialogs and panels.
  *
- * Deliberately carries no grid of its own. It used to paint a 22px grid, which
- * meant every panel had a second lattice sitting on top of the page's own
- * backdrop grid — two different pitches (22px vs 112px/28px) crossing each
- * other, producing a moire that read as a rendering fault rather than texture.
- * The panel is now simply translucent, so the page grid reads *through* it as
- * one continuous surface and the card looks like a pane of glass laid over the
- * console rather than a second grid pretending to be one.
+ * Three things give a dark surface depth, and all three are here:
+ *
+ *  1. A lit top edge and a dark bottom edge. Real glass catches light along the
+ *     edge facing the source and falls away opposite it. A single flat 1px
+ *     border cannot do that, so the top is lifted and the bottom dropped with
+ *     inset shadows that sit *under* the border colour.
+ *  2. Two shadow layers — a tight contact shadow plus a wide ambient one. One
+ *     broad shadow reads as a smudge; the pair reads as an object lifted off
+ *     the backdrop.
+ *  3. A single soft bloom in the top-left, fading well before the edges so it
+ *     never reads as a second light source.
+ *
+ * Deliberately opaque, and deliberately no grid of its own. Letting the backdrop
+ * lattice show through put a mesh across every card's highlights, and the panel
+ * used to carry its own 22px grid on top of that — two pitches crossing, which
+ * is what read as a rendering fault. The grid belongs behind the cards, not in
+ * them.
  */
 .glass-panel {
-  /* Opaque. The backdrop grid belongs *behind* the cards, not through them —
-     letting it show through put a lattice on top of every panel's highlights
-     and made the whole console shimmer. One solid surface per card. */
-  background-color: rgb(19 13 36);
+  background-color: rgb(22 16 42);
   background-image:
+    /* Corner bloom. */
     radial-gradient(
-      130% 100% at 0% 0%,
-      rgb(150 98 255 / 0.14),
-      transparent 58%
+      120% 90% at 0% 0%,
+      rgb(150 98 255 / 0.16),
+      transparent 62%
     ),
+    /* Vertical falloff, so the panel is lighter where it meets the header. */
     linear-gradient(
       180deg,
-      rgb(255 255 255 / 0.062) 0%,
-      rgb(255 255 255 / 0.016) 100%
+      rgb(255 255 255 / 0.055) 0%,
+      rgb(255 255 255 / 0.012) 55%,
+      rgb(0 0 0 / 0.16) 100%
     );
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.09);
   box-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 0.08),
-    0 26px 50px -34px rgb(0 0 0 / 0.9);
+    /* Lit top edge, dark bottom edge — the edge-lighting that sells the glass. */
+    inset 0 1px 0 0 rgb(255 255 255 / 0.11),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.45),
+    /* Tight contact shadow directly under the card. */
+    0 2px 6px -2px rgb(0 0 0 / 0.5),
+    /* Wide ambient shadow for separation from the backdrop. */
+    0 28px 60px -34px rgb(0 0 0 / 0.95);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Small badges and pills. No dot lattice here either: at 12px it was a third
-   grid pitch on screen alongside the 22px one it replaced and the 112px/28px
-   page backdrop, and the three sets of lines read as noise rather than
-   material. A plain translucent fill stays legible at chip size. */
+/* Interactive panels lift and pick up a violet edge. Colour and shadow only —
+   the lift itself is `.panel-fx`'s job, so the two compose instead of fighting
+   over `transform`. */
+.glass-panel:where(a, button, [role="button"], [data-interactive]):hover {
+  border-color: rgb(167 139 250 / 0.34);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.45),
+    0 4px 10px -3px rgb(0 0 0 / 0.55),
+    0 32px 64px -32px rgb(139 63 226 / 0.42);
+}
+
+/* Small badges and pills. Same edge-lighting idea as the panels, scaled down:
+   a lit top rim and a soft contact shadow, which is what stops a small pill
+   looking like a flat sticker. No dot lattice — at 12px it was a third grid
+   pitch on screen and read as noise rather than material. */
 .glass-chip {
-  background-color: rgb(255 255 255 / 0.05);
+  background-color: rgb(255 255 255 / 0.055);
   background-image: linear-gradient(
     180deg,
-    rgb(255 255 255 / 0.1) 0%,
-    rgb(255 255 255 / 0.03) 100%
+    rgb(255 255 255 / 0.11) 0%,
+    rgb(255 255 255 / 0.025) 100%
   );
-  border: 1px solid rgb(255 255 255 / 0.1);
-  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.09);
+  border: 1px solid rgb(255 255 255 / 0.11);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.12),
+    0 1px 3px -1px rgb(0 0 0 / 0.45);
 }
 
 /* Hover specular band. Transform + opacity only, so it stays on the
