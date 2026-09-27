@@ -1,8 +1,9 @@
 import { motion, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { CampaignCard } from "@/components/CampaignCard";
+import { MARKETING_LINKS } from "@/components/marketing/MarketingShell";
 import { ClipVaultLogo, ClipVaultMark } from "@/components/ClipVaultMark";
 import { PlatformChip, PlatformIcon, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
@@ -76,18 +77,18 @@ function SiteNav() {
           <ClipVaultLogo />
         </Link>
         <div className="hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex">
-          <a href="#how" className="transition-colors hover:text-foreground">
+          <Link to="/how-it-works" className="transition-colors hover:text-foreground">
             How it works
-          </a>
-          <a href="#campaigns" className="transition-colors hover:text-foreground">
+          </Link>
+          <Link to="/campaigns" className="transition-colors hover:text-foreground">
             Campaigns
-          </a>
-          <a href="#pricing" className="transition-colors hover:text-foreground">
+          </Link>
+          <Link to="/pricing" className="transition-colors hover:text-foreground">
             Pricing
-          </a>
-          <a href="#creators" className="transition-colors hover:text-foreground">
-            For creators
-          </a>
+          </Link>
+          <Link to="/faq" className="transition-colors hover:text-foreground">
+            FAQ
+          </Link>
         </div>
         <div className="flex items-center gap-2">
           <a
@@ -1408,61 +1409,8 @@ function FinalCTA() {
       </motion.div>
     </section>
   );
-}
-
-type FooterLink = { label: string; to: string; external?: boolean };
-
-function SiteFooter() {
-  const { hash } = useLocation();
-  /* Footer links use "/#section" so they resolve from any route; scroll here
-     because a client-side navigation does not move the viewport by itself. */
-  useEffect(() => {
-    if (!hash) return;
-    const target = document.getElementById(hash.slice(1));
-    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [hash]);
-
-  const columns: { title: string; links: FooterLink[] }[] = [
-    {
-      title: "Product",
-      links: [
-        { label: "How it works", to: "/#how" },
-        { label: "Live campaigns", to: "/#campaigns" },
-        { label: "Pricing & rates", to: "/#pricing" },
-        { label: "Payout methods", to: "/#payouts" },
-        { label: "FAQ", to: "/#faq" },
-      ],
-    },
-    {
-      title: "Creators",
-      links: [
-        { label: "Start clipping", to: "/auth?returnTo=/dashboard" },
-        { label: "My clips", to: "/dashboard/clips" },
-        { label: "Verify accounts", to: "/dashboard/accounts" },
-        { label: "Payment history", to: "/dashboard/payments" },
-        { label: "Creator FAQ", to: "/#faq" },
-      ],
-    },
-    {
-      title: "Brands",
-      links: [
-        { label: "Start a campaign", to: "/auth?returnTo=/dashboard/campaigns" },
-        { label: "Campaign rules", to: "/#how" },
-        { label: "Creator payouts", to: "/#creators" },
-        { label: "Brand invoicing", to: "/dashboard/invoices" },
-        { label: "Brand FAQ", to: "/#pricing" },
-      ],
-    },
-    {
-      title: "Community",
-      links: [
-        { label: "Discord server", to: DISCORD_INVITE, external: true },
-        { label: "Support email", to: `mailto:${SUPPORT_EMAIL}` },
-        { label: "Sign in", to: "/auth" },
-        { label: "Open dashboard", to: "/dashboard" },
-      ],
-    },
-  ];
+}function SiteFooter() {
+  const columns = MARKETING_LINKS;
   return (
     <footer className="border-t border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04]">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-5">

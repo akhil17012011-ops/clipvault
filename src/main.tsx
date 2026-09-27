@@ -17,6 +17,15 @@ import "./index.css";
 
 // Lazy load route components for better code splitting
 const Landing = lazy(() => import("./pages/Landing.tsx"));
+const HowItWorksPage = lazy(
+  () => import("./pages/marketing/HowItWorksPage.tsx"),
+);
+const CampaignsPage = lazy(() => import("./pages/marketing/CampaignsPage.tsx"));
+const PricingPage = lazy(() => import("./pages/marketing/PricingPage.tsx"));
+const PayoutsPage = lazy(() => import("./pages/marketing/PayoutsPage.tsx"));
+const FaqPage = lazy(() => import("./pages/marketing/FaqPage.tsx"));
+const CreatorsPage = lazy(() => import("./pages/marketing/CreatorsPage.tsx"));
+const BrandsPage = lazy(() => import("./pages/marketing/BrandsPage.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -136,6 +145,13 @@ createRoot(document.getElementById("root")!).render(
             <Suspense fallback={<RouteLoading />}>
               <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/how-it-works" element={<HowItWorksPage />} />
+                <Route path="/campaigns" element={<CampaignsPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/payouts" element={<PayoutsPage />} />
+                <Route path="/faq" element={<FaqPage />} />
+                <Route path="/creators" element={<CreatorsPage />} />
+                <Route path="/brands" element={<BrandsPage />} />
                 <Route
                   path="/auth"
                   element={<AuthPage redirectAfterAuth="/dashboard" />}
