@@ -64,7 +64,7 @@ function GoogleG({ className = "h-5 w-5" }: { className?: string }) {
 function readableError(error: unknown): string {
   const raw = error instanceof Error ? error.message : String(error ?? "");
   if (/already exists|already been registered|is taken/i.test(raw)) {
-    return "An account already uses that email. Try signing in instead.";
+    return "That email already has an account. Sign in instead — Google works too.";
   }
   if (/invalid credentials|incorrect password/i.test(raw)) {
     return "That email and password don't match an account.";
@@ -91,7 +91,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   );
 
   const [mode, setMode] = useState<Mode>("password");
-  const [flow, setFlow] = useState<PasswordFlow>("signUp");
+  /* Sign in is the default because that is what a returning person wants: the
+     same address works with Google and with a password, and offering "create
+     account" first only invites people to try to re-register an account that
+     already exists. */
+  const [flow, setFlow] = useState<PasswordFlow>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -331,7 +335,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   Sign in to Clip Vault
                 </h2>
                 <p className="mt-2 text-center text-sm text-muted-foreground">
-                  New here? Google creates your account automatically.
+                  Google or email and password — both open the same account.
                 </p>
 
                 <button

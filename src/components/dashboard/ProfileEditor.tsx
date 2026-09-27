@@ -1,3 +1,4 @@
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,10 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/use-auth";
 import { useClipVault } from "@/lib/clip-vault-store";
+import { useAction } from "convex/react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, KeyRound, Loader2, ShieldCheck } from "lucide-react";
 
 /**
  * Lets a creator set the name and picture shown across Clip Vault.
@@ -28,10 +31,15 @@ export function ProfileEditor({
   onOpenChange: (open: boolean) => void;
 }) {
   const { profile, updateProfile } = useClipVault();
+  const { role, user } = useAuth();
+  const setOwnPassword = useAction(api.roles.setOwnPassword);
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   /* Re-seed from the saved profile each time the dialog opens, so a cancelled
      edit never leaks into the next one. */
@@ -40,7 +48,32 @@ export function ProfileEditor({
     setName(profile?.name ?? "");
     setImage(profile?.avatarUrl ?? "");
     setError(null);
+    setPassword("");
+    setPasswordError(null);
   }, [open, profile?.name, profile?.avatarUrl]);
+
+  /**
+   * Puts a password on the operator account so the same person can sign in
+   * with their email as well as with Google. The password is hashed by Convex
+   * Auth on the server; it is never sent anywhere else or stored in the browser.
+   */
+  const savePassword = async () => {
+    setPasswordError(null);
+    setPasswordBusy(true);
+    try {
+      const result = await setOwnPassword({ password });
+      setPassword("");
+      toast.success("Password saved", { description: result.message });
+    } catch (err) {
+      setPasswordError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't set that password. Try again.",
+      );
+    } finally {
+      setPasswordBusy(false);
+    }
+  };
 
   const save = async () => {
     setError(null);
@@ -154,6 +187,67 @@ export function ProfileEditor({
                 {busy ? "Saving…" : "Save profile"}
               </Button>
             </div>
+
+            {/* Operator-only: the one account that owns the console. */}
+            {role === "admin" && (
+              <div className="mt-7 border-t border-black/8 pt-6 dark:border-white/10">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-brand" />
+                  <h3 className="text-[13px] font-extrabold tracking-tight">
+                    Sign-in &amp; security
+                  </h3>
+                </div>
+                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                  You sign in with Google on {user?.email}. Add a password and
+                  the same address works on the sign-in form too — both open this
+                  one account.
+                </p>
+
+                <Label
+                  htmlFor="operator-password"
+                  className="mt-4 block text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground"
+                >
+                  Password
+                </Label>
+                <div className="relative mt-2">
+                  <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="operator-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    minLength={8}
+                    className="h-10 pl-9"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && password.length >= 8) {
+                        e.preventDefault();
+                        void savePassword();
+                      }
+                    }}
+                  />
+                </div>
+
+                {passwordError && (
+                  <p className="mt-2 text-[12px] text-red-500 dark:text-red-400">
+                    {passwordError}
+                  </p>
+                )}
+
+                <Button
+                  variant="outline"
+                  className="mt-3 w-full gap-1.5"
+                  onClick={savePassword}
+                  disabled={passwordBusy || password.length < 8}
+                >
+                  {passwordBusy && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  {passwordBusy ? "Saving…" : "Save password"}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
