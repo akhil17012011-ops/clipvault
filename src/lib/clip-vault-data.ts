@@ -15,7 +15,14 @@ export type Platform = "tiktok" | "instagram" | "youtube" | "x";
 export const DISCORD_INVITE = "https://discord.gg/6cj5kYujD4";
 
 /** Where a person reaches a human when Discord is not the right channel. */
-export const SUPPORT_EMAIL = "support@clipvaultclipping.com";
+export const SUPPORT_EMAIL = "Support.clipvault.ae@gmail.com";
+
+/**
+ * Where a suggestion goes. A deliberately separate constant even though it is
+ * the same inbox today, so pointing suggestions somewhere else later is a
+ * one-line change instead of a sweep through every surface.
+ */
+export const SUGGESTIONS_EMAIL = "Support.clipvault.ae@gmail.com";
 
 export const PLATFORMS: Platform[] = ["tiktok", "instagram", "youtube", "x"];
 

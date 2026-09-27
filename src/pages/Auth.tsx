@@ -6,8 +6,10 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { ClipVaultLogo, ClipVaultMark } from "@/components/ClipVaultMark";
+import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  AlertCircle,
   ArrowRight,
   BadgeCheck,
   CheckCircle2,
@@ -17,6 +19,7 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -66,10 +69,21 @@ function readableError(error: unknown): string {
   if (/already exists|already been registered|is taken/i.test(raw)) {
     return "That email already has an account. Sign in instead — Google works too.";
   }
-  if (/invalid credentials|incorrect password/i.test(raw)) {
+  /* Convex Auth surfaces a failed credential check as `InvalidSecret`, not as
+     "invalid credentials" — the stock wording only appears on some paths, so
+     both are matched here. */
+  if (/invalid credentials|incorrect password|invalidsecret/i.test(raw)) {
     return "That email and password don't match an account.";
   }
-  if (/password/i.test(raw) && /short|invalid|8/i.test(raw)) {
+  if (/valid email/i.test(raw)) {
+    return "That doesn't look like an email address.";
+  }
+  /* Convex Auth says exactly this, and the stock wording ("Invalid password")
+     reads as though the account is the problem rather than the length. */
+  if (/invalid password/i.test(raw)) {
+    return "Passwords need to be at least 8 characters.";
+  }
+  if (/password/i.test(raw) && /short|8/i.test(raw)) {
     return "Passwords need to be at least 8 characters.";
   }
   if (/rate limit|too many/i.test(raw)) {
@@ -91,10 +105,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   );
 
   const [mode, setMode] = useState<Mode>("password");
-  /* Sign in is the default because that is what a returning person wants: the
-     same address works with Google and with a password, and offering "create
-     account" first only invites people to try to re-register an account that
-     already exists. */
+  /* Sign in is the default because that is what a returning person wants. The
+     "create account" path is one tap away and, unlike a silent auto-detect, it
+     never signs somebody into the wrong thing without them choosing to. */
   const [flow, setFlow] = useState<PasswordFlow>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -102,6 +115,29 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [codeEmail, setCodeEmail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* Set when a sign-up was refused because the address is taken, so the form
+     can offer the two things that actually work instead of a dead end. */
+  const [takenEmail, setTakenEmail] = useState<string | null>(null);
+
+  /* Whether the typed address already has an account. Held as a subscription
+     rather than a one-shot fetch so the hint appears and disappears as the
+     address is edited, with no request per keystroke. */
+  const knownEmail = email.trim().toLowerCase();
+  const emailStatus = useQuery(api.roles.emailInUse, {
+    email: knownEmail,
+    /* Skip a half-typed address, and skip entirely unless it matters — the
+       hint is only ever shown on the sign-up form. */
+    ...(mode === "password" &&
+    flow === "signUp" &&
+    knownEmail.includes("@")
+      ? {}
+      : { skip: true as const }),
+  });
+
+  /* The same check again as a mutation, run at submit time. The live query
+     above is a hint and can be a beat behind or skipped; this one is the gate
+     that actually stands between somebody and a second, empty account. */
+  const assertEmailAvailable = useMutation(api.roles.assertEmailAvailable);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -135,14 +171,31 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
+    const address = email.trim().toLowerCase();
     setBusy(true);
     setError(null);
+    setTakenEmail(null);
     try {
-      await signIn("password", {
-        email: email.trim().toLowerCase(),
-        password,
-        flow,
-      });
+      /* Convex Auth's `signUp` does not fail when an address is already
+         registered — it creates a second account for the same person and signs
+         them into it. Their existing clips, wallet and messages stay behind on
+         the first row, Google then refuses to link to either because the
+         address is no longer unique, and the account appears to have lost
+         everything. So the collision is caught here, before it can do that. */
+      if (flow === "signUp") {
+        const { inUse } = await assertEmailAvailable({ email: address });
+        if (inUse) {
+          setTakenEmail(address);
+          setFlow("signIn");
+          setError(
+            "That email already has a Clip Vault account. Sign in with your password, or use Google.",
+          );
+          setBusy(false);
+          return;
+        }
+      }
+
+      await signIn("password", { email: address, password, flow });
       /* On success the auth effect above redirects. */
     } catch (err) {
       console.error("Password sign-in error:", err);
@@ -397,7 +450,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       autoComplete="email"
                       placeholder="name@example.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        /* Any stale collision notice belongs to the address
+                           that has just been edited away. */
+                        if (takenEmail && e.target.value.trim().toLowerCase() !== takenEmail) {
+                          setTakenEmail(null);
+                          setError(null);
+                        }
+                      }}
                       className="h-11"
                       disabled={busy}
                       required
@@ -415,11 +476,72 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       minLength={8}
                       required
                     />
+
+                    {/* A live hint, before they press the button: this address is
+                        already a Clip Vault account, so "create account" is the
+                        wrong next step and would build a second, empty one. */}
+                    {flow === "signUp" && emailStatus?.inUse && (
+                      <p className="mt-3 flex items-start gap-1.5 text-[12.5px] leading-relaxed text-amber-600 dark:text-amber-400">
+                        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                          This email already has an account.{" "}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFlow("signIn");
+                              setError(null);
+                            }}
+                            className="font-semibold underline underline-offset-2"
+                          >
+                            Sign in instead
+                          </button>
+                        </span>
+                      </p>
+                    )}
+
                     {error && (
                       <p className="mt-3 text-sm text-red-500 dark:text-red-400">
                         {error}
                       </p>
                     )}
+
+                    {/* After a refused sign-up, the two things that actually
+                        work are offered directly rather than left as a message
+                        telling somebody what went wrong. */}
+                    {takenEmail && (
+                      <div className="mt-4 flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand/[0.07] p-3">
+                        <button
+                          type="button"
+                          onClick={handleGoogle}
+                          disabled={busy}
+                          className="flex h-10 w-full items-center justify-center gap-2.5 rounded-lg bg-card text-sm font-semibold shadow-sm transition-colors hover:bg-accent disabled:opacity-60"
+                        >
+                          {busy ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <GoogleG className="h-4 w-4" />
+                          )}
+                          Continue with Google
+                        </button>
+                        <p className="text-center text-[11.5px] text-muted-foreground">
+                          …or{" "}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEmail(takenEmail);
+                              setPassword("");
+                              setError(
+                                "Enter the password for this account to sign in.",
+                              );
+                            }}
+                            className="font-semibold text-brand underline underline-offset-2"
+                          >
+                            use your password
+                          </button>
+                        </p>
+                      </div>
+                    )}
+
                     <Button
                       type="submit"
                       className="mt-4 h-11 w-full glow-primary"
@@ -451,6 +573,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         onClick={() => {
                           setFlow(flow === "signUp" ? "signIn" : "signUp");
                           setError(null);
+                          setTakenEmail(null);
                         }}
                         className="font-semibold text-brand underline-offset-2 hover:underline"
                       >

@@ -478,6 +478,60 @@ export const setOwnPassword = action({
 });
 
 /**
+ * Whether an address already has an account, so the sign-up form can say so
+ * *before* it submits.
+ *
+ * This is not a convenience. Convex Auth's password `signUp` does not fail when
+ * the address is already taken: it quietly creates a second user row and signs
+ * the person into it. Nothing looks broken — they land in the app — but their
+ * clips, wallet and messages are all sitting on the old row while everything
+ * they do next lands on the new one. Google then refuses to link to either,
+ * because the address is no longer unique, so a later Google sign-up mints
+ * *another* one. That is the "I signed up and it still doesn't work" dead end.
+ *
+ * The form uses this to steer people to sign-in or Google instead of creating
+ * the duplicate. It is a query, so it reveals nothing an attacker could not
+ * already learn by attempting a sign-in and reading the error.
+ */
+export const emailInUse = query({
+  args: { email: v.string() },
+  handler: async (ctx, args): Promise<{ inUse: boolean }> => {
+    const email = args.email.trim().toLowerCase();
+    if (!email || !email.includes("@")) return { inUse: false };
+
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", email))
+      .first();
+
+    return { inUse: existing !== null };
+  },
+});
+
+/**
+ * The same check as {@link emailInUse}, as a mutation, for the moment it has to
+ * be authoritative.
+ *
+ * A live query is a hint: it can be skipped, and it can be a beat behind. This
+ * one runs on submit, so the answer that decides whether a second account gets
+ * created is read fresh from the database.
+ */
+export const assertEmailAvailable = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, args): Promise<{ inUse: boolean }> => {
+    const email = args.email.trim().toLowerCase();
+    if (!email || !email.includes("@")) return { inUse: false };
+
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", email))
+      .first();
+
+    return { inUse: existing !== null };
+  },
+});
+
+/**
  * The signed-in user's role, read from the database.
  * Defaults to "member" for any user without an explicit role.
  */

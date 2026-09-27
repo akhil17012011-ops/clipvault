@@ -77,6 +77,15 @@ export type VerificationStatus = {
   /** True once the resend cooldown has passed. */
   canResend: boolean;
   secondsUntilResend: number;
+  /**
+   * When the resend cooldown lifts, as an absolute timestamp.
+   *
+   * The client counts down from this rather than from `secondsUntilResend`, so
+   * the countdown stays correct across a tab that was in the background (where
+   * timers are throttled and a naive "seconds minus one per tick" drifts). It is
+   * `null` whenever there is no cooldown running.
+   */
+  resendAvailableAt: number | null;
   attemptsLeft: number;
   email: string;
 };
@@ -94,6 +103,7 @@ export const status = query({
         pending: false,
         canResend: false,
         secondsUntilResend: 0,
+        resendAvailableAt: null,
         attemptsLeft: 0,
         email: user.email ?? "",
       };
@@ -105,17 +115,18 @@ export const status = query({
       .collect();
     const record = liveChallenge(rows, now);
 
+    const resendAvailableAt =
+      record == null ? null : record.sentAt + RESEND_COOLDOWN_MS;
+
     return {
       verified: false,
       pending: record != null,
-      canResend: record == null || now - record.sentAt >= RESEND_COOLDOWN_MS,
+      canResend: resendAvailableAt === null || now >= resendAvailableAt,
       secondsUntilResend:
-        record == null
+        resendAvailableAt === null
           ? 0
-          : Math.max(
-              0,
-              Math.ceil((RESEND_COOLDOWN_MS - (now - record.sentAt)) / 1000),
-            ),
+          : Math.max(0, Math.ceil((resendAvailableAt - now) / 1000)),
+      resendAvailableAt,
       attemptsLeft: record == null ? MAX_ATTEMPTS : record.attempts,
       email: user.email ?? "",
     };

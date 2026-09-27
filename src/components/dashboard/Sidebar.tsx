@@ -8,7 +8,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/clip-vault-data";
+import {
+  DISCORD_INVITE,
+  SUGGESTIONS_EMAIL,
+  SUPPORT_EMAIL,
+} from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -228,12 +232,14 @@ function SidebarBody({
     }
   };
 
-  /* Opens the visitor's mail client with the report details prefilled. */
-  const openFeedback = (subject: string) => {
-    const to = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+  /* Opens the visitor's mail client with the report details prefilled.
+     Bug reports go to support; feature requests go to the suggestions inbox, so
+     the two can be triaged separately even while they share an address. */
+  const openFeedback = (subject: string, to = SUPPORT_EMAIL) => {
+    const href = `mailto:${to}?subject=${encodeURIComponent(
       `[Clip Vault] ${subject} — ${email || "signed-in user"}`,
     )}`;
-    window.location.href = to;
+    window.location.href = href;
   };
 
   const filtered = items.filter((item) =>
@@ -360,7 +366,7 @@ function SidebarBody({
         </button>
         <button
           type="button"
-          onClick={() => openFeedback("Feature request")}
+          onClick={() => openFeedback("Feature request", SUGGESTIONS_EMAIL)}
           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-white/[0.06] hover:text-foreground lg:py-2"
         >
           <Lightbulb className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
