@@ -18,8 +18,20 @@ import { auth } from "./auth";
  * Only a same-app path is accepted from the query string — never an absolute
  * URL — so this cannot be used to bounce people to an attacker's site.
  */
+/**
+ * The origin the app itself is served from, used to hand the browser back after
+ * an OAuth round trip.
+ *
+ * `SITE_URL` is the variable the hosting platform publishes, so it is read
+ * first — preferring `APP_URL` over it would mean an override that nobody sets
+ * silently shadows the value that is actually configured, and the hand-back
+ * would quietly fall through to the compiled-in default. `APP_URL` stays
+ * supported as an explicit override for self-hosting.
+ */
 const APP_URL = (
-  process.env.APP_URL ?? "https://clipvaultclipping.freebuff.app"
+  process.env.APP_URL ??
+  process.env.SITE_URL ??
+  "https://clipvaultclipping.freebuff.app"
 ).replace(/\/+$/, "");
 
 const http = httpRouter();
