@@ -71,50 +71,10 @@ export const updateProfile = mutation({
 });
 
 /**
- * Where the creator wants to be paid, in crypto.
+ * There is deliberately no saved payout wallet here.
  *
- * The address is validated for shape only. Sending to a wrong address is
- * irreversible, so the wording tells the creator to check it rather than
- * implying we verified that the wallet is theirs.
+ * A creator chooses the currency, the network and the address on the payout
+ * request itself, so a wallet added months ago can never silently receive money
+ * after they have rotated their keys, and they are never locked into a network
+ * they signed up with. See `payouts.requestPayout`.
  */
-export const updatePayout = mutation({
-  args: {
-    currency: v.optional(v.union(v.literal("sol"), v.literal("ltc"))),
-    address: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("You must be signed in to do that.");
-
-    if (args.address === undefined && args.currency === undefined) {
-      return await ctx.db.get(userId);
-    }
-
-    const patch: {
-      payoutAddress?: string;
-      payoutCurrency?: "sol" | "ltc";
-    } = {};
-
-    if (args.currency !== undefined) {
-      patch.payoutCurrency = args.currency;
-    }
-
-    if (args.address !== undefined) {
-      const address = args.address.trim();
-      if (address) {
-        if (address.length > 120) throw new Error("That address is too long.");
-        // Base58 (Solana) and bech32 (Litecoin) are both mixed case, so case is
-        // meaningful here and must survive untouched.
-        if (!/^[1-9A-HJ-NP-Za-km-z]{26,120}$/.test(address)) {
-          throw new Error("That doesn't look like a Solana or Litecoin address.");
-        }
-        patch.payoutAddress = address;
-      } else {
-        patch.payoutAddress = undefined;
-      }
-    }
-
-    await ctx.db.patch(userId, patch);
-    return await ctx.db.get(userId);
-  },
-});

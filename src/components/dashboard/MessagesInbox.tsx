@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { MailOpen, MessageSquare, Sparkles } from "lucide-react";
+import { ArrowUpRight, MailOpen, MessageSquare, Sparkles } from "lucide-react";
+import { Link } from "react-router";
 import { fmtFull, type CreatorMessage } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 
@@ -121,9 +122,13 @@ function MessagesInboxRow({
             {message.body}
           </p>
           {message.link ? (
-            <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+            <Link
+              to={message.link}
+              className="mt-1.5 inline-flex items-center gap-1 font-mono text-[11px] text-brand underline-offset-4 hover:underline"
+            >
               {message.link}
-            </p>
+              <ArrowUpRight className="h-3 w-3" />
+            </Link>
           ) : null}
         </div>
       </div>

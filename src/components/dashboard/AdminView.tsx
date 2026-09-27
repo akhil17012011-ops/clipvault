@@ -7,6 +7,7 @@ import {
 } from "@/components/dashboard/OverviewPanels";
 import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
 import { AdminMessages } from "@/components/dashboard/AdminMessages";
+import { AdminPayouts } from "@/components/dashboard/AdminPayouts";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import {
   campaignById,
   earnedOf,
   fmtFull,
+  fmtCents,
   fmtMoney,
   fmtRate,
   fmtViews,
@@ -101,31 +103,39 @@ export function AdminView({
     allSubmissions,
     adminUsers,
     adminMessages,
+    adminPayoutRequests,
     sendToCreator,
     broadcast,
     setCampaignStatus,
     cycleInvoice,
-    settleSubmission,
     reviewSubmission,
     deleteCampaign,
   } = useClipVault();
   const stats = useAdminStats();
 
-  /* Settled payouts over the last 7 days — derived from real approvals only. */
+  /* What creators have actually asked to be paid, and not yet actioned. */
+  const payoutPendingCents = adminPayoutRequests
+    .filter((r) => r.status === "pending")
+    .reduce((sum, r) => sum + r.amountCents, 0);
+
+  /* Payouts actually sent over the last 7 days, taken from the requests an
+     operator marked paid — not from clip statuses, because money only moves
+     when a payout request is actioned. */
   const payoutSeries = (() => {
     const dayMs = 86_400_000;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return Array.from({ length: 7 }, (_, i) => {
       const start = today.getTime() - (6 - i) * dayMs;
-      const value = submissions
+      const value = adminPayoutRequests
         .filter(
-          (s) =>
-            s.status === "paid" &&
-            s.submittedAt >= start &&
-            s.submittedAt < start + dayMs,
+          (r) =>
+            r.status === "paid" &&
+            r.decidedAt !== null &&
+            r.decidedAt >= start &&
+            r.decidedAt < start + dayMs,
         )
-        .reduce((sum, s) => sum + earnedOf(s, campaigns), 0);
+        .reduce((sum, r) => sum + r.amountCents / 100, 0);
       return {
         day: new Date(start).toLocaleString("en-US", { weekday: "short" }),
         value,
@@ -138,27 +148,6 @@ export function AdminView({
     (acc, c) => ({ ...acc, [c.invoice]: acc[c.invoice] + 1 }),
     { draft: 0, sent: 0, paid: 0 } as Record<InvoiceStatus, number>,
   );
-
-  const approve = (id: string) => {
-    const submission = submissions.find((s) => s.id === id);
-    if (!submission) return;
-    const campaign = campaignById(campaigns, submission.campaignId);
-    settleSubmission(id, "paid");
-    toast.success("Payout approved", {
-      description: `${fmtMoney(earnedOf(submission, campaigns), true)} for ${
-        submission.creator
-      } · ${campaign?.brand ?? "Campaign"}`,
-    });
-  };
-
-  const reject = (id: string) => {
-    const submission = submissions.find((s) => s.id === id);
-    if (!submission) return;
-    settleSubmission(id, "rejected");
-    toast.error("Clip rejected", {
-      description: `${submission.creator}'s clip was removed from the campaign.`,
-    });
-  };
 
   /** Accept a reviewed clip — it is sent to the campaign and goes live. */
   const acceptClip = (id: string) => {
@@ -193,8 +182,9 @@ export function AdminView({
     },
     payouts: {
       kicker: "Settlements",
-      title: "Platform payouts",
-      description: "Amounts settled to clippers over the last 7 days.",
+      title: "Payout requests",
+      description:
+        "Every withdrawal a creator has asked for, and what you decided on it.",
     },
     creators: {
       kicker: "Directory",
@@ -246,9 +236,9 @@ export function AdminView({
     {
       to: "/dashboard/payouts",
       icon: Wallet,
-      value: fmtMoney(stats.pending, true),
-      label: "Pending payouts",
-      hint: "Awaiting approval in the queue",
+      value: fmtCents(payoutPendingCents),
+      label: "Payout queue",
+      hint: "Requests waiting on you",
     },
     {
       to: "/dashboard/invoices",
@@ -316,13 +306,13 @@ export function AdminView({
         />
         <StatCard
           icon={BarChart3}
-          label="Pending payouts"
-          value={fmtMoney(stats.pending, true)}
-          sub="Awaiting approval in the queue"
+          label="Payout queue"
+          value={fmtCents(payoutPendingCents)}
+          sub="Requested and waiting on you"
           meter={{
             value:
               stats.paidOut + stats.pending > 0
-                ? stats.pending / (stats.paidOut + stats.pending)
+                ? payoutPendingCents / (payoutPendingCents + stats.paidOut)
                 : 0,
             caption: `${fmtMoney(stats.paidOut + stats.pending, true)} in flight`,
           }}
@@ -401,17 +391,25 @@ export function AdminView({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[15px] font-bold tracking-tight">
-                Platform payouts
+                Payout requests
               </h2>
               <p className="text-xs text-muted-foreground">
-                Amounts settled to clippers over the last 7 days
+                Every withdrawal a creator has asked for, and what you decided
               </p>
             </div>
             <span className="glass-chip rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
               USD
             </span>
           </div>
-          <PayoutChart data={payoutSeries} />
+          <div className="mt-4">
+            <AdminPayouts />
+          </div>
+          <div className="mt-6 border-t border-white/[0.07] pt-5">
+          <h3 className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            Payouts sent over the last 7 days
+          </h3>
+            <PayoutChart data={payoutSeries} />
+          </div>
         </motion.section>
       )}
 
@@ -844,19 +842,16 @@ export function AdminView({
                           </DropdownMenu>
                         </div>
                       ) : submission.status === "active" ? (
-                        <div className="flex justify-end">
-                          <Button
-                            size="sm"
-                            className="h-8 gap-1 bg-neon/15 text-neon hover:bg-neon/25 border border-neon/25"
-                            onClick={() => approve(submission.id)}
-                          >
-                            <ShieldCheck className="h-3 w-3" />
-                            Approve payout
-                          </Button>
-                        </div>
+                        /* Money leaves Clip Vault through a payout request, not
+                           through this table. Accepting a clip credits the
+                           creator's balance; the cash moves when they ask for
+                           it and an operator pays it on the payouts page. */
+                        <span className="text-[11.5px] font-semibold text-neon">
+                          Paid to balance
+                        </span>
                       ) : submission.status === "paid" ? (
                         <span className="text-[11.5px] font-semibold text-muted-foreground">
-                          Settled
+                          Withdrawn
                         </span>
                       ) : (
                         <span
@@ -892,7 +887,7 @@ function PayoutChart({
         <BarChart3 className="h-7 w-7 text-muted-foreground" />
         <p className="mt-3 text-sm font-semibold">No settled payouts yet</p>
         <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-          Approve a clip payout and the last 7 days will chart here.
+          Mark a payout request as paid and the last 7 days will chart here.
         </p>
       </div>
     );

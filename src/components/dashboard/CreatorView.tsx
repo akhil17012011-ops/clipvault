@@ -20,6 +20,7 @@ import {
   campaignById,
   daysAgo,
   earnedOf,
+  fmtCents,
   fmtFull,
   fmtMoney,
   fmtViews,
@@ -30,7 +31,10 @@ import {
 import { useClipVault, useCreatorStats } from "@/lib/clip-vault-store";
 import { EASE } from "@/lib/motion";
 import { MessagesInbox } from "@/components/dashboard/MessagesInbox";
-import { PayoutSettings } from "@/components/dashboard/PayoutSettings";
+import {
+  PayoutHistory,
+  PayoutRequestCard,
+} from "@/components/dashboard/PayoutRequestCard";
 import {
   PayoutPulse,
   RecentActivity,
@@ -73,6 +77,7 @@ export function CreatorView({
     accounts,
     accountStats,
     campaigns,
+    wallet,
     toggleJoinCampaign,
     removeAccount,
   } = useClipVault();
@@ -81,18 +86,16 @@ export function CreatorView({
   const openCampaign = campaigns.find((c) => c.id === openCampaignId);
   const { user } = useAuth();
   const stats = useCreatorStats();
-  /* Shown instead of a hardcoded payment method, so the header always matches
-     the wallet the creator actually entered. */
-  const payoutLabel = profile?.payoutAddress
-    ? `${profile.payoutCurrency === "ltc" ? "LTC" : "SOL"} ${profile.payoutAddress.slice(0, 6)}…${profile.payoutAddress.slice(-4)}`
-    : "No payout address yet";
+  /* There is no saved wallet: the header shows what the creator can actually
+     withdraw right now, and the method belongs to each request. */
+  const payoutLabel = `Min ${fmtCents(wallet.minWithdrawalCents)} to withdraw`;
   const name =
     profile?.name ?? user?.name ?? user?.email?.split("@")[0] ?? "Creator";
 
   const feed = campaigns.filter((c) => c.status === "active").slice(0, 4);
 
   const paidCycles = stats.mine
-    .filter((s) => s.status === "paid")
+    .filter((s) => s.status === "active" || s.status === "paid")
     .map((s) => {
       const campaign = campaignById(campaigns, s.campaignId);
       return {
@@ -130,7 +133,7 @@ export function CreatorView({
       kicker: "Get paid",
       title: "Payments",
       description:
-        "Your current cycle and every payout Clip Vault has settled to you.",
+        "Your balance, every payout you've requested, and where each one stands.",
     },
     accounts: {
       kicker: "Verification",
@@ -177,9 +180,9 @@ export function CreatorView({
     {
       to: "/dashboard/payments",
       icon: Wallet,
-      value: fmtMoney(stats.pending, true),
-      label: "Pending payout",
-      hint: "Settled automatically when the cycle closes",
+      value: fmtCents(wallet.availableCents),
+      label: "Available balance",
+      hint: `Request a payout at ${fmtCents(wallet.minWithdrawalCents)}`,
     },
   ];
 
@@ -255,16 +258,19 @@ export function CreatorView({
         <StatCard
           icon={Wallet}
           label="Total earnings"
-          value={fmtMoney(stats.totalEarned, true)}
-          sub={`${fmtMoney(stats.paidOut, true)} already paid out`}
+          value={fmtCents(wallet.lifetimeCents)}
+          sub={`${fmtCents(wallet.availableCents)} available to withdraw`}
           tone="neon"
           meter={{
             value:
-              stats.totalEarned > 0 ? stats.paidOut / stats.totalEarned : 0,
+              wallet.lifetimeCents > 0
+                ? wallet.availableCents / wallet.lifetimeCents
+                : 0,
             caption: `${Math.round(
-              (stats.totalEarned > 0 ? stats.paidOut / stats.totalEarned : 0) *
-                100,
-            )}% settled`,
+              (wallet.lifetimeCents > 0
+                ? wallet.availableCents / wallet.lifetimeCents
+                : 0) * 100,
+            )}% still in your balance`,
           }}
         />
         <StatCard
@@ -292,13 +298,13 @@ export function CreatorView({
         <StatCard
           icon={Clock3}
           label="Payout status"
-          value={stats.pending > 0 ? fmtMoney(stats.pending, true) : "Settled"}
+          value={fmtCents(wallet.availableCents)}
           sub={
-            stats.pending > 0
-              ? "Pending — cycle closes in 3 days"
-              : "Everything has been paid"
+            wallet.availableCents >= wallet.minWithdrawalCents
+              ? "Ready to request a payout"
+              : `${fmtCents(wallet.minWithdrawalCents - wallet.availableCents)} to the minimum`
           }
-          tone={stats.pending > 0 ? "violet" : "neon"}
+          tone={wallet.availableCents >= wallet.minWithdrawalCents ? "neon" : "violet"}
         />
       </motion.div>
       )}
@@ -306,12 +312,7 @@ export function CreatorView({
       {section === "overview" && (
         <div className="grid gap-4 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <PayoutPulse
-              totalEarned={stats.totalEarned}
-              paidOut={stats.paidOut}
-              pending={stats.pending}
-              onSubmitClip={onSubmitClip}
-            />
+            <PayoutPulse wallet={wallet} onSubmitClip={onSubmitClip} />
           </div>
           <div className="lg:col-span-3">
             <RecentActivity
@@ -634,26 +635,34 @@ export function CreatorView({
             </div>
 
             {/* Balance first. What a creator opens Payouts to find out is how
-                much they have coming, so that is the number at the top rather
-                than buried in a cycle summary. */}
+                much they can withdraw right now, so that is the number at the
+                top rather than buried in a cycle summary. */}
             <div className="panel-fx mt-4 overflow-hidden rounded-xl border border-brand/30 bg-brand/[0.08] px-5 py-5">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 Available balance
               </p>
               <p className="mt-1.5 font-mono text-3xl font-extrabold tracking-tight text-foreground">
-                {fmtMoney(stats.pending, true)}
+                {fmtCents(wallet.availableCents)}
               </p>
               <p className="mt-1 text-[11.5px] text-muted-foreground">
-                Earned and not yet paid out
+                From approved clips, ready to withdraw
               </p>
 
-              <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/8 pt-3.5">
+              <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-white/8 pt-3.5">
+                <div>
+                  <dt className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    In pending
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-[14px] font-bold text-foreground">
+                    {fmtCents(wallet.pendingCents)}
+                  </dd>
+                </div>
                 <div>
                   <dt className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Earned to date
                   </dt>
                   <dd className="mt-0.5 font-mono text-[14px] font-bold text-foreground">
-                    {fmtMoney(stats.pending + stats.paidOut, true)}
+                    {fmtCents(wallet.lifetimeCents)}
                   </dd>
                 </div>
                 <div>
@@ -661,30 +670,34 @@ export function CreatorView({
                     Already paid
                   </dt>
                   <dd className="mt-0.5 font-mono text-[14px] font-bold text-neon">
-                    {fmtMoney(stats.paidOut, true)}
+                    {fmtCents(wallet.lifetimeCents - wallet.availableCents - wallet.pendingCents)}
                   </dd>
                 </div>
               </dl>
 
               <div className="mt-3.5 flex items-center justify-between rounded-lg bg-black/[0.25] px-3 py-2">
                 <span className="text-[11.5px] text-muted-foreground">
-                  Next payout
+                  Minimum withdrawal
                 </span>
                 <span className="text-[11.5px] font-semibold text-foreground">
-                  Closes in 3 days
+                  {fmtCents(wallet.minWithdrawalCents)}
                 </span>
               </div>
             </div>
 
-            <PayoutSettings />
+            <div className="mt-4">
+              <PayoutRequestCard />
+            </div>
+
+            <PayoutHistory />
 
             <h3 className="mt-5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              Paid cycles
+              Earnings from clips
             </h3>
             <ul className="mt-2 space-y-2">
               {paidCycles.length === 0 ? (
                 <li className="glass-chip rounded-xl px-4 py-4 text-center text-xs text-muted-foreground">
-                  Paid cycles will show up here.
+                  Approved clips that earned money will show up here.
                 </li>
               ) : (
                 paidCycles.map((cycle) => (
@@ -695,7 +708,7 @@ export function CreatorView({
                     <div>
                       <p className="text-[13px] font-medium">{cycle.label}</p>
                       <div className="mt-0.5">
-                        <StatusBadge status="paid" />
+                        <StatusBadge status="active" />
                       </div>
                     </div>
                     <span className="font-mono text-sm font-bold text-brand">
@@ -708,8 +721,9 @@ export function CreatorView({
 
             <p className="mt-4 flex items-start gap-2 text-[11.5px] leading-relaxed text-muted-foreground">
               <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
-              Earnings land automatically in your payout method when a cycle
-              closes.
+              Approving a clip adds its earnings to your balance straight away.
+              You choose the currency and address when you request a payout —
+              nothing is saved to your profile.
             </p>
           </motion.section>
       )}

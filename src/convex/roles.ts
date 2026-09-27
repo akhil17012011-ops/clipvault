@@ -176,6 +176,39 @@ async function moveProductRows(
     await ctx.db.patch(row._id, { userId: to });
   }
 
+  /* Money has to follow the person, or a merged account silently loses its
+     balance. Two wallets cannot both survive, so the one already on the target
+     wins and the incoming row is dropped — the ledger keeps the history. */
+  const wallets = await ctx.db
+    .query("wallets")
+    .filter((q) => q.eq(q.field("userId"), from))
+    .collect();
+  const targetWallet = await ctx.db
+    .query("wallets")
+    .filter((q) => q.eq(q.field("userId"), to))
+    .first();
+  for (const wallet of wallets) {
+    if (targetWallet) {
+      await ctx.db.patch(targetWallet._id, {
+        availableCents: targetWallet.availableCents + wallet.availableCents,
+        pendingCents: targetWallet.pendingCents + wallet.pendingCents,
+        lifetimeCents: targetWallet.lifetimeCents + wallet.lifetimeCents,
+      });
+      await ctx.db.delete(wallet._id);
+    } else {
+      await ctx.db.patch(wallet._id, { userId: to });
+    }
+  }
+
+  for (const table of ["payoutRequests", "earnings"] as const) {
+    for (const row of await ctx.db
+      .query(table)
+      .filter((q) => q.eq(q.field("userId"), from))
+      .collect()) {
+      await ctx.db.patch(row._id, { userId: to });
+    }
+  }
+
   /* Connected handles are special: two rows for the same platform + handle
      would make "is this clip yours?" ambiguous, so a duplicate is dropped and
      the connection already on the target is the one that survives. */
@@ -270,8 +303,6 @@ async function repairOperator(
   const carried: {
     name?: string;
     image?: string;
-    payoutCurrency?: "sol" | "ltc";
-    payoutAddress?: string;
   } = {};
 
   for (const row of rows) {
@@ -288,13 +319,6 @@ async function repairOperator(
     }
     if (carried.image === undefined && row.image !== undefined) {
       carried.image = row.image;
-    }
-    if (
-      carried.payoutAddress === undefined &&
-      row.payoutAddress !== undefined
-    ) {
-      carried.payoutCurrency = row.payoutCurrency;
-      carried.payoutAddress = row.payoutAddress;
     }
 
     await ctx.db.delete(row._id);

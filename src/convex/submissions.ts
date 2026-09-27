@@ -2,6 +2,19 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { NotAllowedError, requireAdmin, requireUser } from "./access";
+import { MIN_WITHDRAWAL_USD } from "./schema";
+
+/**
+ * What a clip is worth to its creator, in whole cents.
+ *
+ * A clip only earns once it has cleared its campaign's minimum view threshold —
+ * that rule is the same one the dashboard uses, and it is applied here so the
+ * balance can never disagree with what the creator was shown.
+ */
+function earnedCents(views: number, ratePer1k: number, minViews: number) {
+  if (views < minViews) return 0;
+  return Math.round((views / 1000) * ratePer1k * 100);
+}
 
 /**
  * Clips creators submit to campaigns.
@@ -232,7 +245,15 @@ export const review = mutation({
     const campaignName = campaign?.title ?? "your campaign";
 
     if (args.decision === "decline") {
-      const reason = args.note?.trim() || "Didn't meet the campaign brief.";
+      /* A decline without a reason is a dead end for the creator: they cannot
+         fix a clip nobody told them about. So the reason is required here, not
+         merely suggested in the UI. */
+      const reason = args.note?.trim();
+      if (!reason) {
+        throw new Error(
+          "Give the creator a reason for declining — they see it in their messages.",
+        );
+      }
       await ctx.db.patch(args.submissionId, {
         status: "rejected",
         reviewNote: reason,
@@ -243,6 +264,7 @@ export const review = mutation({
         userId: submission.userId,
         title: `Clip declined for ${campaignName}`,
         body: reason,
+        link: "/dashboard/clips",
       });
       return;
     }
@@ -252,12 +274,40 @@ export const review = mutation({
       reviewNote: args.note?.trim() || undefined,
     });
 
+    /* Approval is what turns a clip into money: the balance is credited here,
+       in the same transaction as the review, so a creator can never have an
+       approved clip that was not paid for. */
+    const creditedCents = campaign
+      ? earnedCents(submission.views, campaign.ratePer1k, campaign.minViews)
+      : 0;
+    if (creditedCents > 0) {
+      await ctx.runMutation(internal.payouts.creditEarnings, {
+        userId: submission.userId,
+        submissionId: submission._id,
+        campaignId: submission.campaignId,
+        amountCents: creditedCents,
+        reason: `Clip approved for ${campaign!.title}`,
+      });
+      /* What the campaign has committed goes up by the same amount, so the
+         brand's budget meter reflects the clips actually approved against it. */
+      await ctx.db.patch(campaign!._id, {
+        spent: Math.round((campaign!.spent + creditedCents / 100) * 100) / 100,
+      });
+    }
+
     await ctx.runMutation(internal.messages.notify, {
       userId: submission.userId,
       title: `Clip approved for ${campaignName}`,
-      body: args.note?.trim()
-        ? args.note.trim()
-        : "Your clip is approved and counting toward this campaign's payout.",
+      body: creditedCents > 0
+        ? [
+            args.note?.trim() || null,
+            `$${(creditedCents / 100).toFixed(2)} has been added to your balance. You can request a payout once you're over $${MIN_WITHDRAWAL_USD}.`,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : args.note?.trim() ||
+          "Your clip is approved. It starts earning once it passes the campaign's view threshold.",
+      link: "/dashboard/clips",
     });
 
     if (campaign) {
@@ -299,29 +349,45 @@ export const confirmViews = mutation({
     });
 
     const campaign = await ctx.db.get(submission.campaignId);
+
+    /* A clip that was already approved, and that now measures higher than it
+       did at review, earns the difference. Money only ever moves upwards here. */
+    if (campaign && submission.status === "active") {
+      const alreadyPaid = await ctx.db
+        .query("earnings")
+        .withIndex("by_user", (q) => q.eq("userId", submission.userId))
+        .filter((q) => q.eq(q.field("submissionId"), submission._id))
+        .first();
+      const nowWorth = earnedCents(
+        Math.round(args.views),
+        campaign.ratePer1k,
+        campaign.minViews,
+      );
+      const wasWorth = earnedCents(
+        submission.views,
+        campaign.ratePer1k,
+        campaign.minViews,
+      );
+      const delta = nowWorth - (alreadyPaid ? alreadyPaid.amountCents : wasWorth);
+      if (delta > 0) {
+        await ctx.runMutation(internal.payouts.creditTopUp, {
+          userId: submission.userId,
+          campaignId: submission.campaignId,
+          amountCents: delta,
+          reason: `View count corrected for ${campaign.title}`,
+        });
+        await ctx.db.patch(campaign._id, {
+          spent: Math.round((campaign.spent + delta / 100) * 100) / 100,
+        });
+      }
+    }
+
     await ctx.runMutation(internal.messages.notify, {
       userId: submission.userId,
       title: `View count updated for ${campaign?.title ?? "your clip"}`,
       body: `Your clip is now recorded at ${Math.round(args.views).toLocaleString("en-US")} views.`,
     });
     return true;
-  },
-});
-
-/** Admin payout settlement. */
-export const settle = mutation({
-  args: {
-    submissionId: v.id("submissions"),
-    status: v.union(v.literal("paid"), v.literal("rejected")),
-  },
-  handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    const submission = await ctx.db.get(args.submissionId);
-    if (!submission) throw new Error("That submission no longer exists.");
-    if (submission.status === "pending" || submission.status === "rejected") {
-      throw new Error("Only live clips can be settled.");
-    }
-    await ctx.db.patch(args.submissionId, { status: args.status });
   },
 });
 

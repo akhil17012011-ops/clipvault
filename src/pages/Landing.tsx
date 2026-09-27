@@ -573,8 +573,10 @@ function MockAccounts() {
 
 function MockPayout() {
   const methods = [
-    { name: "Solana", note: "Fast, low fees" },
-    { name: "Litecoin", note: "Direct to wallet" },
+    { name: "Solana", note: "Seconds" },
+    { name: "Bitcoin", note: "A few blocks" },
+    { name: "Litecoin", note: "A few minutes" },
+    { name: "USDT", note: "Tron · Ethereum · BNB" },
   ];
   return (
     <MockFrame title="Payout method">
@@ -601,7 +603,7 @@ function MockPayout() {
       </div>
       <p className="mt-4 flex items-center gap-2 text-[12px] text-muted-foreground">
         <Clock3 className="h-4 w-4 text-brand" />
-        Paid out automatically when a cycle closes.
+        Request a payout to any wallet once you hit $5.
       </p>
     </MockFrame>
   );
@@ -709,8 +711,8 @@ const STEPS = [
   {
     n: "03",
     kicker: "Set up",
-    title: "Add your payout method",
-    body: "Choose how you want to get paid — a Solana or Litecoin wallet — so your earnings land automatically when a cycle closes.",
+    title: "Get paid your way",
+    body: "Nothing to set up in advance. When your balance passes $5 you request a payout and choose the currency and address — Solana, Bitcoin, Litecoin or USDT — on the spot.",
     mock: <MockPayout />,
   },
   {
@@ -724,7 +726,7 @@ const STEPS = [
     n: "05",
     kicker: "Cash out",
     title: "Get paid per view",
-    body: "Your earnings climb live as views roll in. When the cycle closes and views are verified, your payout is sent to your chosen method.",
+    body: "Every approved clip adds to your balance. Hit $5, request a payout to whichever wallet you like, and we send it.",
     mock: <MockCycles />,
   },
 ];
@@ -1196,7 +1198,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "When do I get paid?",
-    a: "Earnings run on weekly cycles and pay out on Friday, straight to the wallet you add in Payout settings.",
+    a: "As soon as your balance passes $5 you can request a payout — you pick the amount, the currency and the address, and we send it.",
   },
   {
     q: "What if a clip is rejected?",
@@ -1285,11 +1287,11 @@ function PricingSection() {
         <motion.div id="payouts" className="mt-20 scroll-mt-24">
           <div className="text-center">
             <h3 className="text-2xl font-extrabold tracking-[-0.03em] sm:text-3xl">
-              Paid every Friday
+              Request it yourself at $5
             </h3>
             <p className="mx-auto mt-3 max-w-xl text-balance text-sm leading-relaxed text-muted-foreground">
-              Add a wallet once and every closed cycle pays out to it
-              automatically. No payout request, no minimum transfer, no chasing.
+              No saved wallet, no waiting for a payout run. Choose the currency
+              and the address when you request it, and we send it from there.
             </p>
           </div>
 
@@ -1297,12 +1299,22 @@ function PricingSection() {
             {[
               {
                 name: "Solana",
-                note: "Fast finality, the lowest fee of the two. Paste the wallet address that starts with 1, 3 or 4.",
+                note: "Fast finality and the lowest fee. Paste the address that starts with 1, 3 or 4.",
                 icon: Zap,
               },
               {
+                name: "Bitcoin",
+                note: "Native on-chain BTC. Paste the address that starts with bc1, 1 or 3.",
+                icon: Wallet,
+              },
+              {
                 name: "Litecoin",
-                note: "A single address that starts with L or M. Lands in a couple of confirmations.",
+                note: "One address, no memo field. Paste the address that starts with ltc1, L or M.",
+                icon: Wallet,
+              },
+              {
+                name: "USDT",
+                note: "Tron, Ethereum or BNB. Pick the network your wallet actually holds it on.",
                 icon: Wallet,
               },
             ].map((method) => (

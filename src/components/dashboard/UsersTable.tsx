@@ -11,7 +11,7 @@ import {
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { ChevronDown, Users as UsersIcon } from "lucide-react";
-import { fmtFull, fmtMoney, fmtViews, type AdminUser } from "@/lib/clip-vault-data";
+import { fmtCents, fmtFull, fmtViews, type AdminUser } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 
 function joinedLabel(ts: number): string {
@@ -33,7 +33,7 @@ export function UsersTable() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const totalViews = adminUsers.reduce((sum, u) => sum + u.views, 0);
-  const totalEarned = adminUsers.reduce((sum, u) => sum + u.earned, 0);
+  const totalEarned = adminUsers.reduce((sum, u) => sum + u.availableCents, 0);
   const totalAccounts = adminUsers.reduce((sum, u) => sum + u.accounts.length, 0);
 
   return (
@@ -58,7 +58,7 @@ export function UsersTable() {
             {fmtViews(totalViews)} views
           </span>
           <span className="rounded-full border border-neon/30 bg-neon/10 px-2.5 py-1 text-neon">
-            {fmtMoney(totalEarned)} earned
+            {fmtCents(totalEarned)} in creator balances
           </span>
         </div>
       </div>
@@ -79,7 +79,7 @@ export function UsersTable() {
                 <TableHead className="text-right">Accounts</TableHead>
                 <TableHead className="text-right">Clips</TableHead>
                 <TableHead className="text-right">Views</TableHead>
-                <TableHead className="text-right">Earned</TableHead>
+                <TableHead className="text-right">Balance</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -152,7 +152,12 @@ export function UsersTable() {
                         {fmtViews(user.views)}
                       </TableCell>
                       <TableCell className="text-right font-mono text-[13px] font-bold text-neon">
-                        {fmtMoney(user.earned)}
+                        {fmtCents(user.availableCents)}
+                        {user.pendingCents > 0 ? (
+                          <span className="block text-[10.5px] font-medium text-amber-500">
+                            {fmtCents(user.pendingCents)} pending
+                          </span>
+                        ) : null}
                       </TableCell>
                     </TableRow>
 

@@ -44,6 +44,31 @@ export const clipMetricsValidator = v.object({
 });
 export type ClipMetrics = Infer<typeof clipMetricsValidator>;
 
+/**
+ * Currencies a creator can be paid in. Chosen at payout-request time rather
+ * than saved up front, so nobody is locked into a wallet they signed up with.
+ */
+export const PAYOUT_METHODS = ["sol", "ltc", "btc", "usdt"] as const;
+export const payoutMethodValidator = v.union(
+  v.literal("sol"),
+  v.literal("ltc"),
+  v.literal("btc"),
+  v.literal("usdt"),
+);
+export type PayoutMethod = Infer<typeof payoutMethodValidator>;
+
+/** Networks USDT can be sent on. The address shape depends on this. */
+export const USDT_NETWORKS = ["trc20", "erc20", "bep20"] as const;
+export const usdtNetworkValidator = v.union(
+  v.literal("trc20"),
+  v.literal("erc20"),
+  v.literal("bep20"),
+);
+export type UsdtNetwork = Infer<typeof usdtNetworkValidator>;
+
+/** The smallest withdrawal a creator can request, in whole dollars. */
+export const MIN_WITHDRAWAL_USD = 5;
+
 const schema = defineSchema(
   {
     // default auth tables using convex auth.
@@ -59,14 +84,10 @@ const schema = defineSchema(
 
       role: v.optional(roleValidator), // role of the user. do not remove
 
-      /**
-       * Where this creator gets paid. Set by the creator, not by an admin, and
-       * only ever used to show them what they entered.
-       */
-      payoutCurrency: v.optional(
-        v.union(v.literal("sol"), v.literal("ltc")),
-      ),
-      payoutAddress: v.optional(v.string()),
+      /* There is deliberately no payout address on the user row. A creator
+         picks the currency, network and address on the payout request itself —
+         see the `payoutRequests` table — so a stale wallet can never be paid by
+         accident. */
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
     /* ------------------------------------------------------------------ */
@@ -194,6 +215,81 @@ const schema = defineSchema(
     })
       .index("by_user", ["userId"])
       .index("by_user_created", ["userId", "createdAt"]),
+
+    /**
+     * A creator's money. One row per user, created with the account.
+     *
+     * Every amount is stored in whole US cents. Dollars are not exactly
+     * representable in binary floating point, and a balance that drifts by a
+     * fraction of a cent across hundreds of clips becomes a balance that does
+     * not match the sum of its own ledger.
+     */
+    wallets: defineTable({
+      userId: v.id("users"),
+      /** Cleared earnings, in cents. What a creator can request a payout from. */
+      availableCents: v.number(),
+      /** Locked inside a payout request that an operator has not actioned. */
+      pendingCents: v.number(),
+      /** Every cent ever credited, paid out or not. */
+      lifetimeCents: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }).index("by_user", ["userId"]),
+
+    /**
+     * One row per credit to a wallet, so the balance can always be explained.
+     *
+     * `submissionId` is unique in practice: approving the same clip twice must
+     * not pay twice, and this is what makes that checkable rather than a
+     * convention.
+     */
+    earnings: defineTable({
+      userId: v.id("users"),
+      /** The clip this money came from, when it came from a clip. */
+      submissionId: v.optional(v.id("submissions")),
+      campaignId: v.optional(v.id("campaigns")),
+      /** Signed, in cents. Negative when a payout request took money out. */
+      amountCents: v.number(),
+      /** Plain-language reason, shown in the creator's history. */
+      reason: v.string(),
+      createdAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_created", ["userId", "createdAt"]),
+
+    /**
+     * A creator asking to be paid, and the operator's answer to it.
+     *
+     * The amount moves from `availableCents` to `pendingCents` the moment the
+     * request is made, so the money cannot be requested twice while an operator
+     * is still deciding. Marking it paid clears the pending balance; rejecting
+     * it requires a reason and returns the money to available.
+     */
+    payoutRequests: defineTable({
+      userId: v.id("users"),
+      /** Name shown to the operator, snapshotted when the request was made. */
+      creatorName: v.string(),
+      amountCents: v.number(),
+      method: payoutMethodValidator,
+      /** Only set for USDT, where the address shape depends on the network. */
+      network: v.optional(usdtNetworkValidator),
+      address: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("paid"),
+        v.literal("rejected"),
+      ),
+      requestedAt: v.number(),
+      decidedAt: v.optional(v.number()),
+      /** Transaction hash or note the operator recorded when paying. */
+      reference: v.optional(v.string()),
+      /** Required on rejection, and shown to the creator. */
+      reason: v.optional(v.string()),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_requested", ["userId", "requestedAt"])
+      .index("by_status", ["status"])
+      .index("by_requested", ["requestedAt"]),
 
     // A clip a creator submitted to a campaign.
     submissions: defineTable({

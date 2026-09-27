@@ -4,6 +4,7 @@ import {
   PageHero,
   fadeUp,
 } from "@/components/marketing/MarketingShell";
+import { MIN_WITHDRAWAL_USD } from "@/lib/clip-vault-data";
 import { motion } from "framer-motion";
 import { Check, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { Link } from "react-router";
@@ -14,8 +15,8 @@ const REQUIREMENTS = [
     body: "TikTok, Instagram Reels or YouTube Shorts. You can add more than one, and every account you post from should be verified.",
   },
   {
-    title: "A wallet we can pay",
-    body: "A Solana or Litecoin address. Add it once in Payout settings and every closed cycle pays out to it.",
+    title: "A crypto address",
+    body: "Whichever one you want to be paid to. You do not save it up front — you choose the currency and paste the address when you request the payout.",
   },
   {
     title: "The right to use the footage",
@@ -144,16 +145,17 @@ export default function CreatorsPage() {
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand">
                 <Wallet className="h-5 w-5" />
               </span>
-              <h2 className="text-2xl font-extrabold tracking-[-0.03em] sm:text-3xl">
-                Payouts
-              </h2>
-            </div>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Earnings run on weekly cycles and pay out on Friday to the wallet
-              in your payout settings — Solana or Litecoin, no minimum
-              transfer, nothing to request. Adding a wallet is part of the setup
-              flow, and you can change it any time before a cycle closes.
-            </p>
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em] sm:text-3xl">
+              Payouts
+            </h2>
+          </div>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            Nothing is saved to your account. When your balance passes $
+            {MIN_WITHDRAWAL_USD} you request a payout, choose Solana, Litecoin,
+            Bitcoin or USDT, paste the address, and we send it. The amount moves
+            into a pending balance while we action it so it can never be
+            requested twice, and you are notified the second it goes out.
+          </p>
             <Link
               to="/payouts"
               className="mt-4 inline-block text-sm font-semibold text-brand underline-offset-4 hover:underline"
@@ -165,8 +167,8 @@ export default function CreatorsPage() {
       </section>
 
       <MarketingCTA
-        title="Your first payout is one cycle away."
-        body="Connect an account, join a campaign and post. That is the whole process."
+        title="Your balance builds as clips get approved."
+        body="Connect an account, join a campaign and post. Reach $5 and the money is yours to withdraw."
       />
     </MarketingShell>
   );

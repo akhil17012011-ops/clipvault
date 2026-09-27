@@ -4,7 +4,7 @@ import {
   PageHero,
   fadeUp,
 } from "@/components/marketing/MarketingShell";
-import { fmtRate } from "@/lib/clip-vault-data";
+import { fmtRate, MIN_WITHDRAWAL_USD } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
 import { CircleDollarSign, Clock3, TrendingUp } from "lucide-react";
@@ -119,16 +119,16 @@ export default function PricingPage() {
                 title: "Rates go live",
                 body: "A campaign's rate is public the moment it launches, and the current range is shown above.",
               },
-              {
-                icon: Clock3,
-                title: "Cycles close weekly",
-                body: "Earnings run on weekly cycles and pay out on Friday to the wallet in your payout settings.",
-              },
-              {
-                icon: CircleDollarSign,
-                title: "No minimum transfer",
-                body: "There is no payout threshold to clear. Whatever a closed cycle earns is what gets sent.",
-              },
+            {
+              icon: Clock3,
+              title: "Paid on your request",
+              body: `Approved clips add to your balance straight away. Once you pass $${MIN_WITHDRAWAL_USD} you request a payout and we send it.`,
+            },
+            {
+              icon: CircleDollarSign,
+              title: "No fee to withdraw",
+              body: "There is no maximum transfer and no payout fee. You get the full amount you asked for.",
+            },
             ].map((item) => (
               <div
                 key={item.title}

@@ -106,7 +106,127 @@ export interface AdminMessage {
   read: boolean;
 }
 
-export type PayoutCurrency = "sol" | "ltc";
+/**
+ * How a creator gets paid.
+ *
+ * There is no saved wallet: the method and the address are chosen at the moment
+ * the payout is requested, and they belong to that one request. That is what
+ * lets someone switch networks between payouts without losing anything, and it
+ * means a stale address saved months ago can never be paid by accident.
+ */
+export type PayoutMethod = "sol" | "ltc" | "btc" | "usdt";
+
+/** Networks USDT can be sent on. The address shape depends on the network. */
+export type UsdtNetwork = "trc20" | "erc20" | "bep20";
+
+/** Smallest withdrawal a creator can request, in whole dollars. */
+export const MIN_WITHDRAWAL_USD = 5;
+
+export const PAYOUT_METHODS: {
+  id: PayoutMethod;
+  label: string;
+  /** What a valid address for this method starts with. */
+  hint: string;
+  networks?: { id: UsdtNetwork; label: string; hint: string }[];
+  arrival: string;
+}[] = [
+  {
+    id: "sol",
+    label: "Solana",
+    hint: "Starts with 1, 3 or 4",
+    arrival: "Seconds",
+  },
+  {
+    id: "ltc",
+    label: "Litecoin",
+    hint: "Starts with ltc1, L or M",
+    arrival: "A few minutes",
+  },
+  {
+    id: "btc",
+    label: "Bitcoin",
+    hint: "Starts with bc1, 1 or 3",
+    arrival: "A few blocks",
+  },
+  {
+    id: "usdt",
+    label: "USDT",
+    hint: "Tron or Ethereum address",
+    arrival: "Minutes to hours",
+    networks: [
+      { id: "trc20", label: "TRC20 (Tron)", hint: "Starts with T" },
+      { id: "erc20", label: "ERC20 (Ethereum)", hint: "Starts with 0x" },
+      { id: "bep20", label: "BEP20 (BNB)", hint: "Starts with 0x" },
+    ],
+  },
+];
+
+export function payoutMethodLabel(
+  method: PayoutMethod,
+  network?: UsdtNetwork | null,
+): string {
+  if (method !== "usdt") {
+    return PAYOUT_METHODS.find((m) => m.id === method)?.label ?? method.toUpperCase();
+  }
+  const suffix = network ? ` (${network.toUpperCase()})` : "";
+  return `USDT${suffix}`;
+}
+
+/** Shortens an address for display without pretending to be the whole thing. */
+export function shortAddress(address: string): string {
+  if (address.length <= 16) return address;
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
+export type PayoutRequestStatus = "pending" | "paid" | "rejected";
+
+/** One line of a creator's money history. */
+export interface PayoutRequest {
+  id: string;
+  amountCents: number;
+  method: PayoutMethod;
+  network: UsdtNetwork | null;
+  address: string;
+  status: PayoutRequestStatus;
+  requestedAt: number;
+  decidedAt: number | null;
+  reference: string | null;
+  reason: string | null;
+}
+
+/** The same request as the brand console sees it, with the creator attached. */
+export interface AdminPayoutRequest extends PayoutRequest {
+  userId: string;
+  creatorName: string;
+  creatorEmail: string | null;
+}
+
+/** A single movement of money, positive or negative. */
+export interface EarningEntry {
+  id: string;
+  amountCents: number;
+  reason: string;
+  campaignId: string | null;
+  createdAt: number;
+}
+
+/** A creator's money, in whole cents. */
+export interface Wallet {
+  availableCents: number;
+  pendingCents: number;
+  lifetimeCents: number;
+  minWithdrawalCents: number;
+}
+
+/** Formats cents as dollars, without floating point drift. */
+export function fmtCents(cents: number): string {
+  return (cents / 100).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 /** How much a single connected account has actually produced. */
 export interface AccountStats {
@@ -139,6 +259,10 @@ export interface AdminUser {
   clips: number;
   views: number;
   earned: number;
+  /** What is actually withdrawable right now, in cents. */
+  availableCents: number;
+  /** Locked in a payout request waiting on Clip Vault. */
+  pendingCents: number;
 }
 
 export type InvoiceStatus = "draft" | "sent" | "paid";

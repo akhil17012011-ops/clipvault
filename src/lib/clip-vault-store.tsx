@@ -14,7 +14,12 @@ import {
   type AdminUser,
   type AdminMessage,
   type CreatorMessage,
-  type PayoutCurrency,
+  type AdminPayoutRequest,
+  type EarningEntry,
+  type PayoutMethod,
+  type PayoutRequest,
+  type UsdtNetwork,
+  type Wallet,
   type Campaign,
   type CampaignAsset,
   type ClipMetrics,
@@ -38,9 +43,6 @@ import {
  */
 
 export interface Profile {
-  /** Where the creator asked to be paid, if they have set it. */
-  payoutCurrency?: PayoutCurrency;
-  payoutAddress?: string;
   name: string;
   email: string;
   avatarUrl?: string;
@@ -60,11 +62,30 @@ interface ClipVaultContextValue {
   /** Unread messages, for the bell badge. */
   unreadCount: number;
   markAllRead: () => Promise<void>;
-  /** Save where I want to be paid. */
-  updatePayout: (patch: {
-    currency?: PayoutCurrency;
-    address?: string;
+
+  /* ---- money ---- */
+  /** My balance: available, locked in a request, and lifetime. */
+  wallet: Wallet;
+  /** Every payout I have requested, newest first. */
+  payoutRequests: PayoutRequest[];
+  /** Every movement of my money, newest first. */
+  earnings: EarningEntry[];
+  /**
+   * Ask to be paid. The method and address belong to this request only — there
+   * is no saved wallet.
+   */
+  requestPayout: (input: {
+    amountCents: number;
+    method: PayoutMethod;
+    network?: UsdtNetwork;
+    address: string;
   }) => Promise<void>;
+  /** Admin-only: every payout request on the platform. */
+  adminPayoutRequests: AdminPayoutRequest[];
+  /** Admin-only: mark a request paid and release the pending balance. */
+  markPayoutPaid: (id: string, reference?: string) => Promise<void>;
+  /** Admin-only: reject a request, return the money, and explain why. */
+  rejectPayout: (id: string, reason: string) => Promise<void>;
   /** Admin: overwrite a clip's view count with the measured figure. */
   confirmViews: (id: string, views: number) => Promise<void>;
   /** Admin-only: every user with their accounts and totals. */
@@ -132,7 +153,6 @@ interface ClipVaultContextValue {
     decision: "accept" | "decline",
     note?: string,
   ) => Promise<void>;
-  settleSubmission: (id: string, status: "paid" | "rejected") => Promise<void>;
 }
 
 const ClipVaultContext = createContext<ClipVaultContextValue | null>(null);
@@ -149,6 +169,7 @@ const campaignId = (id: string) => id as GenericId<"campaigns">;
 const accountId = (id: string) => id as GenericId<"connectedAccounts">;
 const submissionId = (id: string) => id as GenericId<"submissions">;
 const userId = (id: string) => id as GenericId<"users">;
+const payoutRequestId = (id: string) => id as GenericId<"payoutRequests">;
 
 /** Tells `useQuery` not to run a query at all. */
 const SKIP = "skip" as const;
@@ -304,7 +325,22 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
     isAuthenticated ? {} : SKIP,
   );
   const markAllReadMutation = useMutation(api.messages.markAllRead);
-  const updatePayoutMutation = useMutation(api.users.updatePayout);
+  const requestPayoutMutation = useMutation(api.payouts.requestPayout);
+  const markPayoutPaidMutation = useMutation(api.payouts.markPaid);
+  const rejectPayoutMutation = useMutation(api.payouts.markRejected);
+  const rawWallet = useQuery(api.payouts.myWallet, isAuthenticated ? {} : SKIP);
+  const rawRequests = useQuery(
+    api.payouts.myRequests,
+    isAuthenticated ? {} : SKIP,
+  );
+  const rawEarnings = useQuery(
+    api.payouts.myEarnings,
+    isAuthenticated ? {} : SKIP,
+  );
+  const rawAdminRequests = useQuery(
+    api.payouts.allRequests,
+    isAdmin ? {} : SKIP,
+  );
   const confirmViewsMutation = useMutation(api.submissions.confirmViews);
   const rawAdminMessages = useQuery(api.messages.listAll, isAdmin ? {} : SKIP);
   const sendToCreatorMutation = useMutation(api.messages.sendToCreator);
@@ -321,7 +357,6 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
   const setInvoiceMutation = useMutation(api.campaigns.setInvoice);
   const removeCampaignMutation = useMutation(api.campaigns.remove);
   const reviewMutation = useMutation(api.submissions.review);
-  const settleMutation = useMutation(api.submissions.settle);
   const updateProfileMutation = useMutation(api.users.updateProfile);
 
   /* The profile is the real auth record, not anything the browser can set. */
@@ -331,8 +366,6 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       name: user.name ?? user.email?.split("@")[0] ?? "Creator",
       email: user.email ?? "",
       avatarUrl: user.image,
-      payoutCurrency: user.payoutCurrency,
-      payoutAddress: user.payoutAddress,
     };
   }, [user]);
 
@@ -365,11 +398,63 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
     await markAllReadMutation();
   }, [markAllReadMutation]);
 
-  const updatePayout = useCallback(
-    async (patch: { currency?: PayoutCurrency; address?: string }) => {
-      await updatePayoutMutation(patch);
+  /* ---- money ---- */
+
+  const wallet = useMemo<Wallet>(
+    () => ({
+      availableCents: rawWallet?.availableCents ?? 0,
+      pendingCents: rawWallet?.pendingCents ?? 0,
+      lifetimeCents: rawWallet?.lifetimeCents ?? 0,
+      minWithdrawalCents: rawWallet?.minWithdrawalCents ?? 500,
+    }),
+    [rawWallet],
+  );
+
+  const payoutRequests = useMemo(
+    () => (rawRequests ?? []) as PayoutRequest[],
+    [rawRequests],
+  );
+
+  const earnings = useMemo(
+    () => (rawEarnings ?? []) as EarningEntry[],
+    [rawEarnings],
+  );
+
+  const adminPayoutRequests = useMemo(
+    () => (rawAdminRequests ?? []) as AdminPayoutRequest[],
+    [rawAdminRequests],
+  );
+
+  const requestPayout = useCallback(
+    async (input: {
+      amountCents: number;
+      method: PayoutMethod;
+      network?: UsdtNetwork;
+      address: string;
+    }) => {
+      await requestPayoutMutation(input);
     },
-    [updatePayoutMutation],
+    [requestPayoutMutation],
+  );
+
+  const markPayoutPaid = useCallback(
+    async (id: string, reference?: string) => {
+      await markPayoutPaidMutation({
+        requestId: payoutRequestId(id),
+        reference,
+      });
+    },
+    [markPayoutPaidMutation],
+  );
+
+  const rejectPayout = useCallback(
+    async (id: string, reason: string) => {
+      await rejectPayoutMutation({
+        requestId: payoutRequestId(id),
+        reason,
+      });
+    },
+    [rejectPayoutMutation],
   );
 
   const confirmViews = useCallback(
@@ -566,13 +651,6 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
     [reviewMutation],
   );
 
-  const settleSubmission = useCallback(
-    async (id: string, status: "paid" | "rejected") => {
-      await settleMutation({ submissionId: submissionId(id), status });
-    },
-    [settleMutation],
-  );
-
   const value = useMemo<ClipVaultContextValue>(
     () => ({
       profile,
@@ -588,7 +666,13 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       messages,
       unreadCount: rawUnread ?? 0,
       markAllRead,
-      updatePayout,
+      wallet,
+      payoutRequests,
+      earnings,
+      requestPayout,
+      adminPayoutRequests,
+      markPayoutPaid,
+      rejectPayout,
       confirmViews,
       campaigns,
       submissions,
@@ -603,7 +687,6 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       setCampaignStatus,
       cycleInvoice,
       deleteCampaign,
-      settleSubmission,
       reviewSubmission,
     }),
     [
@@ -620,7 +703,13 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       messages,
       rawUnread,
       markAllRead,
-      updatePayout,
+      wallet,
+      payoutRequests,
+      earnings,
+      requestPayout,
+      adminPayoutRequests,
+      markPayoutPaid,
+      rejectPayout,
       confirmViews,
       campaigns,
       submissions,
@@ -635,7 +724,6 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       setCampaignStatus,
       cycleInvoice,
       deleteCampaign,
-      settleSubmission,
       reviewSubmission,
     ],
   );

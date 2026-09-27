@@ -276,13 +276,13 @@ export const rotateAdminCredentials = internalAction({
 });
 
 /**
- * Every user on the platform, with the accounts they connected and what their
- * clips have actually earned. Admin only.
+ * Every user on the platform, with the accounts they connected, what their
+ * clips have earned, and what is actually in their wallet right now. Admin
+ * only.
  *
- * Earnings use the same rule the creator's payout screen does: a clip pays
- * once it is past its campaign's view threshold, and rejected clips never pay.
- * Reporting it here rather than in the browser keeps one definition of
- * "earned" from drifting between the two views.
+ * The balance is read from the wallet rather than recomputed from clips,
+ * because the wallet is what a payout request is checked against. Recomputing
+ * here would be a second definition of "earned", and two definitions drift.
  */
 export const users = query({
   args: {},
@@ -293,12 +293,17 @@ export const users = query({
     const accountRows = await ctx.db.query("connectedAccounts").collect();
     const submissionRows = await ctx.db.query("submissions").collect();
     const campaignRows = await ctx.db.query("campaigns").collect();
+    const walletRows = await ctx.db.query("wallets").collect();
 
     const campaigns = new Map(
       campaignRows.map((c) => [
         c._id,
         { minViews: c.minViews, ratePer1k: c.ratePer1k },
       ]),
+    );
+
+    const walletByUser = new Map(
+      walletRows.map((wallet) => [wallet.userId, wallet]),
     );
 
     const accountsByUser = new Map<string, typeof accountRows>();
@@ -322,6 +327,8 @@ export const users = query({
           earned += (submission.views / 1000) * campaign.ratePer1k;
         }
 
+        const wallet = walletByUser.get(user._id);
+
         return {
           userId: user._id,
           name: user.name ?? user.email?.split("@")[0] ?? "Creator",
@@ -341,6 +348,8 @@ export const users = query({
           clips: mine.length,
           views,
           earned,
+          availableCents: wallet?.availableCents ?? 0,
+          pendingCents: wallet?.pendingCents ?? 0,
         };
       })
       .sort((a, b) => b.joined - a.joined);

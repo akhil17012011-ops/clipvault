@@ -28,7 +28,23 @@ const CREATOR_QUESTIONS = [
   },
   {
     q: "When do I get paid?",
-    a: "Earnings run on weekly cycles and pay out on Friday, straight to the wallet you add in Payout settings. There is no minimum transfer to clear.",
+    a: "As soon as your balance passes $5 you can request a payout. You pick the amount, the currency and the address; the money then moves into a pending balance until an operator sends it, and you get a message the moment it is.",
+  },
+  {
+    q: "How much can I withdraw at once?",
+    a: "Any amount from $5 up to your whole available balance. There is no maximum transfer and no fee for requesting one.",
+  },
+  {
+    q: "Which crypto can I be paid in?",
+    a: "Solana, Litecoin, Bitcoin and USDT. USDT can go out on Tron, Ethereum or BNB — pick the network that matches the wallet you actually hold it in, because a transfer on the wrong network cannot be recovered.",
+  },
+  {
+    q: "Do I have to save a wallet address?",
+    a: "No. The currency, network and address belong to the payout request itself, so an address you used months ago can never be paid by accident and you are free to use a different one each time.",
+  },
+  {
+    q: "What if my payout is rejected?",
+    a: "You get a reason in your messages and the full amount goes straight back into your available balance, so you can fix the address and request again.",
   },
   {
     q: "What can get a clip rejected?",
@@ -54,6 +70,10 @@ const BRAND_QUESTIONS = [
     a: "You pick a rate per 1,000 verified views and a total budget when you create the campaign. Both are public, and they stay fixed for the life of the campaign.",
   },
   {
+    q: "How do payouts actually reach creators?",
+    a: "Creators accrue a balance as their clips are approved and withdraw it themselves once they pass $5. We pay each request manually in the currency and to the address they chose, then mark it paid in the console.",
+  },
+  {
     q: "What happens when the budget runs out?",
     a: "The campaign closes and stops accepting new clips. Rates never change mid-cycle — the campaign simply closes.",
   },
@@ -63,7 +83,7 @@ const BRAND_QUESTIONS = [
   },
   {
     q: "When do I get invoiced?",
-    a: "When a weekly cycle closes you get a single invoice covering the verified views in that cycle. One invoice, one payment, no per-clip bookkeeping.",
+    a: "When a cycle closes you get a single invoice covering the verified views in that cycle. One invoice, one payment, no per-clip bookkeeping.",
   },
   {
     q: "Do I need a contract?",

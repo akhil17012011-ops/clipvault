@@ -4,10 +4,12 @@ import {
   campaignById,
   daysAgo,
   earnedOf,
+  fmtCents,
   fmtMoney,
   fmtViews,
   type Campaign,
   type Submission,
+  type Wallet as WalletSummary,
 } from "@/lib/clip-vault-data";
 import {
   ArrowUpRight,
@@ -19,24 +21,25 @@ import {
 import { Link } from "react-router";
 
 /**
- * Overview money panel — the creator's balance split into what has already
- * been settled and what is still riding the current cycle. Reads from the
- * same payout rule as the payments page (clips past `minViews`, rejects
- * excluded), so the two pages can never disagree.
+ * Overview money panel — the creator's real balance, not an estimate.
+ *
+ * These are the wallet's own numbers, so this card and the payments page can
+ * never disagree: money is only counted once, when a clip is approved, and it
+ * leaves the available balance the moment a payout is requested.
  */
 export function PayoutPulse({
-  totalEarned,
-  paidOut,
-  pending,
+  wallet,
   onSubmitClip,
 }: {
-  totalEarned: number;
-  paidOut: number;
-  pending: number;
+  wallet: WalletSummary;
   onSubmitClip: () => void;
 }) {
-  const paidShare = totalEarned > 0 ? paidOut / totalEarned : 0;
-  const hasMoney = totalEarned > 0;
+  const available = wallet.availableCents / 100;
+  const pending = wallet.pendingCents / 100;
+  const lifetime = wallet.lifetimeCents / 100;
+  const paidOut = Math.max(0, lifetime - available - pending);
+  const paidShare = lifetime > 0 ? paidOut / lifetime : 0;
+  const hasMoney = lifetime > 0;
 
   return (
     <section className="glass-panel relative flex h-full flex-col overflow-hidden rounded-2xl p-5">
@@ -53,7 +56,7 @@ export function PayoutPulse({
               Payout pulse
             </p>
             <p className="text-[13px] font-semibold tracking-tight">
-              Current cycle
+              Available balance
             </p>
           </div>
         </div>
@@ -67,12 +70,14 @@ export function PayoutPulse({
       </header>
 
       <p className="relative mt-5 font-mono text-[38px] font-extrabold leading-none tracking-[-0.045em] tabular-nums text-foreground">
-        {fmtMoney(pending, true)}
+        {fmtCents(wallet.availableCents)}
       </p>
       <p className="relative mt-2 text-[12.5px] text-muted-foreground">
-        {pending > 0
-          ? "Releasing on the next Friday payout run."
-          : "Nothing in flight — every qualified view has been settled."}
+        {wallet.availableCents >= wallet.minWithdrawalCents
+          ? "You're over the minimum — request a payout whenever you want."
+          : `Approved clips earn ${fmtCents(
+              wallet.minWithdrawalCents - wallet.availableCents,
+            )} more before you can withdraw.`}
       </p>
 
       {/* Settled vs pending, as one proportional bar. */}
@@ -95,13 +100,13 @@ export function PayoutPulse({
           />
           <Legend
             swatch="from-[#7C3AED] to-[#C084FC]"
-            label="In flight"
-            value={fmtMoney(pending, true)}
+            label="In a request"
+            value={fmtCents(wallet.pendingCents)}
           />
           <Legend
             swatch="from-white/25 to-white/10"
             label="Lifetime"
-            value={fmtMoney(totalEarned, true)}
+            value={fmtCents(wallet.lifetimeCents)}
           />
         </div>
       </div>

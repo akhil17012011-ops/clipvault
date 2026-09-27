@@ -216,7 +216,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             {[
               { icon: Wallet, text: "Published rates — up to $3 per 1K views" },
               { icon: ShieldCheck, text: "Bio-verification links your accounts once" },
-              { icon: CheckCircle2, text: "Weekly payouts to a Solana or Litecoin wallet" },
+              {
+                icon: CheckCircle2,
+                text: "Withdraw from $5 to Solana, Bitcoin, Litecoin or USDT",
+              },
             ].map((item) => (
               <li
                 key={item.text}

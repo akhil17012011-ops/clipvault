@@ -100,7 +100,7 @@ export function TopBar({
           <NotificationBell />
           <span className="glass-chip hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground md:inline-flex">
             <Wallet className="h-3.5 w-3.5" />
-            Payouts every Friday
+            Withdraw from $5
           </span>
 
           <DropdownMenu>

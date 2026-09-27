@@ -6,6 +6,7 @@ import {
 } from "@/components/marketing/MarketingShell";
 import { motion } from "framer-motion";
 import { Check, ShieldCheck, Wallet, Zap } from "lucide-react";
+import { Link } from "react-router";
 
 const CREATOR_STEPS = [
   {
@@ -35,8 +36,8 @@ const CREATOR_STEPS = [
   {
     n: "05",
     kicker: "Get paid",
-    title: "Watch views turn into earnings",
-    body: "Once a clip passes its campaign's view threshold it starts earning. Cycles close weekly and pay out on Friday, and every clip shows its review state and reason.",
+    title: "Withdraw when you hit $5",
+    body: "Once a clip is approved its earnings land in your balance straight away. Reach $5, request a payout in the currency and to the address you want, and we send it.",
   },
 ];
 
@@ -144,7 +145,7 @@ export default function HowItWorksPage() {
               },
               {
                 title: "Counted and paid",
-                body: "Once it passes, its views count toward your earnings and the next Friday payout.",
+                body: "Once it passes, its earnings are added to your Clip Vault balance and you can withdraw them.",
               },
             ].map((stage) => (
               <div
@@ -161,13 +162,19 @@ export default function HowItWorksPage() {
           <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
             <Wallet className="h-4 w-4 text-brand" />
             Payout details and currencies live on the{" "}
-            <a href="/payouts" className="text-foreground underline underline-offset-4">
+            <Link
+              to="/payouts"
+              className="text-foreground underline underline-offset-4"
+            >
               payout methods
-            </a>{" "}
+            </Link>{" "}
             page. Full answers live on the{" "}
-            <a href="/faq" className="text-foreground underline underline-offset-4">
+            <Link
+              to="/faq"
+              className="text-foreground underline underline-offset-4"
+            >
               FAQ
-            </a>
+            </Link>
             .
           </p>
         </motion.div>
