@@ -532,47 +532,88 @@ export function earnedOf(
 /**
  * The first-run tour, in the order the work actually happens.
  *
- * Each step carries the page it is about, so "Next" moves the user to the place
- * being described rather than describing a page they are not on. The order is
- * the order of the job: connect a handle, join something, submit, get paid —
- * with the brand step kept in the middle, because a user can be either.
+ * Each step carries the page it is about, a concrete checklist and the specific
+ * outcome, so "Next" both moves the user to the place being described and tells
+ * them what to actually do there. The order is the order of the job: connect a
+ * handle, join something, submit, get paid — with the brand step kept in the
+ * middle, because a user can be either.
  */
 export const TOUR_STEPS = [
   {
     to: "/dashboard",
+    icon: "sparkles",
     kicker: "Step 1 · Welcome",
     title: "This is your Clip Vault console",
-    body: "Everything here reads live from your account: the campaigns you can clip, the handles we track, the clips you submitted and the money those clips have earned. The tour walks you through the whole thing in six steps.",
+    body: "Everything here is read live from your account — nothing is a demo. Six short steps and you are set up: a verified account, a campaign to clip, a clip submitted, and money on the way.",
+    points: [
+      "The sidebar is your whole product: every page lives there",
+      "The bell at the top is how the site talks to you",
+      "Nothing here needs a follow-up email or a form",
+    ],
   },
   {
     to: "/dashboard/accounts",
+    icon: "shield",
     kicker: "Step 2 · Accounts",
-    title: "Connect the account you post from",
-    body: "Views are only counted from a handle we can verify. Clip Vault gives you a one-time code, you paste it into that account's bio, and we read your public profile to confirm it is really there. Add as many accounts as you post from.",
+    title: "Connect the handle you post from",
+    body: "Views are only counted from an account we can prove is yours, so this is the one step that unlocks everything else. It takes about a minute per account.",
+    points: [
+      "Press Connect account, pick your platform, type your @handle",
+      "Copy the code Clip Vault generates into that account's bio",
+      "Press Verify — we read your public profile and confirm the code",
+      "Add a second account any time: one per platform or several",
+    ],
   },
   {
     to: "/dashboard/campaigns",
+    icon: "megaphone",
     kicker: "Step 3 · Campaigns",
     title: "Join a campaign and see what it pays",
-    body: "Every campaign publishes its rate before you join — dollars per 1,000 views, the view threshold a clip has to clear, and which platforms are allowed. Join in one tap: no application, no follower minimum.",
+    body: "Every campaign publishes its rate before you join. There is no application, no follower minimum and no audition — you see the number, you decide.",
+    points: [
+      "Join in one tap from the card",
+      "Open a joined campaign to read the brief and the creative rules",
+      "The rate is dollars per 1,000 verified views — it cannot change later",
+    ],
   },
   {
     to: "/dashboard/clips",
+    icon: "clapperboard",
     kicker: "Step 4 · Clips",
-    title: "Submit the clip, and we verify the views",
-    body: "Paste a link to a clip you published for a campaign. An operator checks it and confirms the real view count — a number that has been measured, not one a link claimed. Once approved, that clip's money goes straight into your balance.",
+    title: "Post the clip, submit the link, get paid for views",
+    body: "Post your clip on the platform the campaign accepts, then submit the link. An operator checks the clip and confirms the real view count — a number that has been measured, not one a link claimed.",
+    points: [
+      "Submit a clip from here or from the campaign page",
+      "A clip only earns once it clears the campaign's view threshold",
+      "On approval the money is added to your balance automatically",
+      "2,000 views at $1 per 1,000 means $2.00 in your balance",
+    ],
   },
   {
     to: "/dashboard/request",
+    icon: "send",
     kicker: "Step 5 · Brands",
     title: "Running a brand? Request a campaign",
-    body: "Send the campaign name, the description, your budget and the photos, videos or links clippers should work from. An operator approves or declines it here — approved means live, and creators can join the same day.",
+    body: "You do not need an admin panel to run a campaign here. Send what you want to run, and an operator sets up the rate, rules and budget — then publishes it or tells you why not.",
+    points: [
+      "Name, description, budget, platforms",
+      "Add the photos, videos or links clippers should work from",
+      "Edit or delete it while it is still waiting on a decision",
+      "Approved means live: creators can join the same day",
+    ],
   },
   {
     to: "/dashboard/payments",
+    icon: "wallet",
     kicker: "Step 6 · Payments",
     title: "Get paid when you clear the minimum",
-    body: "Your balance holds everything approved clips have earned. Request a payout from the minimum upward, pick the network and address on the request itself, and follow it to paid from this same page. The bell at the top tells you when something needs you.",
+    body: "Your balance holds everything your approved clips have earned. Request a payout once you are over the minimum, and follow it all the way to paid from this same page.",
+    points: [
+      "Available is what you can withdraw right now",
+      "Pending is money locked in a request you have made",
+      "You pick the network and address on the request itself",
+      "The bell tells you when something needs a decision",
+    ],
   },
 ] as const;
 

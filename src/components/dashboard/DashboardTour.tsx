@@ -5,15 +5,32 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  CheckCircle2,
+  Clapperboard,
   Compass,
+  Megaphone,
+  Send,
+  ShieldCheck,
   Sparkles,
+  Wallet,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
 import { useAuth } from "@/hooks/use-auth";
 import { TOUR_STEPS } from "@/lib/clip-vault-data";
+
+/** One icon per step, so the card is recognisable before it is read. */
+const STEP_ICONS: Record<string, LucideIcon> = {
+  sparkles: Sparkles,
+  shield: ShieldCheck,
+  megaphone: Megaphone,
+  clapperboard: Clapperboard,
+  send: Send,
+  wallet: Wallet,
+};
 
 /**
  * Where the card sits for each step.
@@ -60,15 +77,21 @@ export function DashboardTour({
      one — so their fifth step is the other half of the same job. */
   const steps = useMemo(
     () =>
-      role === "admin"
-        ? TOUR_STEPS.map((s) =>
+      role === "admin"                ? TOUR_STEPS.map((s) =>
             s.to === "/dashboard/request"
               ? {
                   ...s,
                   to: "/dashboard/requests",
+                  icon: "send",
                   kicker: "Step 5 · Brands",
                   title: "Answer the brands asking for a campaign",
                   body: "Every campaign a brand wants starts as a request: the description, the budget, the platforms and their files. Approving publishes it live at the numbers they gave; declining asks you for a reason, and the brand reads it.",
+                  points: [
+                    "The badge on the sidebar item is how many are waiting",
+                    "Approve publishes the campaign creators can join",
+                    "Decline requires a reason — the brand is sent it",
+                    "Delete removes a test or duplicate outright",
+                  ],
                 }
               : s,
           )
@@ -86,6 +109,7 @@ export function DashboardTour({
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
+  const StepIcon = STEP_ICONS[current?.icon ?? "sparkles"] ?? Compass;
 
   const goTo = (index: number) => {
     setStep(index);
@@ -115,13 +139,10 @@ export function DashboardTour({
           }`}
         >
           <div className="glass-liquid rounded-3xl">
-            <div className="flex items-start gap-3.5 p-5 pb-4">
+            {/* Header: icon, kicker, title. */}
+            <div className="flex items-start gap-3.5 p-5 pb-3.5">
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand">
-                {step === 0 ? (
-                  <Sparkles className="h-5 w-5" />
-                ) : (
-                  <Compass className="h-5 w-5" />
-                )}
+                <StepIcon className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#C9AEFF]">
@@ -130,9 +151,6 @@ export function DashboardTour({
                 <h2 className="mt-1.5 text-[17px] font-extrabold leading-snug tracking-[-0.02em]">
                   {current.title}
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
-                  {current.body}
-                </p>
               </div>
               <button
                 type="button"
@@ -145,8 +163,22 @@ export function DashboardTour({
               </button>
             </div>
 
+            <p className="px-5 text-[12.5px] leading-relaxed text-muted-foreground">
+              {current.body}
+            </p>
+
+            {/* What to actually do on this page, not just what it is. */}
+            <ul className="mt-3.5 space-y-1.5 px-5">
+              {current.points.map((point) => (
+                <li key={point} className="flex gap-2 text-[12px] leading-snug">
+                  <CheckCircle2 className="mt-[1px] h-3.5 w-3.5 shrink-0 text-[#7DF0B4]" />
+                  <span className="text-foreground/80">{point}</span>
+                </li>
+              ))}
+            </ul>
+
             {/* Progress: one dot per step, filled up to where you are. */}
-            <div className="flex items-center gap-1.5 px-5 pb-1">
+            <div className="mt-4 flex items-center gap-1.5 px-5 pb-1">
               {STEPS.map((stepItem, i) => (
                 <button
                   key={stepItem.to}

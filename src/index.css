@@ -611,39 +611,39 @@ html.lenis body {
 }
 
 /* Liquid glass — the floating, translucent material used by the guided tour.
-   Unlike `.glass-panel` this one is genuinely see-through and blurs what is
-   behind it, because it moves over live content and an opaque slab would hide
-   the page it is talking about. A slow specular sweep and two drifting blooms
-   keep it reading as liquid rather than as a card. */
+   Nearly opaque rather than see-through: it floats over live content and has
+   to stay readable without competing with what is behind it, so the glass reads
+   through its blur, blooms, lit rim and specular sweep rather than through
+   transparency. A slow highlight and two drifting blooms keep it liquid. */
 .glass-liquid {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background-color: rgb(20 14 40 / 0.52);
+  background-color: rgb(19 13 38 / 0.84);
   background-image:
     radial-gradient(
       90% 120% at 12% 0%,
-      rgb(168 85 247 / 0.28),
+      rgb(168 85 247 / 0.3),
       transparent 58%
     ),
     radial-gradient(
       80% 110% at 100% 100%,
-      rgb(56 189 248 / 0.16),
+      rgb(56 189 248 / 0.18),
       transparent 60%
     ),
     linear-gradient(
       180deg,
-      rgb(255 255 255 / 0.1) 0%,
-      rgb(255 255 255 / 0.02) 42%,
-      rgb(0 0 0 / 0.22) 100%
+      rgb(255 255 255 / 0.09) 0%,
+      rgb(255 255 255 / 0.015) 42%,
+      rgb(0 0 0 / 0.28) 100%
     );
   border: 1px solid rgb(255 255 255 / 0.14);
-  backdrop-filter: blur(26px) saturate(180%);
-  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
   box-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 0.22),
-    inset 0 -1px 0 0 rgb(0 0 0 / 0.4),
-    inset 0 0 40px -18px rgb(192 132 252 / 0.5),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.24),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.5),
+    inset 0 0 44px -16px rgb(192 132 252 / 0.55),
     0 2px 8px -2px rgb(0 0 0 / 0.5),
     0 30px 70px -30px rgb(0 0 0 / 0.9);
   animation: clipvault-liquid-drift 14s ease-in-out infinite alternate;
