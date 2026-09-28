@@ -37,6 +37,18 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 /** Handles are 1-30 chars of letters, digits, dot or underscore. */
 const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
 
+/**
+ * Minimum time between real platform lookups for one account.
+ *
+ * The dashboard polls every 2 seconds for a live feel, but each poll is a
+ * request from this deployment's shared IP, and the platforms throttle those
+ * aggressively — Instagram already answers this deployment with degraded
+ * responses. The cooldown is what keeps the poller from burning the very
+ * access that bio verification depends on: polls inside the window are
+ * answered from the stored row, at full speed.
+ */
+const STATS_REFRESH_COOLDOWN_MS = 15_000;
+
 type Platform = Infer<typeof PLATFORM>;
 
 /** Domains a profile link for each platform can legitimately come from. */
@@ -333,8 +345,12 @@ export const refreshStats = action({
   args: { accountId: v.id("connectedAccounts") },
   handler: async (ctx, args): Promise<{
     ok: boolean;
+    /** True when the platform itself was asked on this call. */
+    fetched: boolean;
     followers: number | null;
     posts: number | null;
+    /** When the platform was last actually asked, per the stored row. */
+    refreshedAt: number | null;
     reason?: string;
   }> => {
     /* An action cannot read the database, and the decision about whose account
@@ -347,21 +363,49 @@ export const refreshStats = action({
     if (!account) {
       return {
         ok: false,
+        fetched: false,
         followers: null,
         posts: null,
+        refreshedAt: null,
         reason: "That connection request is no longer available to you.",
+      };
+    }
+
+    /* The dashboard polls every couple of seconds, but every poll is a real
+       request from this deployment's shared IP — and the platforms throttle
+       those hard (Instagram already serves this deployment degraded
+       responses). A poller that outruns the cooldown is answered from the
+       stored row instead, so the page stays live while the platform sees at
+       most one request per account per interval. */
+    if (
+      account.statsRefreshedAt != null &&
+      Date.now() - account.statsRefreshedAt < STATS_REFRESH_COOLDOWN_MS
+    ) {
+      return {
+        ok: true,
+        fetched: false,
+        followers: account.followers ?? null,
+        posts: account.posts ?? null,
+        refreshedAt: account.statsRefreshedAt,
       };
     }
 
     const profile = await fetchProfile(account.platform, account.handle);
     if (!profile.ok) {
-      /* Nothing is written back: the count we already hold is the best number
-         we have, and one refused lookup must never turn a real follower
-         count into a zero. */
+      /* The attempt itself is stamped even though nothing was read: without
+         it, every refused lookup would be retried at full poll speed and the
+         throttling would only deepen. The count we already hold is untouched
+         — one refused lookup must never turn a real follower count into a
+         zero. */
+      await ctx.runMutation(internal.accounts.setStats, {
+        accountId: account._id,
+      });
       return {
         ok: false,
+        fetched: true,
         followers: account.followers ?? null,
         posts: account.posts ?? null,
+        refreshedAt: Date.now(),
         reason: profile.reason,
       };
     }
@@ -376,8 +420,10 @@ export const refreshStats = action({
     });
     return {
       ok: true,
+      fetched: true,
       followers: profile.followers ?? account.followers ?? null,
       posts: profile.posts ?? account.posts ?? null,
+      refreshedAt: Date.now(),
     };
   },
 });
@@ -400,6 +446,7 @@ export const getForStats = internalQuery({
       handle: account.handle,
       followers: account.followers,
       posts: account.posts,
+      statsRefreshedAt: account.statsRefreshedAt,
     };
   },
 });

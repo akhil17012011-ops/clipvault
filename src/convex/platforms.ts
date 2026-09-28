@@ -210,8 +210,16 @@ function instagramDirectCounts(user: Record<string, unknown>): {
   const timeline = user.edge_owner_to_timeline_media as
     | { count?: unknown }
     | undefined;
+  /* `follower_count` is only sometimes present. On the degraded responses
+     Instagram serves to datacentre IPs (`country_block: true`), the shorthand
+     count fields are stripped but `edge_followed_by.count` still carries the
+     real number. Reading both, in that order, means the count survives the
+     degraded shape instead of reading as "not published". */
+  const followedBy = user.edge_followed_by as
+    | { count?: unknown }
+    | undefined;
   return {
-    followers: parseCount(user.follower_count),
+    followers: parseCount(user.follower_count) ?? parseCount(followedBy?.count),
     posts: parseCount(timeline?.count),
   };
 }

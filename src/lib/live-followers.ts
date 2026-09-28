@@ -32,6 +32,11 @@ export function useLiveFollowers(
   enabled = true,
 ): { syncedAt: number | null } {
   const { refreshAccountStats } = useClipVault();
+  /* When the platforms were last really asked, as reported by the server.
+     This is deliberately not "when we last polled": inside the server's
+     cooldown a poll is answered from the stored row, and stamping that poll
+     with the current time would show "read 1s ago" about numbers that are
+     actually minutes old. */
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
 
   /* Only verified accounts have a count worth refreshing, and the joined ids
@@ -61,10 +66,19 @@ export function useLiveFollowers(
 
       inFlight.current = true;
       try {
-        await Promise.all(
-          targets.map((id) => refreshAccountStats(id).catch(() => undefined)),
+        const results = await Promise.all(
+          targets.map((id) => refreshAccountStats(id).catch(() => null)),
         );
-        if (!cancelled) setSyncedAt(Date.now());
+        /* The freshest real read across the accounts drives the label. A
+           result without a timestamp (account gone, call failed) never
+           advances it, and it can only move forward — a slower poll landing
+           after a faster one must not drag the label backwards. */
+        const times = results
+          .map((r) => r?.refreshedAt ?? null)
+          .filter((t): t is number => t != null);
+        if (!cancelled && times.length > 0) {
+          setSyncedAt((prev) => Math.max(prev ?? 0, ...times));
+        }
       } finally {
         inFlight.current = false;
       }

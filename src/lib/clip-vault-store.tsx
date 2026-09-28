@@ -121,9 +121,21 @@ interface ClipVaultContextValue {
    * Only the row is named — the server reads the handle, the platform and the
    * ownership check from the database itself. Used by the live follower
    * poller; the counts it writes are ordinary reactive rows, so everything
-   * that shows a follower number updates from the same write.
+   * that shows a follower number updates from the same write. The server may
+   * answer from the row it already holds (see the cooldown in
+   * `accounts.refreshStats`), which is why the result carries the time of the
+   * last real platform read rather than this call's own timestamp.
    */
-  refreshAccountStats: (id: string) => Promise<void>;
+  refreshAccountStats: (
+    id: string,
+  ) => Promise<{
+    ok: boolean;
+    fetched: boolean;
+    followers: number | null;
+    posts: number | null;
+    refreshedAt: number | null;
+    reason?: string;
+  }>;
   removeAccount: (id: string) => Promise<void>;
 
   toggleJoinCampaign: (id: string) => Promise<void>;
@@ -560,9 +572,17 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       /* Deliberately not reading the row out of `rawAccounts` first: the
          server checks that this caller owns the account anyway, and a stable
          callback keeps the 2-second poller from restarting on every render. */
-      await convex.action(api.accounts.refreshStats, {
+      const result = (await convex.action(api.accounts.refreshStats, {
         accountId: accountId(id),
-      });
+      })) as {
+        ok: boolean;
+        fetched: boolean;
+        followers: number | null;
+        posts: number | null;
+        refreshedAt: number | null;
+        reason?: string;
+      };
+      return result;
     },
     [convex],
   );
