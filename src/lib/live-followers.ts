@@ -3,13 +3,14 @@ import type { LinkedAccount } from "@/lib/clip-vault-data";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * How often follower counts are re-read from the platforms.
+ * How often the page re-checks the counts of its connected accounts.
  *
- * Every tick is a real HTTP lookup against TikTok, Instagram, YouTube or X.
- * Two seconds is a deliberately aggressive, "watch it move" cadence for the
- * page a creator is actively looking at; raise it if a platform starts
- * refusing the lookups — the stored count survives a refusal either way, so a
- * slower tick is always safe.
+ * This is the UI cadence, not the platform cadence: each tick asks the server,
+ * and the server only re-reads a platform once per cooldown per account
+ * (see `STATS_REFRESH_COOLDOWN_MS` in `convex/accounts.ts`), answering every
+ * other tick from the row it already holds. That split is deliberate — the
+ * platforms throttle the deployment's shared IP hard, and an unthrottled poll
+ * would eventually cost us the very access bio verification depends on.
  */
 export const LIVE_FOLLOWER_INTERVAL_MS = 2_000;
 
@@ -21,16 +22,16 @@ export const LIVE_FOLLOWER_INTERVAL_MS = 2_000;
  * platform's own, and every other view of them (tiles, per-account stats, the
  * leaderboard) updates from the same rows at the same time.
  *
- * Two things keep this from hammering the platforms from a background tab:
- * it skips ticks while the document is hidden, and it never runs a second
- * batch while one is still in flight. A tick that fails leaves the previous
- * count exactly as it was — the page shows a real number or nothing, never a
- * zero invented by a dropped request.
+ * It also reports *why* a count is missing. A refused lookup, a lost
+ * connection and a platform that simply publishes no count are three
+ * different situations for the creator; collapsing them into one blank line
+ * is how a broken call ends up reading as "not published", which blames the
+ * platform for something on our side.
  */
 export function useLiveFollowers(
   accounts: LinkedAccount[],
   enabled = true,
-): { syncedAt: number | null } {
+): { syncedAt: number | null; reason: string | null } {
   const { refreshAccountStats } = useClipVault();
   /* When the platforms were last really asked, as reported by the server.
      This is deliberately not "when we last polled": inside the server's
@@ -38,6 +39,8 @@ export function useLiveFollowers(
      with the current time would show "read 1s ago" about numbers that are
      actually minutes old. */
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
+  /* The server's own explanation for a missing count, if it gave one. */
+  const [reason, setReason] = useState<string | null>(null);
 
   /* Only verified accounts have a count worth refreshing, and the joined ids
      are the effect's identity — a plain array would be a new reference on
@@ -67,17 +70,46 @@ export function useLiveFollowers(
       inFlight.current = true;
       try {
         const results = await Promise.all(
-          targets.map((id) => refreshAccountStats(id).catch(() => null)),
+          targets.map((id) =>
+            refreshAccountStats(id).catch((err: unknown) => ({
+              ok: false,
+              fetched: false,
+              followers: null,
+              posts: null,
+              refreshedAt: null,
+              /* A call that produced no result at all — a missing function
+                 after a partial publish, a lost connection, an auth failure —
+                 must not vanish. Silently dropping it is what made a broken
+                 call read as "not published by the platform", blaming the
+                 platform for something on our side. */
+              reason:
+                err instanceof Error && err.message
+                  ? err.message
+                  : "We couldn't refresh this count from Clip Vault.",
+            })),
+          ),
         );
         /* The freshest real read across the accounts drives the label. A
            result without a timestamp (account gone, call failed) never
            advances it, and it can only move forward — a slower poll landing
            after a faster one must not drag the label backwards. */
         const times = results
-          .map((r) => r?.refreshedAt ?? null)
+          .map((r) => r.refreshedAt)
           .filter((t): t is number => t != null);
         if (!cancelled && times.length > 0) {
           setSyncedAt((prev) => Math.max(prev ?? 0, ...times));
+        }
+        if (!cancelled) {
+          /* Any count still missing keeps its explanation; a batch with no
+             failures clears it, so the hint never holds a stale reason. */
+          const explanations = results
+            .map((r) => (r.ok ? null : (r.reason ?? null)))
+            .filter((r): r is string => r != null);
+          setReason(
+            explanations.length > 0
+              ? explanations[explanations.length - 1]
+              : null,
+          );
         }
       } finally {
         inFlight.current = false;
@@ -101,5 +133,5 @@ export function useLiveFollowers(
     };
   }, [enabled, ids, refreshAccountStats]);
 
-  return { syncedAt };
+  return { syncedAt, reason };
 }
