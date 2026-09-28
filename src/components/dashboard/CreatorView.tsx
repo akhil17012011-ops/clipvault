@@ -33,6 +33,7 @@ import { EASE } from "@/lib/motion";
 import { MessagesInbox } from "@/components/dashboard/MessagesInbox";
 import { RequestCampaignView } from "@/components/dashboard/RequestCampaignView";
 import { AccountsView } from "@/components/dashboard/AccountsView";
+import { BrandRequestPanel } from "@/components/dashboard/BrandRequestPanel";
 import {
   PayoutHistory,
   PayoutRequestCard,
@@ -363,6 +364,7 @@ export function CreatorView({
       )}
 
       {section === "campaigns" && !openCampaign && (
+        <div className="space-y-5">
           <motion.section
             id="campaigns"
             initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
@@ -426,6 +428,9 @@ export function CreatorView({
               )}
             </div>
           </motion.section>
+
+          <BrandRequestPanel />
+        </div>
       )}
 
       {section === "clips" && (

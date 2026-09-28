@@ -3,17 +3,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PlatformChip } from "@/components/ClipVaultUI";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/hooks/use-auth";
 import { PLATFORMS, PLATFORM_META, type Platform } from "@/lib/clip-vault-data";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
   Clock3,
+  FileText,
   Loader2,
   Megaphone,
+  Pencil,
   Plus,
   Send,
   Trash2,
+  X,
   XCircle,
 } from "lucide-react";
 import { useState } from "react";
@@ -23,6 +27,22 @@ import { useMutation, useQuery } from "convex/react";
 type AssetKind = "image" | "video" | "link";
 
 type Asset = { label: string; url: string; kind: AssetKind };
+
+/** A request as `campaignRequests.mine` returns it. */
+type Request_ = {
+  id: Id<"campaignRequests">;
+  title: string;
+  description: string;
+  budgetUsd: number;
+  ratePer1k: number;
+  minViews: number;
+  days: number;
+  platforms: Platform[];
+  assets: Asset[];
+  status: "pending" | "approved" | "declined";
+  reason: string | null;
+  requestedAt: number;
+};
 
 const STATUS: Record<
   string,
@@ -66,12 +86,23 @@ function when(ms: number): string {
  * from — and an operator approves or declines it. Nothing goes live on its own,
  * which is why the list below always shows the decision rather than implying
  * one.
+ *
+ * While a request is still pending it is the brand's to change: they can edit
+ * the details or delete it outright. After a decision it is a record, and only
+ * the operator can close it.
  */
 export function RequestCampaignView() {
   const { user } = useAuth();
   const requests = useQuery(api.campaignRequests.mine);
   const submit = useMutation(api.campaignRequests.submit);
+  const edit = useMutation(api.campaignRequests.edit);
+  const remove = useMutation(api.campaignRequests.remove);
 
+  const [editingId, setEditingId] = useState<Id<"campaignRequests"> | null>(
+    null,
+  );
+  const [deletingId, setDeletingId] =
+    useState<Id<"campaignRequests"> | null>(null);
   const [brandName, setBrandName] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -79,12 +110,43 @@ export function RequestCampaignView() {
   const [rate, setRate] = useState("");
   const [minViews, setMinViews] = useState("");
   const [days, setDays] = useState("30");
-  const [platforms, setPlatforms] = useState<Platform[]>(["tiktok", "instagram"]);
+  const [platforms, setPlatforms] = useState<Platform[]>([
+    "tiktok",
+    "instagram",
+  ]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
   const open = (requests ?? []).filter((r) => r.status === "pending");
+  const editing = (requests ?? []).find((r) => r.id === editingId) ?? null;
+
+  const clearForm = () => {
+    setEditingId(null);
+    setTitle("");
+    setDescription("");
+    setBudget("");
+    setRate("");
+    setMinViews("");
+    setDays("30");
+    setAssets([]);
+    setNote("");
+  };
+
+  const startEdit = (r: Request_) => {
+    setEditingId(r.id);
+    setBrandName("");
+    setTitle(r.title);
+    setDescription(r.description);
+    setBudget(String(r.budgetUsd));
+    setRate(String(r.ratePer1k));
+    setMinViews(String(r.minViews));
+    setDays(String(r.days));
+    setPlatforms(r.platforms);
+    setAssets(r.assets);
+    setNote("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const togglePlatform = (p: Platform) =>
     setPlatforms((current) =>
@@ -96,6 +158,21 @@ export function RequestCampaignView() {
       current.map((asset, i) => (i === index ? { ...asset, ...patch } : asset)),
     );
 
+  const fields = {
+    brandName: brandName.trim() || (user?.name ?? "").trim(),
+    title: title.trim(),
+    description: description.trim(),
+    budgetUsd: num(budget),
+    ratePer1k: num(rate),
+    minViews: num(minViews),
+    days: num(days) || 30,
+    platforms,
+    assets: assets
+      .filter((a) => a.url.trim().length > 0)
+      .map((a) => ({ label: a.label, url: a.url, kind: a.kind })),
+    note: note.trim() || undefined,
+  };
+
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (platforms.length === 0) {
@@ -104,36 +181,20 @@ export function RequestCampaignView() {
     }
     setBusy(true);
     try {
-      const result = await submit({
-        brandName: brandName.trim(),
-        title: title.trim(),
-        description: description.trim(),
-        budgetUsd: num(budget),
-        ratePer1k: num(rate),
-        minViews: num(minViews),
-        days: num(days) || 30,
-        platforms,
-        assets: assets
-          .filter((a) => a.url.trim().length > 0)
-          .map((a) => ({ label: a.label, url: a.url, kind: a.kind })),
-        note: note.trim() || undefined,
-      });
+      const result = editingId
+        ? await edit({ requestId: editingId, ...fields })
+        : await submit(fields);
       /* The server answers with the reason as data rather than throwing, so a
          validation problem shows up as a sentence instead of "Server Error". */
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      setTitle("");
-      setDescription("");
-      setBudget("");
-      setRate("");
-      setMinViews("");
-      setAssets([]);
-      setNote("");
-      toast.success("Request sent", {
-        description:
-          "An operator reviews it and you'll see the decision here and in Messages.",
+      clearForm();
+      toast.success(editingId ? "Request updated" : "Request sent", {
+        description: editingId
+          ? "An operator will review the new details."
+          : "An operator reviews it and you'll see the decision here and in Messages.",
       });
     } catch (err) {
       /* Convex attaches a request id to its own errors. Showing it turns an
@@ -150,6 +211,21 @@ export function RequestCampaignView() {
       );
     } finally {
       setBusy(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    const id = deletingId;
+    if (!id) return;
+    setDeletingId(null);
+    if (editingId === id) clearForm();
+    try {
+      await remove({ requestId: id });
+      toast.success("Request deleted");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "That didn't work. Try again.",
+      );
     }
   };
 
@@ -225,6 +301,33 @@ export function RequestCampaignView() {
                       {r.reason}
                     </p>
                   )}
+
+                  {/* While it is still pending the details are the brand's to
+                      change. After a decision it is a record. */}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {r.status === "pending" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="glass-chip gap-1.5"
+                        onClick={() => startEdit(r)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                    )}
+                    {r.status !== "approved" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1.5 text-muted-foreground hover:text-red-500"
+                        onClick={() => setDeletingId(r.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -238,7 +341,22 @@ export function RequestCampaignView() {
         transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
         className="glass-panel rounded-2xl p-5"
       >
-        <h3 className="text-[15px] font-bold tracking-tight">New request</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-[15px] font-bold tracking-tight">
+            {editing ? `Editing “${editing.title}”` : "New request"}
+          </h3>
+          {editing && (
+            <Button size="sm" variant="ghost" onClick={clearForm} className="gap-1.5">
+              <X className="h-3.5 w-3.5" />
+              Cancel edit
+            </Button>
+          )}
+        </div>
+        {editing && (
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Saving replaces the details the operator has not looked at yet.
+          </p>
+        )}
 
         <form onSubmit={onSubmit} className="mt-4 space-y-5">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -461,24 +579,56 @@ export function RequestCampaignView() {
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="submit"
-              disabled={busy || open.length >= 2}
+              disabled={busy || (!editing && open.length >= 2)}
               className="liquid glow-primary bg-gradient-to-b from-[#A855F7] to-[#8B3FE2]"
             >
               {busy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : editing ? (
+                <FileText className="mr-2 h-4 w-4" />
               ) : (
                 <Send className="mr-2 h-4 w-4" />
               )}
-              Send request
+              {editing ? "Save changes" : "Send request"}
             </Button>
             <span className="text-xs text-muted-foreground">
-              {open.length >= 2
-                ? "You have two requests waiting — we'll answer those first."
-                : `Sending as ${user?.email ?? "your account"}.`}
+              {editing
+                ? "Only this request changes — nothing else is touched."
+                : open.length >= 2
+                  ? "You have two requests waiting — we'll answer those first."
+                  : `Sending as ${user?.email ?? "your account"}.`}
             </span>
           </div>
         </form>
       </motion.section>
+
+      {deletingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-sm rounded-2xl p-5">
+            <h3 className="text-[15px] font-bold">Delete this request?</h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              It is removed for good and nothing is sent to anyone. If you only
+              want to change the details, cancel and use Edit instead.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setDeletingId(null)}
+              >
+                Keep it
+              </Button>
+              <Button
+                size="sm"
+                className="bg-rose-600 hover:bg-rose-500"
+                onClick={() => void confirmDelete()}
+              >
+                Delete it
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

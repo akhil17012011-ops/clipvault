@@ -144,17 +144,20 @@ export const listAll = query({
 });
 
 /**
- * Deletes a request outright. Admin only.
+ * Deletes a request outright.
  *
- * Declining is the normal way to close a request — the brand keeps the answer.
- * This exists for the ones that should not have been made at all: a test, a
- * duplicate, spam. It is a hard delete, and it only touches the request, never
- * a campaign that was already approved from it.
+ * An operator can remove any request that never became a campaign; a brand can
+ * remove their own while it is still open or declined. Once a request has been
+ * approved the campaign is the real thing, so the request row stays — deleting
+ * the request then would orphan the campaign from the decision that created it.
+ *
+ * This is a hard delete: the request is gone from both the brand's list and the
+ * operator's queue, with nothing left behind.
  */
 export const remove = mutation({
   args: { requestId: v.id("campaignRequests") },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireUser(ctx);
     const request = await ctx.db.get(args.requestId);
     if (!request) return;
     if (request.campaignId) {
@@ -162,9 +165,125 @@ export const remove = mutation({
         "This request is already live as a campaign — pause or delete the campaign instead.",
       );
     }
+    /* A brand may only touch their own, and only while it is still their call
+       to make: an approved or declined request is a decision on record. */
+    if (user.role !== "admin") {
+      if (request.userId !== user._id) {
+        throw new Error("You can only remove your own request.");
+      }
+      if (request.status === "approved") {
+        throw new Error("That campaign is already live.");
+      }
+    }
     await ctx.db.delete(args.requestId);
   },
 });
+
+/** Every field a brand fills in, whether sending a request or editing one. */
+const REQUEST_FIELDS = {
+  brandName: v.string(),
+  title: v.string(),
+  description: v.string(),
+  budgetUsd: v.number(),
+  ratePer1k: v.optional(v.number()),
+  minViews: v.optional(v.number()),
+  days: v.optional(v.number()),
+  platforms: v.optional(v.array(PLATFORM)),
+  assets: v.optional(v.array(ASSET)),
+  note: v.optional(v.string()),
+};
+
+type RequestFields = {
+  brandName: string;
+  title: string;
+  description: string;
+  budgetUsd: number;
+  ratePer1k: number;
+  minViews: number;
+  days: number;
+  platforms: Platform[];
+  assets: { label: string; url: string; kind: "image" | "video" | "link" }[];
+  note?: string;
+};
+
+type Platform = "tiktok" | "instagram" | "youtube" | "x";
+
+/**
+ * Validates a request and returns the values as they should be written.
+ *
+ * Submit and edit share this so a brand cannot be held to rules on the way in
+ * and then allowed to break the same ones on the way through an edit.
+ */
+function cleanRequest(args: {
+  brandName: string;
+  title: string;
+  description: string;
+  budgetUsd: number;
+  ratePer1k?: number;
+  minViews?: number;
+  days?: number;
+  platforms?: Platform[];
+  assets?: { label: string; url: string; kind: "image" | "video" | "link" }[];
+  note?: string;
+}): RequestFields {
+  const brandName = args.brandName.trim();
+  const title = args.title.trim();
+  const description = args.description.trim();
+  if (brandName.length < 2) {
+    throw new Error("Which brand is this campaign for?");
+  }
+  if (title.length < 3) throw new Error("Give the campaign a name.");
+  if (description.length < 20) {
+    throw new Error(
+      "Describe the campaign in a sentence or two, so we know what to set up.",
+    );
+  }
+  if (title.length > 120) throw new Error("That campaign name is too long.");
+  if (description.length > 4000) {
+    throw new Error("That description is too long.");
+  }
+  if (!Number.isFinite(args.budgetUsd) || args.budgetUsd < 10) {
+    throw new Error("A campaign budget starts at $10.");
+  }
+  if (args.budgetUsd > 10_000_000) {
+    throw new Error("That budget is too large.");
+  }
+
+  const ratePer1k = args.ratePer1k ?? 0;
+  if (ratePer1k < 0 || ratePer1k > 1000) {
+    throw new Error("The rate has to be between $0 and $1,000 per 1,000 views.");
+  }
+  const minViews = args.minViews ?? 0;
+  if (minViews < 0) throw new Error("Minimum views cannot be negative.");
+  const days = args.days ?? 30;
+  if (days < 1 || days > 365) {
+    throw new Error("A campaign runs between 1 and 365 days.");
+  }
+
+  const platforms = [...new Set(args.platforms ?? [])] as Platform[];
+  if (platforms.length === 0) {
+    throw new Error("Pick at least one platform to post on.");
+  }
+
+  return {
+    brandName,
+    title,
+    description,
+    budgetUsd: args.budgetUsd,
+    ratePer1k,
+    minViews,
+    days,
+    platforms,
+    assets: cleanAssets(args.assets ?? []),
+    note: args.note?.trim() || undefined,
+  };
+}
+
+function failure(err: unknown): string {
+  return err instanceof Error
+    ? err.message
+    : "We couldn't save that request. Try again in a moment.";
+}
 
 /** How many requests are waiting on a decision. Admin only. */
 export const pendingCount = query({
@@ -192,65 +311,14 @@ export const pendingCount = query({
  * no idea what to fix. Returning the reason as data keeps this screen honest.
  */
 export const submit = mutation({
-  args: {
-    brandName: v.string(),
-    title: v.string(),
-    description: v.string(),
-    budgetUsd: v.number(),
-    ratePer1k: v.optional(v.number()),
-    minViews: v.optional(v.number()),
-    days: v.optional(v.number()),
-    platforms: v.optional(v.array(PLATFORM)),
-    assets: v.optional(v.array(ASSET)),
-    note: v.optional(v.string()),
-  },
+  args: REQUEST_FIELDS,
   handler: async (
     ctx,
     args,
   ): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
     try {
       const user = await requireUser(ctx);
-
-      const brand = args.brandName.trim();
-      const title = args.title.trim();
-      const description = args.description.trim();
-      if (brand.length < 2) {
-        throw new Error("Which brand is this campaign for?");
-      }
-      if (title.length < 3) throw new Error("Give the campaign a name.");
-      if (description.length < 20) {
-        throw new Error(
-          "Describe the campaign in a sentence or two, so we know what to set up.",
-        );
-      }
-      if (title.length > 120) throw new Error("That campaign name is too long.");
-      if (description.length > 4000) {
-        throw new Error("That description is too long.");
-      }
-      if (!Number.isFinite(args.budgetUsd) || args.budgetUsd < 10) {
-        throw new Error("A campaign budget starts at $10.");
-      }
-      if (args.budgetUsd > 10_000_000) {
-        throw new Error("That budget is too large.");
-      }
-
-      const ratePer1k = args.ratePer1k ?? 0;
-      if (ratePer1k < 0 || ratePer1k > 1000) {
-        throw new Error(
-          "The rate has to be between $0 and $1,000 per 1,000 views.",
-        );
-      }
-      const minViews = args.minViews ?? 0;
-      if (minViews < 0) throw new Error("Minimum views cannot be negative.");
-      const days = args.days ?? 30;
-      if (days < 1 || days > 365) {
-        throw new Error("A campaign runs between 1 and 365 days.");
-      }
-
-      const platforms = [...new Set(args.platforms ?? [])];
-      if (platforms.length === 0) {
-        throw new Error("Pick at least one platform to post on.");
-      }
+      const clean = cleanRequest(args);
 
       const open = await ctx.db
         .query("campaignRequests")
@@ -265,29 +333,74 @@ export const submit = mutation({
 
       const id = await ctx.db.insert("campaignRequests", {
         userId: user._id,
-        brandName: brand,
+        brandName: clean.brandName,
         brandEmail: user.email ?? "",
-        title,
-        description,
-        budgetUsd: args.budgetUsd,
-        ratePer1k,
-        minViews,
-        days,
-        platforms,
-        assets: cleanAssets(args.assets ?? []),
-        note: args.note?.trim() || undefined,
+        title: clean.title,
+        description: clean.description,
+        budgetUsd: clean.budgetUsd,
+        ratePer1k: clean.ratePer1k,
+        minViews: clean.minViews,
+        days: clean.days,
+        platforms: clean.platforms,
+        assets: clean.assets,
+        note: clean.note,
         status: "pending",
         requestedAt: Date.now(),
       });
       return { ok: true, id };
     } catch (err) {
-      return {
-        ok: false,
-        error:
-          err instanceof Error
-            ? err.message
-            : "We couldn't save that request. Try again in a moment.",
-      };
+      return { ok: false, error: failure(err) };
+    }
+  },
+});
+
+/**
+ * Edits a request the brand has not had an answer to yet.
+ *
+ * Only a pending request can be edited. Once an operator has approved or
+ * declined it, the numbers on the row are the record of a decision, and
+ * changing them afterwards would make the queue lie about what was agreed.
+ */
+export const edit = mutation({
+  args: {
+    requestId: v.id("campaignRequests"),
+    ...REQUEST_FIELDS,
+  },
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
+    try {
+      const user = await requireUser(ctx);
+      const request = await ctx.db.get(args.requestId);
+      if (!request) throw new Error("That request no longer exists.");
+      if (request.userId !== user._id) {
+        throw new Error("You can only edit your own request.");
+      }
+      if (request.status !== "pending") {
+        throw new Error(
+          request.status === "approved"
+            ? "That campaign is already live — open a new request if you need something else."
+            : "That request was already declined, so send a new one instead.",
+        );
+      }
+
+      const clean = cleanRequest(args);
+      await ctx.db.patch(args.requestId, {
+        brandName: clean.brandName,
+        title: clean.title,
+        description: clean.description,
+        budgetUsd: clean.budgetUsd,
+        ratePer1k: clean.ratePer1k,
+        minViews: clean.minViews,
+        days: clean.days,
+        platforms: clean.platforms,
+        assets: clean.assets,
+        note: clean.note,
+      });
+      return { ok: true, id: args.requestId };
+    } catch (err) {
+      return { ok: false, error: failure(err) };
     }
   },
 });
