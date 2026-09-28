@@ -52,7 +52,13 @@ function parseCount(value: unknown): number | undefined {
     return Number.isFinite(value) ? Math.round(value) : undefined;
   }
   if (typeof value !== "string") return undefined;
-  const match = value.replace(/,/g, "").trim().match(/^([\d.]+)\s*([KMB])?/i);
+  const text = value.replace(/,/g, "").trim();
+  /* Spelled-out magnitudes are a trap, not a format. "30.5 million" would
+     otherwise parse as 30 — a number off by six orders of magnitude, shown to
+     a creator as if it were real. A count written in words is not a count this
+     can read, so it is refused rather than guessed at. */
+  if (/\b(thousand|million|billion|trillion)\b/i.test(text)) return undefined;
+  const match = text.match(/^([\d.]+)\s*([KMB])?/i);
   if (!match) return undefined;
   const base = Number.parseFloat(match[1]);
   if (!Number.isFinite(base)) return undefined;
@@ -127,15 +133,72 @@ function tiktokCounts(html: string): { followers?: number; posts?: number } {
   };
 }
 
-/** YouTube's channel header carries the subscriber and video totals as text. */
+/**
+ * Reads a channel count out of the data YouTube embeds in the page.
+ *
+ * YouTube has shipped this number in several shapes, and pinning a regex to
+ * one of them silently returns "no data" when they change:
+ *
+ *   "subscriberCountText":{...,"simpleText":"30.5M subscribers"}
+ *   "videoCountText":{"runs":[{"text":"72"},{"text":" videos"}]}
+ *
+ * So the key is located first and the number is taken from the short window
+ * after it, accepting either the rendered `simpleText` or a `runs` array.
+ *
+ * The accessibility label is deliberately NOT read. It spells the magnitude
+ * out in words — "30.5 million subscribers" — which a numeric parser reads as
+ * 30. That is the single worst way to be wrong about a follower count, so the
+ * field is ignored entirely rather than special-cased.
+ */
+function youtubeCount(html: string, key: string): number | undefined {
+  const at = html.indexOf(`"${key}"`);
+  if (at < 0) return undefined;
+
+  /* The window is this key's own object and nothing else. The subscriber and
+     video counts sit directly next to each other in the page, so a plain
+     fixed-width window around `videoCountText` also swallows the subscriber
+     count — and reading that instead reports a channel's 72 videos as its
+     30.5M subscribers.
+
+     The boundary is the next `*CountText` key. That is exactly the level the
+     two counts live on: cutting on any generic "next key" would instead stop
+     at `,"simpleText":` nested inside the accessibility object and lose the
+     number this is looking for. */
+  const body = html.slice(at + key.length + 3);
+  const next = body.search(/"[A-Za-z_][A-Za-z0-9_]*CountText":/);
+  const window = body.slice(0, next > 0 && next < 400 ? next : 400);
+
+  // The rendered form, when YouTube publishes one.
+  const simple = window.match(/"simpleText"\s*:\s*"([^"]+)"/);
+  if (simple?.[1]) {
+    const n = parseCount(simple[1]);
+    if (n !== undefined) return n;
+  }
+
+  // The split form: the number and its unit are separate runs.
+  for (const match of window.matchAll(/"text"\s*:\s*"([^"]*)"/g)) {
+    if (!/\d/.test(match[1])) continue;
+    const n = parseCount(match[1]);
+    if (n !== undefined) return n;
+  }
+
+  // A bare number immediately before the unit, as a last resort.
+  const bare = window.match(
+    /"(\d[\d.,]*\s*[KMB]?)\s*(?:subscribers?|videos?)/i,
+  );
+  if (bare?.[1]) return parseCount(bare[1]);
+
+  return undefined;
+}
+
+/** YouTube's channel header carries the subscriber and video totals. */
 function youtubeCounts(html: string): { followers?: number; posts?: number } {
   return {
-    followers: parseCount(
-      html.match(/"subscriberCountText"[^}]*?"simpleText"\s*:\s*"([^"]+)"/)?.[1],
-    ),
-    posts: parseCount(
-      html.match(/"videosCountText"[^}]*?"simpleText"\s*:\s*"([^"]+)"/)?.[1],
-    ),
+    followers: youtubeCount(html, "subscriberCountText"),
+    /* The key is `videoCountText`, singular. An earlier version of this looked
+       for `videosCountText`, which YouTube does not emit at all — so the post
+       count silently read as zero for every channel. */
+    posts: youtubeCount(html, "videoCountText"),
   };
 }
 

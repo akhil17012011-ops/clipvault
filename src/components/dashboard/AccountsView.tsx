@@ -76,17 +76,29 @@ export function AccountsView({
   const connected = accounts.filter((a) => a.status === "connected");
   const pending = accounts.filter((a) => a.status !== "connected");
 
-  const liveNote =
-    connected.length === 0
-      ? null
-      : syncedAt == null
-        ? "Reading live…"
-        : `Live · read ${Math.max(0, Math.round((now - syncedAt) / 1000))}s ago`;
-
   const followers = connected.reduce(
     (sum, a) => sum + (a.followers ?? 0),
     0,
   );
+  /* A platform that never published a count leaves it null. Summing nulls as
+     zero would tell the creator they have no followers, which is a different
+     and much worse claim than "this platform has not told us". So the tile
+     only shows a number when at least one account actually published one. */
+  const anyFollowersKnown = connected.some((a) => a.followers != null);
+  const anyPostsKnown = connected.some((a) => a.posts != null);
+
+  /* The hint has to say what actually happened. A refresh that found no
+     number is not a live count, so it says so rather than showing a confident
+     "Live · read 3s ago" next to a dash. */
+  const liveNote =
+    connected.length === 0
+      ? null
+      : !anyFollowersKnown
+        ? "Not published by the platform"
+        : syncedAt == null
+          ? "Reading live…"
+          : `Live · read ${Math.max(0, Math.round((now - syncedAt) / 1000))}s ago`;
+
   const clipCount = stats.reduce((sum, s) => sum + s.clips, 0);
   const views = stats.reduce((sum, s) => sum + s.views, 0);
   const earned = stats.reduce((sum, s) => sum + s.earned, 0);
@@ -140,7 +152,7 @@ export function AccountsView({
             { label: "Verified", value: `${connected.length}`, hint: null },
             {
               label: "Followers",
-              value: fmtViews(followers),
+              value: anyFollowersKnown ? fmtViews(followers) : "—",
               hint: liveNote,
             },
             { label: "Clips", value: fmtFull(clipCount), hint: null },
@@ -186,7 +198,14 @@ export function AccountsView({
               label: "Platforms",
               value: platforms.length > 0 ? `${platforms.length}` : "—",
             },
-            { label: "Posts live", value: fmtFull(connected.reduce((sum, a) => sum + (a.posts ?? 0), 0)) },
+            {
+              label: "Posts live",
+              value: anyPostsKnown
+                ? fmtFull(
+                    connected.reduce((sum, a) => sum + (a.posts ?? 0), 0),
+                  )
+                : "—",
+            },
           ].map((item) => (
             <div key={item.label}>
               <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
