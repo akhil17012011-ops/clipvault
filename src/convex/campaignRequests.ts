@@ -143,6 +143,29 @@ export const listAll = query({
   },
 });
 
+/**
+ * Deletes a request outright. Admin only.
+ *
+ * Declining is the normal way to close a request — the brand keeps the answer.
+ * This exists for the ones that should not have been made at all: a test, a
+ * duplicate, spam. It is a hard delete, and it only touches the request, never
+ * a campaign that was already approved from it.
+ */
+export const remove = mutation({
+  args: { requestId: v.id("campaignRequests") },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const request = await ctx.db.get(args.requestId);
+    if (!request) return;
+    if (request.campaignId) {
+      throw new Error(
+        "This request is already live as a campaign — pause or delete the campaign instead.",
+      );
+    }
+    await ctx.db.delete(args.requestId);
+  },
+});
+
 /** How many requests are waiting on a decision. Admin only. */
 export const pendingCount = query({
   args: {},

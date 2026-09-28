@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   Loader2,
   Megaphone,
+  Trash2,
   X,
   XCircle,
 } from "lucide-react";
@@ -69,9 +70,12 @@ export function AdminCampaignRequests() {
   const requests = useQuery(api.campaignRequests.listAll);
   const approve = useMutation(api.campaignRequests.approve);
   const decline = useMutation(api.campaignRequests.decline);
+  const remove = useMutation(api.campaignRequests.remove);
 
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] =
+    useState<Id<"campaignRequests"> | null>(null);
   const [reason, setReason] = useState("");
 
   const run = async (
@@ -271,6 +275,19 @@ export function AdminCampaignRequests() {
                   <X className="mr-2 h-3.5 w-3.5" />
                   Decline
                 </Button>
+                {/* For a test, a duplicate or spam — a hard delete. Declining is
+                    the normal way to close a real request. */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => setDeletingId(r.id)}
+                  title="Delete this request"
+                  className="text-muted-foreground hover:text-red-500"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </Button>
               </div>
             )}
           </div>
@@ -322,6 +339,42 @@ export function AdminCampaignRequests() {
                 Decided
               </p>
               <ul className="mt-3 space-y-3">{history.map((r) => row(r, true))}</ul>
+            </div>
+          )}
+
+          {deletingId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+              <div className="glass-panel w-full max-w-sm rounded-2xl p-5">
+                <h3 className="text-[15px] font-bold">Delete this request?</h3>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  It is removed for good and the brand is not told. To close a
+                  real request with an answer, decline it instead.
+                </p>
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDeletingId(null)}
+                  >
+                    Keep it
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-rose-600 hover:bg-rose-500"
+                    onClick={async () => {
+                      const id = deletingId;
+                      setDeletingId(null);
+                      await run(
+                        id,
+                        () => remove({ requestId: id }),
+                        "Request deleted",
+                      );
+                    }}
+                  >
+                    Delete it
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </>
