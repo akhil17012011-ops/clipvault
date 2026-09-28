@@ -39,8 +39,31 @@ export type ProfileResult =
       followers?: number;
       /** Real post count, when the platform exposes it in what we read. */
       posts?: number;
+      /**
+       * True when the paid residential fallback was exercised to produce this
+       * result. Callers use it to meter the paid route — it costs money per
+       * run, so "it was allowed to run" has to be traceable to whoever pays
+       * the bill.
+       */
+      usedFallback?: boolean;
     }
-  | { ok: false; reason: string };
+  | {
+      ok: false;
+      reason: string;
+      /** See the `ok: true` branch. */
+      usedFallback?: boolean;
+    };
+
+/**
+ * Options for a profile read.
+ *
+ * `allowFallback` gates Instagram's paid residential route (Apify). It exists
+ * because that route bills per profile: a poller allowed to reach it at full
+ * speed would turn a creator's open dashboard into a running meter.
+ */
+export type ProfileOptions = {
+  allowFallback?: boolean;
+};
 
 /**
  * Reads a follower or post count that a platform may report as a number, as a
@@ -405,28 +428,68 @@ async function fetchInstagramViaApify(
     };
   }
 
+  /* The actor's field spellings have changed across versions: snake_case and
+     camelCase both appear in the wild, and the bio has been `biography` and
+     `bio`. Reading every plausible spelling costs nothing, while missing one
+     is exactly how a working token still produces a tile that says no count
+     was published. parseCount only accepts values that really look like
+     counts — an array or an object is ignored, never guessed at. */
+  const followers =
+    parseCount(first.followers_count) ??
+    parseCount(first.followersCount) ??
+    parseCount(first.followerCount) ??
+    parseCount(first.followers);
+  const posts =
+    parseCount(first.media_count) ??
+    parseCount(first.posts_count) ??
+    parseCount(first.mediaCount) ??
+    parseCount(first.postCount) ??
+    parseCount(first.posts);
+  const bioText = first.biography ?? first.bio;
+
+  if (followers === undefined) {
+    // Operator-facing: when the actor changes its output shape again, the
+    // names it now uses show up in the function logs instead of vanishing.
+    console.log(
+      "Apify profile item carried no follower count. Keys:",
+      Object.keys(first).slice(0, 50).join(", "),
+    );
+  }
+
   return {
     ok: true,
     handle: first.username.toLowerCase(),
-    bio: typeof first.biography === "string" ? first.biography : "",
-    followers: parseCount(first.followers_count),
-    // The field was renamed across actor versions, so read both spellings
-    // rather than reporting a zero when only one is present.
-    posts: parseCount(first.media_count ?? first.posts_count),
+    bio: typeof bioText === "string" ? bioText : "",
+    followers,
+    posts,
   };
 }
 
-async function fetchInstagram(handle: string): Promise<ProfileResult> {
+async function fetchInstagram(
+  handle: string,
+  options: ProfileOptions,
+): Promise<ProfileResult> {
   // Instagram directly first: free, fast, and it works from most networks.
   const direct = await fetchInstagramDirect(handle);
   if (direct) return direct;
 
+  // The direct route was refused. The fallback bills per profile, so the
+  // caller decides whether this round is allowed to spend it.
+  if (options.allowFallback === false) {
+    return {
+      ok: false,
+      reason:
+        "Instagram isn't answering profile lookups from our servers right now. Try again in a few minutes.",
+    };
+  }
+
   // Refused, so read the identical public profile through Apify instead.
   const viaApify = await fetchInstagramViaApify(handle);
-  if (viaApify) return viaApify;
+  if (viaApify) return { ...viaApify, usedFallback: true };
 
   return {
     ok: false,
+    usedFallback: true,
     reason:
       "Instagram isn't answering profile lookups from our servers right now. Try again in a few minutes.",
   };
@@ -436,6 +499,7 @@ async function fetchInstagram(handle: string): Promise<ProfileResult> {
 export function fetchProfile(
   platform: Platform,
   handle: string,
+  options: ProfileOptions = {},
 ): Promise<ProfileResult> {
   switch (platform) {
     case "tiktok":
@@ -445,6 +509,6 @@ export function fetchProfile(
     case "x":
       return fetchX(handle);
     case "instagram":
-      return fetchInstagram(handle);
+      return fetchInstagram(handle, options);
   }
 }

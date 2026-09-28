@@ -49,6 +49,18 @@ const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
  */
 const STATS_REFRESH_COOLDOWN_MS = 15_000;
 
+/**
+ * Minimum time between *paid* Instagram fallback lookups for one account.
+ *
+ * The direct route is free and runs on its own cooldown above; this meter
+ * exists only for the Apify route, which bills per profile. At a permissive
+ * window an open dashboard would quietly rack up a bill, while a window that
+ * never reopens would freeze the count forever. Ten minutes caps the spend
+ * at roughly a dozen runs per account per hour, and only while Instagram's
+ * free route is refusing us.
+ */
+const APIFY_FALLBACK_COOLDOWN_MS = 10 * 60_000;
+
 type Platform = Infer<typeof PLATFORM>;
 
 /** Domains a profile link for each platform can legitimately come from. */
@@ -390,7 +402,21 @@ export const refreshStats = action({
       };
     }
 
-    const profile = await fetchProfile(account.platform, account.handle);
+    const allowFallback =
+      account.platform !== "instagram" ||
+      account.fallbackRefreshedAt == null ||
+      Date.now() - account.fallbackRefreshedAt >= APIFY_FALLBACK_COOLDOWN_MS;
+
+    const profile = await fetchProfile(account.platform, account.handle, {
+      allowFallback,
+    });
+    /* Only rounds that actually exercised the paid route move the meter. A
+       free read succeeding must never keep pushing the paid window forward,
+       or the fallback would stay shut exactly when Instagram starts
+       refusing us. */
+    const fallbackStamp =
+      profile.usedFallback === true ? { fallbackRefreshedAt: Date.now() } : {};
+
     if (!profile.ok) {
       /* The attempt itself is stamped even though nothing was read: without
          it, every refused lookup would be retried at full poll speed and the
@@ -399,6 +425,7 @@ export const refreshStats = action({
          zero. */
       await ctx.runMutation(internal.accounts.setStats, {
         accountId: account._id,
+        ...fallbackStamp,
       });
       return {
         ok: false,
@@ -417,6 +444,7 @@ export const refreshStats = action({
       accountId: account._id,
       ...(profile.followers !== undefined ? { followers: profile.followers } : {}),
       ...(profile.posts !== undefined ? { posts: profile.posts } : {}),
+      ...fallbackStamp,
     });
     return {
       ok: true,
@@ -447,6 +475,7 @@ export const getForStats = internalQuery({
       followers: account.followers,
       posts: account.posts,
       statsRefreshedAt: account.statsRefreshedAt,
+      fallbackRefreshedAt: account.fallbackRefreshedAt,
     };
   },
 });
@@ -464,6 +493,8 @@ export const setStats = internalMutation({
     accountId: v.id("connectedAccounts"),
     followers: v.optional(v.number()),
     posts: v.optional(v.number()),
+    /** Stamps the paid-fallback spend meter; omitted leaves it alone. */
+    fallbackRefreshedAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const account = await ctx.db.get(args.accountId);
@@ -472,6 +503,9 @@ export const setStats = internalMutation({
       followers: args.followers ?? account.followers,
       posts: args.posts ?? account.posts,
       statsRefreshedAt: Date.now(),
+      ...(args.fallbackRefreshedAt !== undefined
+        ? { fallbackRefreshedAt: args.fallbackRefreshedAt }
+        : {}),
     });
   },
 });

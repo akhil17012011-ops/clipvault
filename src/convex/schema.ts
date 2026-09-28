@@ -180,6 +180,13 @@ const schema = defineSchema(
       posts: v.optional(v.number()),
       /** When the follower/post counts were last re-read from the platform. */
       statsRefreshedAt: v.optional(v.number()),
+      /**
+       * When Instagram's paid residential fallback (Apify) was last permitted
+       * to run for this account. The fallback bills per profile, so this is a
+       * spend meter: the free direct route runs every refresh, while the paid
+       * one only reopens its window after this much time has passed.
+       */
+      fallbackRefreshedAt: v.optional(v.number()),
       createdAt: v.number(),
     })
       .index("by_user", ["userId"])
