@@ -36,17 +36,21 @@ const STEP_ICONS: Record<string, LucideIcon> = {
  * Where the card sits for each step.
  *
  * A tour pinned to one corner stops being read after the first step — the eye
- * has already looked there. Moving it each time pulls attention back, and it
- * also means the card is never sitting on top of the thing it is describing.
- * Corners first, so the centre of the page — where the content is — stays clear.
+ * has already looked there. Moving it each time pulls attention back.
+ *
+ * On desktop every position stays clear of the 264px sidebar: a card that slides
+ * over the navigation hides the very list the user is being told to use, and it
+ * also makes the movement read as a glitch rather than as intent. Anything on
+ * the left is offset past the rail (19.5rem) rather than pinned to the viewport
+ * edge, and the rest travel down the right, where there is room.
  */
 const PLACEMENTS = [
-  "left-4 bottom-5 sm:left-8 sm:bottom-8",
-  "right-4 bottom-5 sm:right-8 sm:bottom-8",
-  "left-4 top-24 sm:left-8 sm:top-28",
-  "right-4 top-24 sm:right-8 sm:top-28",
-  "left-1/2 bottom-5 -translate-x-1/2 sm:bottom-8",
-  "right-4 top-1/2 -translate-y-1/2 sm:right-8",
+  "right-4 bottom-6 lg:right-10 lg:bottom-10",
+  "left-4 bottom-6 lg:left-[19.5rem] lg:bottom-10",
+  "right-4 top-28 lg:right-10 lg:top-32",
+  "left-4 top-28 lg:left-[19.5rem] lg:top-32",
+  "right-4 top-1/2 -translate-y-1/2 lg:right-10",
+  "left-4 top-1/2 -translate-y-1/2 lg:left-[19.5rem]",
 ] as const;
 
 /**
@@ -130,10 +134,14 @@ export function DashboardTour({
              a teleport: the card is the same element throughout, so framer
              measures the new position and animates the difference. */
           layout
-          initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
+          initial={{ opacity: 0, y: 20, scale: 0.98, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: 16, scale: 0.98, filter: "blur(8px)" }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, y: 14, scale: 0.99, filter: "blur(6px)" }}
+          /* A long, heavy ease-out for the travel between corners: fast at the
+             start, unhurried at the end, so the card arrives rather than
+             stopping. The entry and exit use the same curve, so appearing and
+             moving feel like one continuous thing. */
+          transition={{ duration: 0.62, ease: [0.32, 0.72, 0, 1] }}
           className={`fixed z-50 w-[min(22rem,calc(100vw-2rem))] lg:w-[23rem] ${
             PLACEMENTS[step % PLACEMENTS.length]
           }`}

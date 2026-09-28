@@ -610,16 +610,16 @@ html.lenis body {
     0 32px 64px -32px rgb(139 63 226 / 0.42);
 }
 
-/* Liquid glass — the floating, translucent material used by the guided tour.
-   Nearly opaque rather than see-through: it floats over live content and has
-   to stay readable without competing with what is behind it, so the glass reads
-   through its blur, blooms, lit rim and specular sweep rather than through
-   transparency. A slow highlight and two drifting blooms keep it liquid. */
+/* Liquid glass — the floating material used by the guided tour.
+   Fully opaque. The card floats over live content, and anything you can see
+   through it competes with the text the user is being asked to read, so the
+   glass is carried entirely by the lit rim, the two blooms, the inset violet
+   glow and the slow specular sweep. Depth without transparency. */
 .glass-liquid {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background-color: rgb(19 13 38 / 0.84);
+  background-color: rgb(19 13 38);
   background-image:
     radial-gradient(
       90% 120% at 12% 0%,
@@ -638,8 +638,8 @@ html.lenis body {
       rgb(0 0 0 / 0.28) 100%
     );
   border: 1px solid rgb(255 255 255 / 0.14);
-  backdrop-filter: blur(30px) saturate(190%);
-  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  backdrop-filter: saturate(140%);
+  -webkit-backdrop-filter: saturate(140%);
   box-shadow:
     inset 0 1px 0 0 rgb(255 255 255 / 0.24),
     inset 0 -1px 0 0 rgb(0 0 0 / 0.5),
@@ -698,7 +698,6 @@ html.lenis body {
 }
 @media (prefers-reduced-transparency: reduce) {
   .glass-liquid {
-    background: var(--card);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
