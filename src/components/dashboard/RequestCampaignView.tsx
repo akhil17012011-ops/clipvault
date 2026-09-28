@@ -316,17 +316,19 @@ export function RequestCampaignView() {
                         Edit
                       </Button>
                     )}
-                    {r.status !== "approved" && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="gap-1.5 text-muted-foreground hover:text-red-500"
-                        onClick={() => setDeletingId(r.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Delete
-                      </Button>
-                    )}
+                    {/* Shown on every request, including an approved one: if the
+                        campaign behind it was taken down, this is how the brand
+                        clears the record. The server refuses while the campaign
+                        is still live. */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1.5 text-muted-foreground hover:text-red-500"
+                      onClick={() => setDeletingId(r.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
+                    </Button>
                   </div>
                 </li>
               );
@@ -607,8 +609,9 @@ export function RequestCampaignView() {
           <div className="glass-panel w-full max-w-sm rounded-2xl p-5">
             <h3 className="text-[15px] font-bold">Delete this request?</h3>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              It is removed for good and nothing is sent to anyone. If you only
-              want to change the details, cancel and use Edit instead.
+              It is removed for good and nothing is sent to anyone. If it is
+              already live as a campaign, delete the campaign itself instead —
+              the request goes with it.
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <Button

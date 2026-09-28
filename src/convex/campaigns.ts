@@ -212,6 +212,16 @@ export const remove = mutation({
     for (const clip of clips) await ctx.db.delete(clip._id);
 
     await ctx.db.delete(args.campaignId);
+
+    /* A campaign that came from a brand request is only as real as the
+       campaign. Leaving the request behind would keep telling that brand
+       "approved — live" for something that no longer exists, so the request
+       goes with it. */
+    const requests = await ctx.db
+      .query("campaignRequests")
+      .filter((q) => q.eq(q.field("campaignId"), args.campaignId))
+      .collect();
+    for (const request of requests) await ctx.db.delete(request._id);
   },
 });
 

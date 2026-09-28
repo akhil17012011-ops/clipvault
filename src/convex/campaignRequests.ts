@@ -146,10 +146,10 @@ export const listAll = query({
 /**
  * Deletes a request outright.
  *
- * An operator can remove any request that never became a campaign; a brand can
- * remove their own while it is still open or declined. Once a request has been
- * approved the campaign is the real thing, so the request row stays — deleting
- * the request then would orphan the campaign from the decision that created it.
+ * An operator can remove any request; a brand can remove their own. A request
+ * that was approved is tied to the campaign it created, and that campaign is
+ * the real thing — so the request only goes when the campaign does, which is
+ * why deleting a campaign deletes the request that created it too.
  *
  * This is a hard delete: the request is gone from both the brand's list and the
  * operator's queue, with nothing left behind.
@@ -160,20 +160,23 @@ export const remove = mutation({
     const user = await requireUser(ctx);
     const request = await ctx.db.get(args.requestId);
     if (!request) return;
-    if (request.campaignId) {
+
+    /* The campaign a request was approved into is the real thing. If it is
+       still there, the request stays with it — deleting one without the other
+       would leave a brand being told a campaign is live when it is not. If the
+       campaign has since been removed, the request has nothing left to refer
+       to and can go. */
+    const live = request.campaignId
+      ? ((await ctx.db.get(request.campaignId)) ?? null)
+      : null;
+    if (live) {
       throw new Error(
-        "This request is already live as a campaign — pause or delete the campaign instead.",
+        "That request is already live as a campaign — delete the campaign itself to take it down.",
       );
     }
-    /* A brand may only touch their own, and only while it is still their call
-       to make: an approved or declined request is a decision on record. */
-    if (user.role !== "admin") {
-      if (request.userId !== user._id) {
-        throw new Error("You can only remove your own request.");
-      }
-      if (request.status === "approved") {
-        throw new Error("That campaign is already live.");
-      }
+    /* A brand may only touch their own. */
+    if (user.role !== "admin" && request.userId !== user._id) {
+      throw new Error("You can only remove your own request.");
     }
     await ctx.db.delete(args.requestId);
   },
