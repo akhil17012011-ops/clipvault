@@ -37,6 +37,8 @@ import {
   type InvoiceStatus,
 } from "@/lib/clip-vault-data";
 import { useAdminStats, useClipVault } from "@/lib/clip-vault-store";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
 import { EASE } from "@/lib/motion";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -45,6 +47,7 @@ import {
   ClipboardList,
   Eye,
   FileText,
+  Megaphone,
   Pause,
   Play,
   Plus,
@@ -114,6 +117,11 @@ export function AdminView({
     deleteCampaign,
   } = useClipVault();
   const stats = useAdminStats();
+  /* How many brands are waiting on an approve/decline. */
+  const pendingRequests = useQuery(
+    api.campaignRequests.pendingCount,
+    "skip",
+  ) ?? 0;
 
   /* What creators have actually asked to be paid, and not yet actioned. */
   const payoutPendingCents = adminPayoutRequests
@@ -234,6 +242,16 @@ export function AdminView({
   const [openReviewId, setReviewing] = useState<string | null>(null);
 
   const shortcuts = [
+    {
+      to: "/dashboard/requests",
+      icon: Megaphone,
+      value: `${pendingRequests}`,
+      label: "Campaign requests",
+      hint:
+        pendingRequests > 0
+          ? "Brands waiting on a decision"
+          : "No brand requests waiting",
+    },
     {
       to: "/dashboard/moderation",
       icon: ScanSearch,

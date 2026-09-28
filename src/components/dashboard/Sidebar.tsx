@@ -1,4 +1,5 @@
 import { ClipVaultMark } from "@/components/ClipVaultMark";
+import { api } from "@/convex/_generated/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +32,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { EASE, SPRING, SPRING_PILL } from "@/lib/motion";
-import { useEffect, useState } from "react";
+import { useQuery } from "convex/react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import type { DashboardView } from "./TopBar";
@@ -98,6 +100,14 @@ const NAV: Record<DashboardView, NavItem[]> = {
       group: "Workspace",
     },
     {
+      /* Kept high in the list: a brand waiting on a decision is the one thing
+         an operator should see without scrolling. */
+      to: "/dashboard/requests",
+      label: "Campaign requests",
+      icon: Megaphone,
+      group: "Workspace",
+    },
+    {
       to: "/dashboard/creators",
       label: "Creators",
       icon: UserRound,
@@ -131,12 +141,6 @@ const NAV: Record<DashboardView, NavItem[]> = {
       to: "/dashboard/invoices",
       label: "Invoices",
       icon: ReceiptText,
-      group: "Manage",
-    },
-    {
-      to: "/dashboard/requests",
-      label: "Campaign requests",
-      icon: Megaphone,
       group: "Manage",
     },
     {
@@ -209,6 +213,12 @@ function SidebarBody({
   onNavigate?: () => void;
 }) {
   const items = NAV[role];
+  /* Only an operator can be shown a queue count; for a creator the query is
+     never sent. */
+  const pendingRequests = useQuery(
+    api.campaignRequests.pendingCount,
+    role === "admin" ? {} : "skip",
+  );
   const { user, signOut } = useAuth();
   const { profile } = useClipVault();
   const navigate = useNavigate();
@@ -304,6 +314,10 @@ function SidebarBody({
         {filtered.map((item, index) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to;
+          const badge =
+            item.to === "/dashboard/requests" && pendingRequests
+              ? pendingRequests
+              : 0;
           const showGroup =
             index === 0 || filtered[index - 1]?.group !== item.group;
           return (
@@ -348,6 +362,11 @@ function SidebarBody({
               >
                 {item.label}
               </span>
+              {badge > 0 && (
+                <span className="relative ml-auto rounded-full border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-200">
+                  {badge}
+                </span>
+              )}
             </motion.button>
             </div>
           );

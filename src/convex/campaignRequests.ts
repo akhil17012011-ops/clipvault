@@ -143,6 +143,19 @@ export const listAll = query({
   },
 });
 
+/** How many requests are waiting on a decision. Admin only. */
+export const pendingCount = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+    const rows = await ctx.db
+      .query("campaignRequests")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .collect();
+    return rows.length;
+  },
+});
+
 /**
  * Asks for a campaign. Signed-in brands only.
  *
