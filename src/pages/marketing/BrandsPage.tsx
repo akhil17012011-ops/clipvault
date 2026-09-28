@@ -4,9 +4,23 @@ import {
   PageHero,
   fadeUp,
 } from "@/components/marketing/MarketingShell";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Check, Megaphone, ReceiptText, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Megaphone,
+  PhoneCall,
+  ReceiptText,
+  ShieldCheck,
+} from "lucide-react";
 import { Link } from "react-router";
+
+const CALL_POINTS = [
+  "Thirty minutes, one call, and a written summary of what you agreed to.",
+  "We tell you what a realistic view count costs before you commit a budget.",
+  "You pick the slot; an operator confirms or declines it, and you see which.",
+];
 
 const SETUP = [
   {
@@ -167,9 +181,56 @@ export default function BrandsPage() {
         </motion.div>
       </section>
 
+      <section
+        id="call"
+        className="scroll-mt-24 border-y border-black/8 bg-black/[0.015] dark:border-white/10 dark:bg-white/[0.02]"
+      >
+        <div className="mx-auto max-w-3xl px-5 py-20">
+          <motion.div {...fadeUp}>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand">
+                <PhoneCall className="h-5 w-5" />
+              </span>
+              <h2 className="text-2xl font-extrabold tracking-[-0.03em] sm:text-3xl">
+                Book a 30-minute call
+              </h2>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Campaigns are set up with a short call rather than a form nobody
+              reads. Sign in, pick a slot that suits you, and tell us what you
+              want to launch — we come back with a rate, a creator list and a
+              realistic view count for your budget.
+            </p>
+            <ul className="mt-6 space-y-3">
+              {CALL_POINTS.map((point) => (
+                <li key={point} className="flex gap-2.5 text-sm leading-relaxed">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                  <span className="text-muted-foreground">{point}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-6 text-sm text-muted-foreground">
+              You will see whether your request was approved or declined on the
+              same page — nothing is booked until an operator confirms it.
+            </p>
+            <Button
+              asChild
+              className="liquid glow-primary mt-6 h-11 bg-gradient-to-b from-[#A855F7] to-[#8B3FE2] px-6 hover:from-[#8B6BFF] hover:to-[#6642EE]"
+            >
+              <Link to="/auth?returnTo=/dashboard/calls">
+                Book your slot
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
       <MarketingCTA
         title="Launch your first campaign."
         body="Set a rate, publish the rules and let verified creators do the reach."
+        primaryLabel="Book a 30-minute call"
+        primaryTo="/auth?returnTo=/dashboard/calls"
       />
     </MarketingShell>
   );

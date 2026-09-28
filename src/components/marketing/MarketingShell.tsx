@@ -227,11 +227,16 @@ export function MarketingCTA({
   title,
   body,
   discord = true,
+  primaryLabel = "Start clipping",
+  primaryTo = "/auth?returnTo=/dashboard",
 }: {
   title: string;
   body: string;
   /** Offer the Discord invite alongside the auth button. */
   discord?: boolean;
+  /** Main call to action. Brands land on the booking page, not the console. */
+  primaryLabel?: string;
+  primaryTo?: string;
 }) {
   return (
     <section className="mx-auto max-w-5xl px-5 py-20">
@@ -254,8 +259,8 @@ export function MarketingCTA({
               size="lg"
               className="liquid glow-primary h-12 bg-gradient-to-b from-[#A855F7] to-[#8B3FE2] px-7 hover:from-[#8B6BFF] hover:to-[#6642EE]"
             >
-              <Link to="/auth?returnTo=/dashboard">
-                Start clipping
+              <Link to={primaryTo}>
+                {primaryLabel}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

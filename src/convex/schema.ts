@@ -291,6 +291,40 @@ const schema = defineSchema(
       .index("by_status", ["status"])
       .index("by_requested", ["requestedAt"]),
 
+    /**
+     * A brand asking for a 30-minute call with Clip Vault.
+     *
+     * A brand never gets a campaign from the marketing site: they sign in, ask
+     * for a slot, and an operator approves or declines it from the console.
+     * Nothing is confirmed until it is `approved`, which is why a slot is only
+     * taken off the list once someone approves it.
+     */
+    callBookings: defineTable({
+      userId: v.id("users"),
+      /** Snapshotted so the queue still reads correctly if the user is deleted. */
+      brandName: v.string(),
+      brandEmail: v.string(),
+      company: v.optional(v.string()),
+      /** What the brand wants to cover on the call. */
+      topic: v.string(),
+      note: v.optional(v.string()),
+      /** When the call starts, on a 30-minute boundary. */
+      startsAt: v.number(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("approved"),
+        v.literal("declined"),
+      ),
+      requestedAt: v.number(),
+      decidedAt: v.optional(v.number()),
+      decidedBy: v.optional(v.id("users")),
+      /** Required on a decline, and sent to the brand. */
+      reason: v.optional(v.string()),
+    })
+      .index("by_user", ["userId"])
+      .index("by_status", ["status"])
+      .index("by_slot", ["startsAt"]),
+
     // A clip a creator submitted to a campaign.
     submissions: defineTable({
       campaignId: v.id("campaigns"),

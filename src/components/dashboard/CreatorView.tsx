@@ -31,6 +31,7 @@ import {
 import { useClipVault, useCreatorStats } from "@/lib/clip-vault-store";
 import { EASE } from "@/lib/motion";
 import { MessagesInbox } from "@/components/dashboard/MessagesInbox";
+import { BookCallView } from "@/components/dashboard/BookCallView";
 import {
   PayoutHistory,
   PayoutRequestCard,
@@ -61,6 +62,7 @@ export type CreatorSection =
   | "clips"
   | "payments"
   | "accounts"
+  | "calls"
   | "messages";
 
 export function CreatorView({
@@ -140,12 +142,16 @@ export function CreatorView({
       title: "Accounts",
       description:
         "Bio-verified handles that Clip Vault tracks views back to you for.",
+    },    calls: {
+      kicker: "Brands",
+      title: "Book a call",
+      description:
+        "30 minutes with the Clip Vault team about a campaign, and where your request stands.",
     },
     messages: {
       kicker: "Inbox",
       title: "Messages",
-      description:
-        "Approvals, declines and anything Clip Vault has sent you directly.",
+      description: "Approvals, declines and anything Clip Vault has sent you directly.",
     },
   };
   const page = PAGES[section];
@@ -550,6 +556,8 @@ export function CreatorView({
             )}
           </motion.section>
       )}
+
+      {section === "calls" && <BookCallView />}
 
       {section === "messages" && <MessagesInbox />}
 

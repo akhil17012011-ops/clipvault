@@ -21,6 +21,7 @@ import {
   Lightbulb,
   LogOut,
   Megaphone,
+  PhoneCall,
   ReceiptText,
   Search,
   ShieldCheck,
@@ -78,6 +79,12 @@ const NAV: Record<DashboardView, NavItem[]> = {
       group: "Manage",
     },
     {
+      to: "/dashboard/calls",
+      label: "Book a call",
+      icon: PhoneCall,
+      group: "Manage",
+    },
+    {
       to: "/dashboard/messages",
       label: "Messages",
       icon: MessageSquare,
@@ -125,6 +132,12 @@ const NAV: Record<DashboardView, NavItem[]> = {
       to: "/dashboard/invoices",
       label: "Invoices",
       icon: ReceiptText,
+      group: "Manage",
+    },
+    {
+      to: "/dashboard/calls",
+      label: "Call requests",
+      icon: PhoneCall,
       group: "Manage",
     },
     {

@@ -8,6 +8,7 @@ import {
 import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
 import { AdminMessages } from "@/components/dashboard/AdminMessages";
 import { AdminPayouts } from "@/components/dashboard/AdminPayouts";
+import { AdminCalls } from "@/components/dashboard/AdminCalls";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,7 @@ export type AdminSection =
   | "creators"
   | "users"
   | "messages"
+  | "calls"
   | "payouts"
   | "invoices"
   | "campaigns"
@@ -203,6 +205,12 @@ export function AdminView({
       title: "Messages",
       description:
         "Send one creator a note, or announce something to everyone.",
+    },
+    calls: {
+      kicker: "Calls",
+      title: "Call requests",
+      description:
+        "Brands that asked for a 30-minute call — approve the slot or decline it with a reason.",
     },
     invoices: {
       kicker: "Billing",
@@ -364,6 +372,19 @@ export function AdminView({
       )}
 
       {section === "overview" && <ShortcutGrid cards={shortcuts} />}
+
+      {section === "calls" && (
+        <motion.section
+          id="calls"
+          initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.78, ease: EASE }}
+          className="glass-panel rounded-2xl p-5"
+        >
+          <AdminCalls />
+        </motion.section>
+      )}
 
       {section === "creators" && <CreatorsView />}
 
