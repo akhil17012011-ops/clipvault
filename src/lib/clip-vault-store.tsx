@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  countedViews,
   earnedOf,
   type AccountStats,
   type AdminUser,
@@ -114,6 +115,15 @@ interface ClipVaultContextValue {
     /** False when the lookup was refused, so no bio could be read. */
     bioRead: boolean;
   }>;
+  /**
+   * Re-read one connected account's follower and post count from its platform.
+   *
+   * Only the row is named — the server reads the handle, the platform and the
+   * ownership check from the database itself. Used by the live follower
+   * poller; the counts it writes are ordinary reactive rows, so everything
+   * that shows a follower number updates from the same write.
+   */
+  refreshAccountStats: (id: string) => Promise<void>;
   removeAccount: (id: string) => Promise<void>;
 
   toggleJoinCampaign: (id: string) => Promise<void>;
@@ -256,6 +266,7 @@ type SubmissionRow = {
   platformOk: boolean;
   metrics?: ClipMetrics;
   views: number;
+  viewsConfirmed?: boolean;
   status: Submission["status"];
   submittedAt: number;
   reviewNote?: string;
@@ -274,6 +285,8 @@ const toSubmission = (row: SubmissionRow, mine: boolean): Submission => ({
   platformOk: row.platformOk,
   metrics: row.metrics,
   views: row.views,
+  /* Absent means never verified, which is worth zero — the same as false. */
+  viewsConfirmed: row.viewsConfirmed ?? false,
   status: row.status,
   submittedAt: row.submittedAt,
   reviewNote: row.reviewNote,
@@ -542,6 +555,18 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
     [convex, rawAccounts],
   );
 
+  const refreshAccountStats = useCallback(
+    async (id: string) => {
+      /* Deliberately not reading the row out of `rawAccounts` first: the
+         server checks that this caller owns the account anyway, and a stable
+         callback keeps the 2-second poller from restarting on every render. */
+      await convex.action(api.accounts.refreshStats, {
+        accountId: accountId(id),
+      });
+    },
+    [convex],
+  );
+
   const removeAccount = useCallback(
     async (id: string) => {
       await removeAccountMutation({ accountId: accountId(id) });
@@ -679,6 +704,7 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       allSubmissions,
       addAccount,
       verifyAccount,
+      refreshAccountStats,
       removeAccount,
       toggleJoinCampaign,
       submitClip,
@@ -716,6 +742,7 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       allSubmissions,
       addAccount,
       verifyAccount,
+      refreshAccountStats,
       removeAccount,
       toggleJoinCampaign,
       submitClip,
@@ -745,7 +772,15 @@ export function useCreatorStats() {
   const { submissions, campaigns } = useClipVault();
   return useMemo(() => {
     const mine = submissions.filter((s) => s.mine && s.status !== "rejected");
-    const totalViews = mine.reduce((sum, s) => sum + s.views, 0);
+    /* Two different numbers, and the difference matters. `totalViews` is what
+       a creator can actually bank: only clips an operator has verified count.
+       `awaitingViews` is the view count sitting on clips still waiting for
+       that check — real reach, but not yet worth anything. Collapsing them
+       into one figure would promise money the server has not released. */
+    const totalViews = mine.reduce((sum, s) => sum + countedViews(s), 0);
+    const awaitingViews = mine
+      .filter((s) => !s.viewsConfirmed)
+      .reduce((sum, s) => sum + s.views, 0);
     const totalEarned = mine.reduce(
       (sum, s) => sum + earnedOf(s, campaigns),
       0,
@@ -759,6 +794,8 @@ export function useCreatorStats() {
     return {
       mine,
       totalViews,
+      awaitingViews,
+      awaitingClips: mine.filter((s) => !s.viewsConfirmed).length,
       totalEarned,
       paidOut,
       pending: Math.max(0, totalEarned - paidOut),

@@ -17,6 +17,22 @@ function earnedCents(views: number, ratePer1k: number, minViews: number) {
 }
 
 /**
+ * The views that count.
+ *
+ * A view count straight off a creator's link is a claim, not a measurement:
+ * anyone can paste a number. Views only become real once an operator has
+ * confirmed the count, so an unconfirmed clip contributes nothing here — not to
+ * a payout, not to a total, not to a leaderboard. Confirming the count is what
+ * releases the money.
+ */
+function countedViews(submission: {
+  views: number;
+  viewsConfirmed?: boolean;
+}): number {
+  return submission.viewsConfirmed ? submission.views : 0;
+}
+
+/**
  * Clips creators submit to campaigns.
  *
  * The client runs a scan to give fast feedback, but every rule is re-checked
@@ -276,9 +292,17 @@ export const review = mutation({
 
     /* Approval is what turns a clip into money: the balance is credited here,
        in the same transaction as the review, so a creator can never have an
-       approved clip that was not paid for. */
+       approved clip that was not paid for.
+
+       Only a *verified* count pays. Approving a clip whose number nobody has
+       checked would pay out against a claim, so an operator sets the count
+       first (or does it straight after) and the difference is released then. */
     const creditedCents = campaign
-      ? earnedCents(submission.views, campaign.ratePer1k, campaign.minViews)
+      ? earnedCents(
+          countedViews(submission),
+          campaign.ratePer1k,
+          campaign.minViews,
+        )
       : 0;
     if (creditedCents > 0) {
       await ctx.runMutation(internal.payouts.creditEarnings, {
@@ -306,7 +330,9 @@ export const review = mutation({
             .filter(Boolean)
             .join(" ")
         : args.note?.trim() ||
-          "Your clip is approved. It starts earning once it passes the campaign's view threshold.",
+          (submission.viewsConfirmed
+            ? "Your clip is approved. It starts earning once it passes the campaign's view threshold."
+            : "Your clip is approved. An operator still has to confirm the real view count — the money follows the verified number, not the one from the link."),
       link: "/dashboard/clips",
     });
 
@@ -349,6 +375,7 @@ export const confirmViews = mutation({
     });
 
     const campaign = await ctx.db.get(submission.campaignId);
+    let releasedCents = 0;
 
     /* A clip that was already approved, and that now measures higher than it
        did at review, earns the difference. Money only ever moves upwards here. */
@@ -364,17 +391,20 @@ export const confirmViews = mutation({
         campaign.minViews,
       );
       const wasWorth = earnedCents(
-        submission.views,
+        /* Before this confirmation the clip was worth nothing, because an
+           unverified number is not a measurement. */
+        countedViews(submission),
         campaign.ratePer1k,
         campaign.minViews,
       );
       const delta = nowWorth - (alreadyPaid ? alreadyPaid.amountCents : wasWorth);
       if (delta > 0) {
+        releasedCents = delta;
         await ctx.runMutation(internal.payouts.creditTopUp, {
           userId: submission.userId,
           campaignId: submission.campaignId,
           amountCents: delta,
-          reason: `View count corrected for ${campaign.title}`,
+          reason: `View count verified for ${campaign.title}`,
         });
         await ctx.db.patch(campaign._id, {
           spent: Math.round((campaign.spent + delta / 100) * 100) / 100,
@@ -384,8 +414,15 @@ export const confirmViews = mutation({
 
     await ctx.runMutation(internal.messages.notify, {
       userId: submission.userId,
-      title: `View count updated for ${campaign?.title ?? "your clip"}`,
-      body: `Your clip is now recorded at ${Math.round(args.views).toLocaleString("en-US")} views.`,
+      title: `Views verified for ${campaign?.title ?? "your clip"}`,
+      body: `Your clip is now recorded at ${Math.round(args.views).toLocaleString(
+        "en-US",
+      )} verified views.${
+        releasedCents > 0
+          ? ` $${(releasedCents / 100).toFixed(2)} has been added to your balance.`
+          : ""
+      }`,
+      link: "/dashboard/clips",
     });
     return true;
   },

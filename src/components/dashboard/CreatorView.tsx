@@ -308,9 +308,15 @@ export function CreatorView({
         />
         <StatCard
           icon={Eye}
-          label="Views tracked"
+          label="Views counted"
           value={fmtViews(stats.totalViews)}
-          sub={`${fmtFull(stats.totalViews)} verified views`}
+          sub={
+            stats.awaitingViews > 0
+              ? `${fmtFull(stats.awaitingViews)} on ${stats.awaitingClips} clip${
+                  stats.awaitingClips === 1 ? "" : "s"
+                } awaiting verification`
+              : `${fmtFull(stats.totalViews)} verified views`
+          }
           meter={{
             value: Math.min(1, stats.totalViews / 1_000_000),
             caption: `${fmtFull(stats.totalViews)} of 1M`,
@@ -514,6 +520,10 @@ export function CreatorView({
                         campaign !== undefined &&
                         submission.views < campaign.minViews &&
                         submission.status !== "rejected";
+                      /* The count on the clip and the count that earns are two
+                         different things until an operator checks it. Both are
+                         shown, and the unverified one is never dressed up as
+                         money. */
                       return (
                         <TableRow key={submission.id}>
                           <TableCell>
@@ -549,15 +559,28 @@ export function CreatorView({
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <span className="font-mono text-[13px] font-semibold">
+                            <span
+                              className={`font-mono text-[13px] font-semibold ${
+                                submission.viewsConfirmed
+                                  ? ""
+                                  : "text-muted-foreground"
+                              }`}
+                            >
                               {fmtFull(submission.views)}
                             </span>
                             {submission.status === "active" && (
                               <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-neon align-middle live-dot text-neon" />
                             )}
-                            {submission.metrics && submission.status === "pending" && (
-                              <span className="block text-[10.5px] text-muted-foreground">
-                                {fmtFull(submission.metrics.likes)} likes
+                            {submission.viewsConfirmed ? (
+                              submission.metrics &&
+                              submission.status === "pending" && (
+                                <span className="block text-[10.5px] text-muted-foreground">
+                                  {fmtFull(submission.metrics.likes)} likes
+                                </span>
+                              )
+                            ) : (
+                              <span className="mt-0.5 block text-[10px] font-semibold text-amber-500/90 dark:text-amber-300/90">
+                                awaiting verification
                               </span>
                             )}
                           </TableCell>
@@ -572,7 +595,7 @@ export function CreatorView({
                             {submission.status === "pending" && (
                               <span className="mt-1 block text-[10.5px] text-muted-foreground">
                                 {campaign && earned > 0
-                                  ? `Pays ${fmtMoney(earned)} once approved`
+                                  ? `Pays ${fmtMoney(earned)} once views are verified`
                                   : "Admin checking"}
                               </span>
                             )}
@@ -585,12 +608,12 @@ export function CreatorView({
                                 <>
                                   {fmtMoney(earned, true)}
                                   <span className="mt-0.5 block text-[10.5px] font-medium text-muted-foreground">
-                                    on approval
+                                    once views are verified
                                   </span>
                                 </>
                               ) : (
                                 <span className="text-[11px] font-medium text-muted-foreground">
-                                  on approval
+                                  once views are verified
                                 </span>
                               )
                             ) : qualifying ? (

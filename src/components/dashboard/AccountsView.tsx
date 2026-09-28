@@ -11,6 +11,7 @@ import {
   type Platform,
   type Submission,
 } from "@/lib/clip-vault-data";
+import { useLiveFollowers } from "@/lib/live-followers";
 import { motion } from "framer-motion";
 import {
   BadgeCheck,
@@ -21,7 +22,7 @@ import {
   Trash2,
   TriangleAlert,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   accounts: LinkedAccount[];
@@ -62,8 +63,26 @@ export function AccountsView({
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  /* Follower counts are re-read from the platforms every couple of seconds
+     while this page is open, so the numbers here are the platform's current
+     ones rather than whatever was true when the bio was verified. */
+  const { syncedAt } = useLiveFollowers(accounts);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const connected = accounts.filter((a) => a.status === "connected");
   const pending = accounts.filter((a) => a.status !== "connected");
+
+  const liveNote =
+    connected.length === 0
+      ? null
+      : syncedAt == null
+        ? "Reading live…"
+        : `Live · read ${Math.max(0, Math.round((now - syncedAt) / 1000))}s ago`;
+
   const followers = connected.reduce(
     (sum, a) => sum + (a.followers ?? 0),
     0,
@@ -118,10 +137,14 @@ export function AccountsView({
 
         <dl className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {[
-            { label: "Verified", value: `${connected.length}` },
-            { label: "Followers", value: fmtViews(followers) },
-            { label: "Clips", value: fmtFull(clipCount) },
-            { label: "Views", value: fmtViews(views) },
+            { label: "Verified", value: `${connected.length}`, hint: null },
+            {
+              label: "Followers",
+              value: fmtViews(followers),
+              hint: liveNote,
+            },
+            { label: "Clips", value: fmtFull(clipCount), hint: null },
+            { label: "Views", value: fmtViews(views), hint: null },
           ].map((item) => (
             <div
               key={item.label}
@@ -133,6 +156,12 @@ export function AccountsView({
               <dd className="mt-1 font-mono text-[17px] font-extrabold tracking-tight">
                 {item.value}
               </dd>
+              {item.hint && (
+                <p className="mt-1 flex items-center gap-1.5 text-[10px] font-semibold text-neon">
+                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon" />
+                  {item.hint}
+                </p>
+              )}
             </div>
           ))}
         </dl>
@@ -261,7 +290,9 @@ export function AccountsView({
                       <p className="truncate text-[11px] text-muted-foreground">
                         {[
                           account.followers != null
-                            ? `${fmtViews(account.followers)} followers`
+                            ? `${fmtViews(account.followers)} followers${
+                                liveNote ? " · live" : ""
+                              }`
                             : null,
                           account.posts != null
                             ? `${fmtFull(account.posts)} posts`

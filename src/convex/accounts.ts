@@ -115,16 +115,20 @@ function totalsFor(
     views: number;
     status: string;
     campaignId: unknown;
+    viewsConfirmed?: boolean;
   }>,
   campaigns: Map<unknown, { minViews: number; ratePer1k: number }>,
 ): { clips: number; views: number; earned: number } {
   let views = 0;
   let earned = 0;
   for (const submission of submissions) {
+    if (submission.status === "rejected") continue;
+    /* Only a confirmed count is real. An unverified number is the creator's
+       claim, so it counts for nothing — here or in a payout. */
+    if (!submission.viewsConfirmed) continue;
     views += submission.views;
     const campaign = campaigns.get(submission.campaignId);
     if (!campaign) continue;
-    if (submission.status === "rejected") continue;
     if (submission.views < campaign.minViews) continue;
     earned += (submission.views / 1000) * campaign.ratePer1k;
   }
@@ -312,6 +316,119 @@ type CheckResult = {
  * bio. The profile is read on the server, and the code has to genuinely appear
  * there — the client cannot assert that a verification happened.
  */
+/**
+ * Re-reads the public profile of an account and records a fresh follower and
+ * post count.
+ *
+ * Follower counts move, so a number captured when the bio was verified is
+ * stale within days. This is what keeps it live: it asks the platform again and
+ * writes down only what the platform actually published. A platform that
+ * refuses the lookup leaves the previous numbers exactly as they were and says
+ * so — a refresh must never replace a real count with a guess, nor wipe it
+ * because one call failed.
+ *
+ * Callers are their own owner, or an operator looking at that creator.
+ */
+export const refreshStats = action({
+  args: { accountId: v.id("connectedAccounts") },
+  handler: async (ctx, args): Promise<{
+    ok: boolean;
+    followers: number | null;
+    posts: number | null;
+    reason?: string;
+  }> => {
+    /* An action cannot read the database, and the decision about whose account
+       this is has to be made from stored rows — never from the browser. The
+       read and the ownership check therefore happen together, in an internal
+       query, the same way `verifyBio` does it. */
+    const account = await ctx.runQuery(internal.accounts.getForStats, {
+      accountId: args.accountId,
+    });
+    if (!account) {
+      return {
+        ok: false,
+        followers: null,
+        posts: null,
+        reason: "That connection request is no longer available to you.",
+      };
+    }
+
+    const profile = await fetchProfile(account.platform, account.handle);
+    if (!profile.ok) {
+      /* Nothing is written back: the count we already hold is the best number
+         we have, and one refused lookup must never turn a real follower
+         count into a zero. */
+      return {
+        ok: false,
+        followers: account.followers ?? null,
+        posts: account.posts ?? null,
+        reason: profile.reason,
+      };
+    }
+
+    /* Only the fields the platform actually published are passed on. A field
+       it did not publish is simply omitted, and `setStats` leaves the stored
+       value untouched. */
+    await ctx.runMutation(internal.accounts.setStats, {
+      accountId: account._id,
+      ...(profile.followers !== undefined ? { followers: profile.followers } : {}),
+      ...(profile.posts !== undefined ? { posts: profile.posts } : {}),
+    });
+    return {
+      ok: true,
+      followers: profile.followers ?? account.followers ?? null,
+      posts: profile.posts ?? account.posts ?? null,
+    };
+  },
+});
+
+/**
+ * Reads a connection row for a refresh, but only for the account that owns
+ * it. "Gone" and "not yours" both return null, so this cannot be used to
+ * discover which account ids exist.
+ */
+export const getForStats = internalQuery({
+  args: { accountId: v.id("connectedAccounts") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const account = await ctx.db.get(args.accountId);
+    if (!account) return null;
+    if (account.userId !== user._id && user.role !== "admin") return null;
+    return {
+      _id: account._id,
+      platform: account.platform,
+      handle: account.handle,
+      followers: account.followers,
+      posts: account.posts,
+    };
+  },
+});
+
+/**
+ * Writes a refreshed count.
+ *
+ * Both fields are optional on purpose. A refresh that could not read one of
+ * them omits that field and the stored number survives; only a field the
+ * platform genuinely published is written back. Nothing here ever writes a
+ * zero over a real count, and nothing is written at all when the lookup failed.
+ */
+export const setStats = internalMutation({
+  args: {
+    accountId: v.id("connectedAccounts"),
+    followers: v.optional(v.number()),
+    posts: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const account = await ctx.db.get(args.accountId);
+    if (!account) return;
+    await ctx.db.patch(args.accountId, {
+      followers: args.followers ?? account.followers,
+      posts: args.posts ?? account.posts,
+      statsRefreshedAt: Date.now(),
+    });
+  },
+});
+
 /**
  * Reads the stored verification inputs for a row, but only for the account
  * that owns it. Both "gone" and "not yours" return null so a caller cannot use

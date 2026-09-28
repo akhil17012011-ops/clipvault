@@ -341,6 +341,15 @@ export interface Submission {
   /** Snapshot grabbed from the source platform, when it could be read. */
   metrics?: ClipMetrics;
   views: number;
+  /**
+   * Whether an operator has checked this view count against the clip.
+   *
+   * Until they have, the number is a claim, not a result: it is worth nothing
+   * in payouts, on the leaderboard or in any total. This is the same gate the
+   * server applies, so what a creator is shown can never promise more than
+   * `submissions.confirmViews` actually paid.
+   */
+  viewsConfirmed?: boolean;
   status: SubmissionStatus;
   submittedAt: number;
   /** Why the reviewer declined it, shown back to the creator. */
@@ -519,14 +528,27 @@ export const campaignById = (
 ): Campaign | undefined => campaigns.find((c) => c.id === id);
 
 /** Earnings accrued by a clip at its current view count. */
+/**
+ * The views of a clip that are actually worth something.
+ *
+ * A clip's view count only starts counting once an operator has verified it,
+ * so an unverified count is worth zero everywhere — not "provisional", zero.
+ * This mirrors `countedViews` in `convex/submissions.ts` exactly; if the two
+ * ever drift, the page starts promising money the server will not pay.
+ */
+export function countedViews(submission: Submission): number {
+  return submission.viewsConfirmed ? submission.views : 0;
+}
+
 export function earnedOf(
   submission: Submission,
   campaigns: Campaign[],
 ): number {
   const campaign = campaignById(campaigns, submission.campaignId);
   if (!campaign || submission.status === "rejected") return 0;
-  if (submission.views < campaign.minViews) return 0;
-  return (submission.views / 1000) * campaign.ratePer1k;
+  const views = countedViews(submission);
+  if (views < campaign.minViews) return 0;
+  return (views / 1000) * campaign.ratePer1k;
 }
 
 /**

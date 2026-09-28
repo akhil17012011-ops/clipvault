@@ -178,6 +178,8 @@ const schema = defineSchema(
        */
       followers: v.optional(v.number()),
       posts: v.optional(v.number()),
+      /** When the follower/post counts were last re-read from the platform. */
+      statsRefreshedAt: v.optional(v.number()),
       createdAt: v.number(),
     })
       .index("by_user", ["userId"])

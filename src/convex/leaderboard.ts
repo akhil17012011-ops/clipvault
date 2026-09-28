@@ -33,14 +33,16 @@ export const board = query({
       const clips = submissions.filter((s) => s.userId === user._id);
       const handles = accounts.filter((a) => a.userId === user._id);
 
-      /* Only approved, threshold-clearing clips count, exactly as they do for
-         a payout — a leaderboard that counts rejected clips would rank people
-         on money they never earned. */
+      /* Only approved, *verified* clips count, exactly as they do for a payout.
+         A view count nobody has confirmed is a claim, so it is worth nothing
+         here either — otherwise the board would rank people on numbers they
+         typed in. */
       let views = 0;
       let earningCents = 0;
       let bestViews = 0;
       for (const clip of clips) {
         if (clip.status === "rejected") continue;
+        if (!clip.viewsConfirmed) continue;
         const campaign = rateById.get(clip.campaignId);
         if (!campaign) continue;
         views += clip.views;
@@ -128,6 +130,8 @@ export const userDetail = query({
         let earnedCents = 0;
         for (const clip of clips) {
           if (clip.status === "rejected") continue;
+          /* Unverified counts are a claim; they do not count here either. */
+          if (!clip.viewsConfirmed) continue;
           views += clip.views;
           const campaign = byId.get(clip.campaignId);
           if (!campaign || clip.views < campaign.minViews) continue;
@@ -151,7 +155,9 @@ export const userDetail = query({
       })
       .sort((a, b) => b.views - a.views);
 
-    const live = submissions.filter((s) => s.status !== "rejected");
+    const live = submissions.filter(
+      (s) => s.status !== "rejected" && s.viewsConfirmed,
+    );
     const totalViews = live.reduce((sum, s) => sum + s.views, 0);
     const best = live.reduce(
       (acc, s) => (s.views > (acc?.views ?? 0) ? s : acc),
@@ -169,7 +175,8 @@ export const userDetail = query({
       accounts: accountRows,
       totals: {
         accounts: accountRows.filter((a) => a.status === "connected").length,
-        clips: live.length,
+        clips: submissions.filter((s) => s.status !== "rejected").length,
+        verifiedClips: live.length,
         views: totalViews,
         avgViews: live.length > 0 ? Math.round(totalViews / live.length) : 0,
         bestViews: best?.views ?? 0,
