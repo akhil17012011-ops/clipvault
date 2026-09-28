@@ -25,13 +25,13 @@ import {
   fmtMoney,
   fmtViews,
   shortMonth,
-  type AccountStats,
-  type LinkedAccount,
+  type Platform,
 } from "@/lib/clip-vault-data";
 import { useClipVault, useCreatorStats } from "@/lib/clip-vault-store";
 import { EASE } from "@/lib/motion";
 import { MessagesInbox } from "@/components/dashboard/MessagesInbox";
-import { BookCallView } from "@/components/dashboard/BookCallView";
+import { RequestCampaignView } from "@/components/dashboard/RequestCampaignView";
+import { AccountsView } from "@/components/dashboard/AccountsView";
 import {
   PayoutHistory,
   PayoutRequestCard,
@@ -48,7 +48,6 @@ import {
   Megaphone,
   ShieldAlert,
   ShieldCheck,
-  Trash2,
   TrendingUp,
   Upload,
   Wallet,
@@ -62,7 +61,7 @@ export type CreatorSection =
   | "clips"
   | "payments"
   | "accounts"
-  | "calls"
+  | "request"
   | "messages";
 
 export function CreatorView({
@@ -71,7 +70,7 @@ export function CreatorView({
   onSubmitClip,
 }: {
   section: CreatorSection;
-  onConnect: () => void;
+  onConnect: (platform?: Platform) => void;
   onSubmitClip: () => void;
 }) {
   const {
@@ -142,11 +141,11 @@ export function CreatorView({
       title: "Accounts",
       description:
         "Bio-verified handles that Clip Vault tracks views back to you for.",
-    },    calls: {
+    },    request: {
       kicker: "Brands",
-      title: "Book a call",
+      title: "Request a campaign",
       description:
-        "30 minutes with the Clip Vault team about a campaign, and where your request stands.",
+        "Describe the campaign, the budget and the files — and see whether it was approved.",
     },
     messages: {
       kicker: "Inbox",
@@ -214,7 +213,7 @@ export function CreatorView({
             <Button
               variant="outline"
               className="glass-chip gap-1.5 text-foreground hover:border-white/20 hover:bg-white/[0.07]"
-              onClick={onConnect}
+              onClick={() => onConnect()}
             >
               <Link2 className="h-4 w-4" />
               Connect account
@@ -244,7 +243,7 @@ export function CreatorView({
           <Button
             size="sm"
             className="shrink-0 bg-amber-300 text-zinc-900 hover:bg-amber-200"
-            onClick={onConnect}
+            onClick={() => onConnect()}
           >
             Connect now
           </Button>
@@ -557,65 +556,19 @@ export function CreatorView({
           </motion.section>
       )}
 
-      {section === "calls" && <BookCallView />}
+      {section === "request" && <RequestCampaignView />}
 
       {section === "messages" && <MessagesInbox />}
 
       {section === "accounts" && (
-          <motion.section
-            id="accounts"
-            initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.78, ease: EASE }}
-            className="glass-panel scroll-mt-24 rounded-2xl p-5"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
-                  <ShieldCheck className="h-4 w-4" />
-                </span>
-                <h2 className="text-[15px] font-bold tracking-tight">
-                  My connected accounts
-                </h2>
-              </div>
-              <span className="glass-chip rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-                {accounts.filter((a) => a.status === "connected").length}/
-                {accounts.length || 0} verified
-              </span>
-            </div>
-
-            {accounts.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-dashed border-black/12 dark:border-white/15 px-4 py-6 text-center">
-                <p className="text-[13px] font-semibold text-foreground/85">
-                  Nothing connected yet
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Verify a handle to start tracking views.
-                </p>
-              </div>
-            ) : (
-              <ul className="mt-4 space-y-2.5">
-                {accounts.map((account) => (
-                  <AccountRow
-                    key={account.id}
-                    account={account}
-                    stats={accountStats.find((s) => s.accountId === account.id)}
-                    onRemove={() => removeAccount(account.id)}
-                  />
-                ))}
-              </ul>
-            )}
-
-            <Button
-              variant="outline"
-              className="mt-4 w-full glass-chip gap-1.5 hover:border-white/20"
-              onClick={onConnect}
-            >
-              <Link2 className="h-4 w-4" />
-              Connect another account
-            </Button>
-          </motion.section>
+        <div id="accounts" className="scroll-mt-24">
+          <AccountsView
+            accounts={accounts}
+            stats={accountStats}
+            onConnect={onConnect}
+            onRemove={removeAccount}
+          />
+        </div>
       )}
 
       {section === "payments" && (
@@ -735,70 +688,6 @@ export function CreatorView({
           </motion.section>
       )}
     </div>
-  );
-}
-
-function AccountRow({
-  account,
-  stats,
-  onRemove,
-}: {
-  account: LinkedAccount;
-  stats?: AccountStats;
-  onRemove: () => void;
-}) {
-  const connected = account.status === "connected";
-  /* Reach is only shown when the platform really published it. A placeholder
-     zero would read as "nobody follows you" rather than "we could not see". */
-  const reach =
-    connected && (account.followers != null || account.posts != null)
-      ? [
-          account.followers != null
-            ? `${fmtViews(account.followers)} followers`
-            : null,
-          account.posts != null ? `${fmtFull(account.posts)} posts` : null,
-        ].filter(Boolean)
-      : [];
-  const output =
-    connected && stats && stats.clips > 0
-      ? `${fmtFull(stats.clips)} ${stats.clips === 1 ? "clip" : "clips"} · ${fmtViews(stats.views)} views`
-      : null;
-  return (
-    <li className="flex items-center gap-3 glass-chip rounded-xl px-3 py-2.5">
-      <PlatformChip platform={account.platform} size="sm" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold">@{account.handle}</p>
-        {connected ? (
-          reach.length > 0 || output ? (
-            <p className="truncate text-[11px] text-muted-foreground">
-              {[...reach, output].filter(Boolean).join(" · ")}
-            </p>
-          ) : (
-            <p className="truncate text-[11px] text-muted-foreground">
-              Connected — no clips published yet
-            </p>
-          )
-        ) : (
-          <p className="truncate font-mono text-[11px] text-muted-foreground">
-            {account.code}
-          </p>
-        )}
-      </div>
-      {connected && stats && stats.earned > 0 ? (
-        <span className="shrink-0 font-mono text-[13px] font-bold text-neon">
-          {fmtMoney(stats.earned)}
-        </span>
-      ) : null}
-      <StatusBadge status={account.status} />
-      <button
-        type="button"
-        onClick={onRemove}
-        title="Disconnect account"
-        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-black/[0.03] dark:bg-white/[0.05] dark:hover:bg-white/[0.06] hover:text-red-600 dark:hover:text-red-500 dark:text-red-400"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
-    </li>
   );
 }
 

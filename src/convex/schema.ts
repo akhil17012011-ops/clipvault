@@ -292,29 +292,55 @@ const schema = defineSchema(
       .index("by_requested", ["requestedAt"]),
 
     /**
-     * A brand asking for a 30-minute call with Clip Vault.
+     * A brand asking for a campaign to be set up.
      *
-     * A brand never gets a campaign from the marketing site: they sign in, ask
-     * for a slot, and an operator approves or declines it from the console.
-     * Nothing is confirmed until it is `approved`, which is why a slot is only
-     * taken off the list once someone approves it.
+     * A brand never creates a campaign directly from the marketing site: they
+     * sign in, fill in the campaign (name, description, budget, rate, platforms
+     * and the photos/videos/links clippers should work from), and an operator
+     * approves or declines it from the console. Approving it creates the real
+     * `campaigns` row, so what creators join is exactly what the brand asked
+     * for.
      */
-    callBookings: defineTable({
+    campaignRequests: defineTable({
       userId: v.id("users"),
       /** Snapshotted so the queue still reads correctly if the user is deleted. */
       brandName: v.string(),
       brandEmail: v.string(),
-      company: v.optional(v.string()),
-      /** What the brand wants to cover on the call. */
-      topic: v.string(),
+      /** Campaign name, as the brand wrote it. */
+      title: v.string(),
+      /** The brief: what the campaign is, who it is for, what a clip should say. */
+      description: v.string(),
+      /** Total budget in whole US dollars, as the brand wrote it. */
+      budgetUsd: v.number(),
+      /** US dollars offered per 1,000 verified views. */
+      ratePer1k: v.number(),
+      /** Views a single clip needs before it starts earning. */
+      minViews: v.number(),
+      /** How long the campaign should run, in days. */
+      days: v.number(),
+      /** Where clips may be published. */
+      platforms: v.array(platformValidator),
+      /** Photos, videos and links the brand shared, for clippers to work from. */
+      assets: v.array(
+        v.object({
+          label: v.string(),
+          url: v.string(),
+          kind: v.union(
+            v.literal("image"),
+            v.literal("video"),
+            v.literal("link"),
+          ),
+        }),
+      ),
+      /** Anything else the brand wants the operator to know. */
       note: v.optional(v.string()),
-      /** When the call starts, on a 30-minute boundary. */
-      startsAt: v.number(),
       status: v.union(
         v.literal("pending"),
         v.literal("approved"),
         v.literal("declined"),
       ),
+      /** The campaign an approval created, so the request and the campaign agree. */
+      campaignId: v.optional(v.id("campaigns")),
       requestedAt: v.number(),
       decidedAt: v.optional(v.number()),
       decidedBy: v.optional(v.id("users")),
@@ -322,8 +348,7 @@ const schema = defineSchema(
       reason: v.optional(v.string()),
     })
       .index("by_user", ["userId"])
-      .index("by_status", ["status"])
-      .index("by_slot", ["startsAt"]),
+      .index("by_status", ["status"]),
 
     // A clip a creator submitted to a campaign.
     submissions: defineTable({

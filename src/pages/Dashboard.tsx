@@ -13,6 +13,7 @@ import { SECTION_TRANSITION } from "@/lib/motion";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import type { Platform } from "@/lib/clip-vault-data";
 
 const CREATOR_SECTIONS: CreatorSection[] = [
   "overview",
@@ -20,7 +21,7 @@ const CREATOR_SECTIONS: CreatorSection[] = [
   "clips",
   "payments",
   "accounts",
-  "calls",
+  "request",
   "messages",
 ];
 const ADMIN_SECTIONS: AdminSection[] = [
@@ -28,7 +29,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
   "creators",
   "users",
   "messages",
-  "calls",
+  "requests",
   "payouts",
   "invoices",
   "campaigns",
@@ -43,6 +44,8 @@ export default function Dashboard() {
   const { role } = useAuth();
   const view: DashboardView = role;
   const [modal, setModal] = useState<ModalKind>(null);
+  /** Which platform the connect wizard opens on, so "add another" is unambiguous. */
+  const [connectPlatform, setConnectPlatform] = useState<Platform>("tiktok");
   const [menuOpen, setMenuOpen] = useState(false);
   const [onboardingSkipped, setOnboardingSkipped] = useState(false);
   const onboardedOnce = useRef(accounts.length > 0);
@@ -122,7 +125,10 @@ export default function Dashboard() {
               {view === "creator" ? (
                 <CreatorView
                   section={section as CreatorSection}
-                  onConnect={() => setModal("connect")}
+                  onConnect={(platform) => {
+                    if (platform) setConnectPlatform(platform);
+                    setModal("connect");
+                  }}
                   onSubmitClip={() => setModal("submit")}
                 />
               ) : (
@@ -142,7 +148,12 @@ export default function Dashboard() {
       </div>
 
       {modal === "connect" && (
-        <ConnectAccountModal open onOpenChange={handleConnectOpenChange} />
+        <ConnectAccountModal
+          key={connectPlatform}
+          open
+          initialPlatform={connectPlatform}
+          onOpenChange={handleConnectOpenChange}
+        />
       )}
       {modal === "submit" && (
         <SubmitClipModal

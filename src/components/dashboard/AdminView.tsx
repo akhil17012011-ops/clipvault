@@ -8,7 +8,7 @@ import {
 import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
 import { AdminMessages } from "@/components/dashboard/AdminMessages";
 import { AdminPayouts } from "@/components/dashboard/AdminPayouts";
-import { AdminCalls } from "@/components/dashboard/AdminCalls";
+import { AdminCampaignRequests } from "@/components/dashboard/AdminCampaignRequests";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
@@ -86,7 +86,7 @@ export type AdminSection =
   | "creators"
   | "users"
   | "messages"
-  | "calls"
+  | "requests"
   | "payouts"
   | "invoices"
   | "campaigns"
@@ -206,11 +206,11 @@ export function AdminView({
       description:
         "Send one creator a note, or announce something to everyone.",
     },
-    calls: {
-      kicker: "Calls",
-      title: "Call requests",
+    requests: {
+      kicker: "Brands",
+      title: "Campaign requests",
       description:
-        "Brands that asked for a 30-minute call — approve the slot or decline it with a reason.",
+        "Brands asking to run a campaign — approve it to publish, or decline it with a reason.",
     },
     invoices: {
       kicker: "Billing",
@@ -373,16 +373,16 @@ export function AdminView({
 
       {section === "overview" && <ShortcutGrid cards={shortcuts} />}
 
-      {section === "calls" && (
+      {section === "requests" && (
         <motion.section
-          id="calls"
+          id="requests"
           initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.78, ease: EASE }}
           className="glass-panel rounded-2xl p-5"
         >
-          <AdminCalls />
+          <AdminCampaignRequests />
         </motion.section>
       )}
 

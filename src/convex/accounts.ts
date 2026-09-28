@@ -193,7 +193,15 @@ export const listAll = query({
   },
 });
 
-/** Start a connection: stores a freshly generated one-time code. */
+/**
+ * Start a connection: stores a freshly generated one-time code.
+ *
+ * A creator can connect as many accounts as they post from, including several
+ * on the same platform — the handle is what identifies an account, not the
+ * platform. Looking rows up by (user, platform) instead used to hand back the
+ * first account every time a second one was added, so the wizard showed the
+ * old handle and its code, and the new handle could never be connected at all.
+ */
 export const request = mutation({
   args: { platform: PLATFORM, handle: v.string() },
   handler: async (ctx, args) => {
@@ -206,16 +214,20 @@ export const request = mutation({
       );
     }
 
-    const existing = await ctx.db
+    /* One account per (user, platform, handle). The handle is compared in JS
+       rather than in an index because platform handles are case-insensitive,
+       and a creator has a handful of accounts at most. */
+    const mine = await ctx.db
       .query("connectedAccounts")
-      .withIndex("by_user_platform", (q) =>
-        q
-          .eq("userId", user._id)
-          .eq("platform", args.platform),
-      )
-      .unique();
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const existing = mine.find(
+      (row) =>
+        row.platform === args.platform &&
+        row.handle.toLowerCase() === handle.toLowerCase(),
+    );
 
-    /* Already verified — nothing to do. */
+    /* Already connected — nothing to do. */
     if (existing && existing.status === "connected") return existing;
 
     /* Keep the code that is already on the row.

@@ -40,13 +40,16 @@ const INSTRUCTIONS = [
 export function ConnectAccountModal({
   open,
   onOpenChange,
+  initialPlatform = "tiktok",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Opens the wizard on a given platform — the Accounts page adds per platform. */
+  initialPlatform?: Platform;
 }) {
   const { addAccount, verifyAccount } = useClipVault();
   const [step, setStep] = useState<Step>("form");
-  const [platform, setPlatform] = useState<Platform>("tiktok");
+  const [platform, setPlatform] = useState<Platform>(initialPlatform);
   const [handle, setHandle] = useState("");
   const [account, setAccount] = useState<LinkedAccount | null>(null);
   const [copied, setCopied] = useState(false);
@@ -74,6 +77,9 @@ export function ConnectAccountModal({
          A pasted profile link is reduced to its username server-side, so the
          creator can paste straight from their bio. */
       const created = await addAccount(platform, clean);
+      /* The server keeps an account that is already being verified, so opening
+         the wizard again on the same handle hands back the same row and code
+         rather than invalidating what is already pasted into a bio. */
       setAccount(created);
       setStep("code");
     } catch (err) {
@@ -161,7 +167,8 @@ export function ConnectAccountModal({
                   Add the handle you post from — or paste your profile link and
                   we'll read the username out of it. Clip Vault generates a
                   one-time code you drop into your bio, then reads your public
-                  profile to confirm it's really there.
+                  profile to confirm it's really there. Connect as many accounts
+                  as you post from, on any platform.
                 </DialogDescription>
               </DialogHeader>
 

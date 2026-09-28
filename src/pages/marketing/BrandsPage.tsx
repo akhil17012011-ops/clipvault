@@ -17,9 +17,9 @@ import {
 import { Link } from "react-router";
 
 const CALL_POINTS = [
-  "Thirty minutes, one call, and a written summary of what you agreed to.",
-  "We tell you what a realistic view count costs before you commit a budget.",
-  "You pick the slot; an operator confirms or declines it, and you see which.",
+  "One form: campaign name, description, budget, rate, platforms and your files.",
+  "An operator reads it, sets up the rate and rules, and approves or declines it here.",
+  "Approved means live — verified creators can join and clip it the same day.",
 ];
 
 const SETUP = [
@@ -192,14 +192,14 @@ export default function BrandsPage() {
                 <PhoneCall className="h-5 w-5" />
               </span>
               <h2 className="text-2xl font-extrabold tracking-[-0.03em] sm:text-3xl">
-                Book a 30-minute call
+                Request your campaign
               </h2>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Campaigns are set up with a short call rather than a form nobody
-              reads. Sign in, pick a slot that suits you, and tell us what you
-              want to launch — we come back with a rate, a creator list and a
-              realistic view count for your budget.
+              There is no brand admin panel to learn. Sign in, describe the
+              campaign you want — name, description, budget, the platforms, and
+              the photos, videos or links clippers should work from — and an
+              operator sets it up and comes back to you on the same page.
             </p>
             <ul className="mt-6 space-y-3">
               {CALL_POINTS.map((point) => (
@@ -211,14 +211,14 @@ export default function BrandsPage() {
             </ul>
             <p className="mt-6 text-sm text-muted-foreground">
               You will see whether your request was approved or declined on the
-              same page — nothing is booked until an operator confirms it.
+              same page — nothing goes live until an operator approves it.
             </p>
             <Button
               asChild
               className="liquid glow-primary mt-6 h-11 bg-gradient-to-b from-[#A855F7] to-[#8B3FE2] px-6 hover:from-[#8B6BFF] hover:to-[#6642EE]"
             >
-              <Link to="/auth?returnTo=/dashboard/calls">
-                Book your slot
+              <Link to="/auth?returnTo=/dashboard/request">
+                Request a campaign
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -228,9 +228,9 @@ export default function BrandsPage() {
 
       <MarketingCTA
         title="Launch your first campaign."
-        body="Set a rate, publish the rules and let verified creators do the reach."
-        primaryLabel="Book a 30-minute call"
-        primaryTo="/auth?returnTo=/dashboard/calls"
+        body="Describe the campaign and budget; we set the rate, publish the rules and let verified creators do the reach."
+        primaryLabel="Request a campaign"
+        primaryTo="/auth?returnTo=/dashboard/request"
       />
     </MarketingShell>
   );

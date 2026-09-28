@@ -21,7 +21,6 @@ import {
   Lightbulb,
   LogOut,
   Megaphone,
-  PhoneCall,
   ReceiptText,
   Search,
   ShieldCheck,
@@ -79,9 +78,9 @@ const NAV: Record<DashboardView, NavItem[]> = {
       group: "Manage",
     },
     {
-      to: "/dashboard/calls",
-      label: "Book a call",
-      icon: PhoneCall,
+      to: "/dashboard/request",
+      label: "Request campaign",
+      icon: Megaphone,
       group: "Manage",
     },
     {
@@ -135,9 +134,9 @@ const NAV: Record<DashboardView, NavItem[]> = {
       group: "Manage",
     },
     {
-      to: "/dashboard/calls",
-      label: "Call requests",
-      icon: PhoneCall,
+      to: "/dashboard/requests",
+      label: "Campaign requests",
+      icon: Megaphone,
       group: "Manage",
     },
     {
