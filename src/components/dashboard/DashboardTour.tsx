@@ -16,6 +16,23 @@ import { useAuth } from "@/hooks/use-auth";
 import { TOUR_STEPS } from "@/lib/clip-vault-data";
 
 /**
+ * Where the card sits for each step.
+ *
+ * A tour pinned to one corner stops being read after the first step — the eye
+ * has already looked there. Moving it each time pulls attention back, and it
+ * also means the card is never sitting on top of the thing it is describing.
+ * Corners first, so the centre of the page — where the content is — stays clear.
+ */
+const PLACEMENTS = [
+  "left-4 bottom-5 sm:left-8 sm:bottom-8",
+  "right-4 bottom-5 sm:right-8 sm:bottom-8",
+  "left-4 top-24 sm:left-8 sm:top-28",
+  "right-4 top-24 sm:right-8 sm:top-28",
+  "left-1/2 bottom-5 -translate-x-1/2 sm:bottom-8",
+  "right-4 top-1/2 -translate-y-1/2 sm:right-8",
+] as const;
+
+/**
  * The first-run tour.
  *
  * Six steps in the order the work actually happens, each one taking the user to
@@ -85,14 +102,20 @@ export function DashboardTour({
       {open && current && (
         <motion.div
           key="tour"
-          initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: 16, filter: "blur(8px)" }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed bottom-5 left-1/2 z-50 w-[min(34rem,calc(100vw-2rem))] -translate-x-1/2"
+          /* `layout` is what makes the jump between corners a glide rather than
+             a teleport: the card is the same element throughout, so framer
+             measures the new position and animates the difference. */
+          layout
+          initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: 16, scale: 0.98, filter: "blur(8px)" }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className={`fixed z-50 w-[min(22rem,calc(100vw-2rem))] lg:w-[23rem] ${
+            PLACEMENTS[step % PLACEMENTS.length]
+          }`}
         >
-          <div className="glass-panel overflow-hidden p-0">
-            <div className="flex items-start gap-3.5 p-5">
+          <div className="glass-liquid rounded-3xl">
+            <div className="flex items-start gap-3.5 p-5 pb-4">
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand/30 bg-brand/10 text-brand">
                 {step === 0 ? (
                   <Sparkles className="h-5 w-5" />
@@ -123,10 +146,10 @@ export function DashboardTour({
             </div>
 
             {/* Progress: one dot per step, filled up to where you are. */}
-            <div className="flex items-center gap-1.5 px-5">
-              {STEPS.map((s, i) => (
+            <div className="flex items-center gap-1.5 px-5 pb-1">
+              {STEPS.map((stepItem, i) => (
                 <button
-                  key={s.to}
+                  key={stepItem.to}
                   type="button"
                   onClick={() => goTo(i)}
                   aria-label={`Go to step ${i + 1}`}
