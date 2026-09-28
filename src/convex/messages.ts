@@ -72,6 +72,27 @@ export const markAllRead = mutation({
   },
 });
 
+/**
+ * Removes a notification from the inbox.
+ *
+ * A creator deletes their own; an operator can clear any notification, which
+ * is what makes a mistaken broadcast recoverable. Nothing is softened to
+ * "archived" — the user asked for it to be gone, and leaving it in a hidden
+ * state only moves the problem.
+ */
+export const remove = mutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const message = await ctx.db.get(args.messageId);
+    if (!message) return;
+    if (message.userId !== user._id && user.role !== "admin") {
+      throw new Error("You can only delete your own notifications.");
+    }
+    await ctx.db.delete(args.messageId);
+  },
+});
+
 /** Sends a direct message to a creator. Admin only. */
 export const sendToCreator = mutation({
   args: {

@@ -13,7 +13,6 @@ import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Bell,
   Bug,
   ChevronUp,
   Clapperboard,
@@ -35,7 +34,6 @@ import { EASE, SPRING, SPRING_PILL } from "@/lib/motion";
 import { useQuery } from "convex/react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { toast } from "sonner";
 import type { DashboardView } from "./TopBar";
 
 type NavItem = {
@@ -83,12 +81,6 @@ const NAV: Record<DashboardView, NavItem[]> = {
       to: "/dashboard/request",
       label: "Request campaign",
       icon: Megaphone,
-      group: "Manage",
-    },
-    {
-      to: "/dashboard/messages",
-      label: "Messages",
-      icon: MessageSquare,
       group: "Manage",
     },
   ],
@@ -141,12 +133,6 @@ const NAV: Record<DashboardView, NavItem[]> = {
       to: "/dashboard/invoices",
       label: "Invoices",
       icon: ReceiptText,
-      group: "Manage",
-    },
-    {
-      to: "/dashboard/messages",
-      label: "Messages",
-      icon: MessageSquare,
       group: "Manage",
     },
   ],
@@ -279,20 +265,6 @@ function SidebarBody({
             </span>
           </span>
         </Link>
-        <motion.button
-          type="button"
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.92 }}
-          onClick={() =>
-            toast("No new notifications", {
-              description: "Campaign alerts and payout receipts show up here.",
-            })
-          }
-          className="glass-chip inline-flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:text-[#C9AEFF] lg:h-9 lg:w-9"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-        </motion.button>
       </div>
 
       {/* Quick search — filters the section list */}

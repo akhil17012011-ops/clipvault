@@ -22,7 +22,6 @@ const CREATOR_SECTIONS: CreatorSection[] = [
   "payments",
   "accounts",
   "request",
-  "messages",
 ];
 const ADMIN_SECTIONS: AdminSection[] = [
   "overview",
