@@ -104,7 +104,7 @@ export function RequestCampaignView() {
     }
     setBusy(true);
     try {
-      await submit({
+      const result = await submit({
         brandName: brandName.trim(),
         title: title.trim(),
         description: description.trim(),
@@ -118,6 +118,12 @@ export function RequestCampaignView() {
           .map((a) => ({ label: a.label, url: a.url, kind: a.kind })),
         note: note.trim() || undefined,
       });
+      /* The server answers with the reason as data rather than throwing, so a
+         validation problem shows up as a sentence instead of "Server Error". */
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
       setTitle("");
       setDescription("");
       setBudget("");
@@ -130,8 +136,17 @@ export function RequestCampaignView() {
           "An operator reviews it and you'll see the decision here and in Messages.",
       });
     } catch (err) {
+      /* Convex attaches a request id to its own errors. Showing it turns an
+         unexplained failure into something that can actually be traced. */
+      const requestId =
+        err && typeof err === "object" && "requestId" in err
+          ? String((err as { requestId?: unknown }).requestId ?? "")
+          : "";
       toast.error(
-        err instanceof Error ? err.message : "That didn't work. Try again.",
+        err instanceof Error
+          ? err.message
+          : "We couldn't reach Clip Vault. Check your connection and try again.",
+        requestId ? { description: `Request ID: ${requestId}` } : undefined,
       );
     } finally {
       setBusy(false);

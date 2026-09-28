@@ -149,6 +149,11 @@ export const listAll = query({
  * The money is stored in whole US dollars here and becomes cents only when the
  * approved campaign is created, so a budget can never carry a fraction of a
  * cent that the wallet maths would later have to explain.
+ *
+ * Failures come back as `{ ok: false, error }` rather than being thrown.
+ * Production deployments deliberately do not send the text of a thrown error
+ * back to the browser, which would leave a brand staring at "Server Error" with
+ * no idea what to fix. Returning the reason as data keeps this screen honest.
  */
 export const submit = mutation({
   args: {
@@ -163,72 +168,91 @@ export const submit = mutation({
     assets: v.optional(v.array(ASSET)),
     note: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
+    try {
+      const user = await requireUser(ctx);
 
-    const brand = args.brandName.trim();
-    const title = args.title.trim();
-    const description = args.description.trim();
-    if (brand.length < 2) throw new Error("Which brand is this campaign for?");
-    if (title.length < 3) throw new Error("Give the campaign a name.");
-    if (description.length < 20) {
-      throw new Error(
-        "Describe the campaign in a sentence or two, so we know what to set up.",
-      );
-    }
-    if (title.length > 120) throw new Error("That campaign name is too long.");
-    if (description.length > 4000) {
-      throw new Error("That description is too long.");
-    }
-    if (!Number.isFinite(args.budgetUsd) || args.budgetUsd < 10) {
-      throw new Error("A campaign budget starts at $10.");
-    }
-    if (args.budgetUsd > 10_000_000) throw new Error("That budget is too large.");
+      const brand = args.brandName.trim();
+      const title = args.title.trim();
+      const description = args.description.trim();
+      if (brand.length < 2) {
+        throw new Error("Which brand is this campaign for?");
+      }
+      if (title.length < 3) throw new Error("Give the campaign a name.");
+      if (description.length < 20) {
+        throw new Error(
+          "Describe the campaign in a sentence or two, so we know what to set up.",
+        );
+      }
+      if (title.length > 120) throw new Error("That campaign name is too long.");
+      if (description.length > 4000) {
+        throw new Error("That description is too long.");
+      }
+      if (!Number.isFinite(args.budgetUsd) || args.budgetUsd < 10) {
+        throw new Error("A campaign budget starts at $10.");
+      }
+      if (args.budgetUsd > 10_000_000) {
+        throw new Error("That budget is too large.");
+      }
 
-    const ratePer1k = args.ratePer1k ?? 0;
-    if (ratePer1k < 0 || ratePer1k > 1000) {
-      throw new Error("The rate has to be between $0 and $1,000 per 1,000 views.");
-    }
-    const minViews = args.minViews ?? 0;
-    if (minViews < 0) throw new Error("Minimum views cannot be negative.");
-    const days = args.days ?? 30;
-    if (days < 1 || days > 365) {
-      throw new Error("A campaign runs between 1 and 365 days.");
-    }
+      const ratePer1k = args.ratePer1k ?? 0;
+      if (ratePer1k < 0 || ratePer1k > 1000) {
+        throw new Error(
+          "The rate has to be between $0 and $1,000 per 1,000 views.",
+        );
+      }
+      const minViews = args.minViews ?? 0;
+      if (minViews < 0) throw new Error("Minimum views cannot be negative.");
+      const days = args.days ?? 30;
+      if (days < 1 || days > 365) {
+        throw new Error("A campaign runs between 1 and 365 days.");
+      }
 
-    const platforms = [...new Set(args.platforms ?? [])];
-    if (platforms.length === 0) {
-      throw new Error("Pick at least one platform to post on.");
-    }
+      const platforms = [...new Set(args.platforms ?? [])];
+      if (platforms.length === 0) {
+        throw new Error("Pick at least one platform to post on.");
+      }
 
-    const open = await ctx.db
-      .query("campaignRequests")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-    const openCount = open.filter((r) => r.status === "pending").length;
-    if (openCount >= MAX_OPEN_PER_USER) {
-      throw new Error(
-        "You already have a campaign request waiting — we'll answer it here first.",
-      );
-    }
+      const open = await ctx.db
+        .query("campaignRequests")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      const openCount = open.filter((r) => r.status === "pending").length;
+      if (openCount >= MAX_OPEN_PER_USER) {
+        throw new Error(
+          "You already have two requests waiting — we'll answer those first.",
+        );
+      }
 
-    const id = await ctx.db.insert("campaignRequests", {
-      userId: user._id,
-      brandName: brand,
-      brandEmail: user.email ?? "",
-      title,
-      description,
-      budgetUsd: args.budgetUsd,
-      ratePer1k,
-      minViews,
-      days,
-      platforms,
-      assets: cleanAssets(args.assets ?? []),
-      note: args.note?.trim() || undefined,
-      status: "pending",
-      requestedAt: Date.now(),
-    });
-    return id;
+      const id = await ctx.db.insert("campaignRequests", {
+        userId: user._id,
+        brandName: brand,
+        brandEmail: user.email ?? "",
+        title,
+        description,
+        budgetUsd: args.budgetUsd,
+        ratePer1k,
+        minViews,
+        days,
+        platforms,
+        assets: cleanAssets(args.assets ?? []),
+        note: args.note?.trim() || undefined,
+        status: "pending",
+        requestedAt: Date.now(),
+      });
+      return { ok: true, id };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err instanceof Error
+            ? err.message
+            : "We couldn't save that request. Try again in a moment.",
+      };
+    }
   },
 });
 
