@@ -9,10 +9,16 @@
   "theme_color": "#160B33",
   "icons": [
     {
-      "src": "/assets/1000007882.jpg",
-      "sizes": "938x938",
-      "type": "image/jpeg",
+      "src": "/logo.svg?v=2",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/logo.svg?v=2",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
