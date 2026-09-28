@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import {
   campaignById,
@@ -209,19 +210,37 @@ export function CreatorView({
               {page.description}
             </p>
           </div>
-          <div className="flex gap-2.5">
-            <Button
-              variant="outline"
-              className="glass-chip gap-1.5 text-foreground hover:border-white/20 hover:bg-white/[0.07]"
-              onClick={() => onConnect()}
-            >
-              <Link2 className="h-4 w-4" />
-              Connect account
-            </Button>
-            <Button className="gap-1.5 glow-primary" onClick={onSubmitClip}>
-              <Upload className="h-4 w-4" />
-              Submit a clip
-            </Button>
+          {/* The actions belong to the page you are actually on. A clip is
+              submitted from Clips and Campaigns, and an account is connected
+              from anywhere it is the thing blocking you. */}
+          <div className="flex flex-wrap gap-2.5">
+            {(section === "campaigns" || section === "clips") && (
+              <Button
+                className="gap-1.5 glow-primary"
+                onClick={onSubmitClip}
+              >
+                <Upload className="h-4 w-4" />
+                Submit a clip
+              </Button>
+            )}
+            {section === "campaigns" && (
+              <Button asChild variant="outline" className="glass-chip gap-1.5">
+                <Link to="/dashboard/request">
+                  <Megaphone className="h-4 w-4" />
+                  Request a campaign
+                </Link>
+              </Button>
+            )}
+            {section !== "request" && section !== "messages" && (
+              <Button
+                variant="outline"
+                className="glass-chip gap-1.5 text-foreground hover:border-white/20 hover:bg-white/[0.07]"
+                onClick={() => onConnect()}
+              >
+                <Link2 className="h-4 w-4" />
+                Connect account
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -316,14 +335,10 @@ export function CreatorView({
       {section === "overview" && (
         <div className="grid gap-4 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <PayoutPulse wallet={wallet} onSubmitClip={onSubmitClip} />
+            <PayoutPulse wallet={wallet} />
           </div>
           <div className="lg:col-span-3">
-            <RecentActivity
-              clips={stats.mine}
-              campaigns={campaigns}
-              onSubmitClip={onSubmitClip}
-            />
+            <RecentActivity clips={stats.mine} campaigns={campaigns} />
           </div>
         </div>
       )}
@@ -356,7 +371,7 @@ export function CreatorView({
             transition={{ duration: 0.78, ease: EASE }}
             className="glass-panel scroll-mt-24 rounded-2xl p-5"
           >
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight">
                   Active campaigns
@@ -365,9 +380,17 @@ export function CreatorView({
                   Published rates — join in one tap
                 </p>
               </div>
-              <span className="glass-chip rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-                {feed.length} live
-              </span>
+              <div className="flex items-center gap-2.5">
+                <Button asChild size="sm" variant="outline" className="glass-chip gap-1.5">
+                  <Link to="/dashboard/request">
+                    <Megaphone className="h-3.5 w-3.5" />
+                    Request a campaign
+                  </Link>
+                </Button>
+                <span className="glass-chip rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                  {feed.length} live
+                </span>
+              </div>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {feed.map((campaign) => (
@@ -393,6 +416,12 @@ export function CreatorView({
                     an account in the meantime and you&apos;ll be ready to clip
                     the moment one goes live.
                   </p>
+                  <Button asChild className="mt-5 gap-1.5 glow-primary">
+                    <Link to="/dashboard/request">
+                      <Megaphone className="h-4 w-4" />
+                      Request a campaign
+                    </Link>
+                  </Button>
                 </div>
               )}
             </div>

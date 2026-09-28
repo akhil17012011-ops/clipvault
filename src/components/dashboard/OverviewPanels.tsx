@@ -29,10 +29,8 @@ import { Link } from "react-router";
  */
 export function PayoutPulse({
   wallet,
-  onSubmitClip,
 }: {
   wallet: WalletSummary;
-  onSubmitClip: () => void;
 }) {
   const available = wallet.availableCents / 100;
   const pending = wallet.pendingCents / 100;
@@ -112,12 +110,13 @@ export function PayoutPulse({
 
       <div className="relative mt-auto pt-5">
         {hasMoney ? (
-          <Button
-            className="w-full gap-1.5 glow-primary"
-            onClick={onSubmitClip}
-          >
-            <Clapperboard className="h-4 w-4" />
-            Submit another clip
+          /* Clips are submitted from the Clips and Campaigns pages, so this
+             points there rather than opening the modal from the overview. */
+          <Button asChild className="w-full gap-1.5 glow-primary">
+            <Link to="/dashboard/clips">
+              <Clapperboard className="h-4 w-4" />
+              Submit another clip
+            </Link>
           </Button>
         ) : (
           <div className="glass-chip flex items-start gap-2.5 rounded-xl px-3.5 py-3">
@@ -163,11 +162,9 @@ function Legend({
 export function RecentActivity({
   clips,
   campaigns,
-  onSubmitClip,
 }: {
   clips: Submission[];
   campaigns: Campaign[];
-  onSubmitClip: () => void;
 }) {
   const recent = [...clips]
     .sort((a, b) => b.submittedAt - a.submittedAt)
@@ -208,13 +205,11 @@ export function RecentActivity({
             Paste a link to any clip you published for a joined campaign and we
             start tracking its views.
           </p>
-          <Button
-            size="sm"
-            className="mt-4 gap-1.5"
-            onClick={onSubmitClip}
-          >
-            <Clapperboard className="h-3.5 w-3.5" />
-            Submit a clip
+          <Button asChild size="sm" className="mt-4 gap-1.5">
+            <Link to="/dashboard/clips">
+              <Clapperboard className="h-3.5 w-3.5" />
+              Submit a clip
+            </Link>
           </Button>
         </div>
       ) : (
