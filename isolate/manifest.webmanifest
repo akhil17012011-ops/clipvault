@@ -9,13 +9,13 @@
   "theme_color": "#160B33",
   "icons": [
     {
-      "src": "/logo.svg?v=2",
+      "src": "/logo.svg?v=3",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/logo.svg?v=2",
+      "src": "/logo.svg?v=3",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
