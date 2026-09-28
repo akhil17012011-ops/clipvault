@@ -16,6 +16,7 @@ import {
   Bug,
   ChevronUp,
   Clapperboard,
+  Compass,
   Home,
   LayoutDashboard,
   Lightbulb,
@@ -142,17 +143,24 @@ export function Sidebar({
   role,
   open,
   onClose,
+  onStartTour,
 }: {
   role: DashboardView;
   /** Mobile drawer visibility (desktop rail is always rendered). */
   open: boolean;
   onClose: () => void;
+  /** Replays the first-run tour for someone who has already seen it. */
+  onStartTour?: () => void;
 }) {
   return (
     <>
       {/* Desktop rail — fixed column */}
       <aside className="glass-rail fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-white/[0.07] lg:flex">
-        <SidebarBody layoutKey="nav-desktop" role={role} />
+        <SidebarBody
+          layoutKey="nav-desktop"
+          role={role}
+          onStartTour={onStartTour}
+        />
       </aside>
 
       {/* Mobile drawer */}
@@ -179,6 +187,7 @@ export function Sidebar({
                 layoutKey="nav-mobile"
                 role={role}
                 onNavigate={onClose}
+                onStartTour={onStartTour}
               />
             </motion.aside>
           </>
@@ -192,11 +201,13 @@ function SidebarBody({
   role,
   layoutKey,
   onNavigate,
+  onStartTour,
 }: {
   role: DashboardView;
   /** Unique layoutId per instance so the active pill animates per rail. */
   layoutKey: string;
   onNavigate?: () => void;
+  onStartTour?: () => void;
 }) {
   const items = NAV[role];
   /* Only an operator can be shown a queue count; for a creator the query is
@@ -380,6 +391,21 @@ function SidebarBody({
           <MessageSquare className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
           Join the Discord
         </a>
+        {/* The tour is shown once and never nags, so it needs a way back for
+            anyone who closed it too early. */}
+        {onStartTour && (
+          <button
+            type="button"
+            onClick={() => {
+              onStartTour();
+              onNavigate?.();
+            }}
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-white/[0.06] hover:text-foreground lg:py-2"
+          >
+            <Compass className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+            Product tour
+          </button>
+        )}
       </div>
 
       {/* Account card */}

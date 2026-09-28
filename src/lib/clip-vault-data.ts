@@ -530,6 +530,53 @@ export function earnedOf(
 }
 
 /**
+ * The first-run tour, in the order the work actually happens.
+ *
+ * Each step carries the page it is about, so "Next" moves the user to the place
+ * being described rather than describing a page they are not on. The order is
+ * the order of the job: connect a handle, join something, submit, get paid —
+ * with the brand step kept in the middle, because a user can be either.
+ */
+export const TOUR_STEPS = [
+  {
+    to: "/dashboard",
+    kicker: "Step 1 · Welcome",
+    title: "This is your Clip Vault console",
+    body: "Everything here reads live from your account: the campaigns you can clip, the handles we track, the clips you submitted and the money those clips have earned. The tour walks you through the whole thing in six steps.",
+  },
+  {
+    to: "/dashboard/accounts",
+    kicker: "Step 2 · Accounts",
+    title: "Connect the account you post from",
+    body: "Views are only counted from a handle we can verify. Clip Vault gives you a one-time code, you paste it into that account's bio, and we read your public profile to confirm it is really there. Add as many accounts as you post from.",
+  },
+  {
+    to: "/dashboard/campaigns",
+    kicker: "Step 3 · Campaigns",
+    title: "Join a campaign and see what it pays",
+    body: "Every campaign publishes its rate before you join — dollars per 1,000 views, the view threshold a clip has to clear, and which platforms are allowed. Join in one tap: no application, no follower minimum.",
+  },
+  {
+    to: "/dashboard/clips",
+    kicker: "Step 4 · Clips",
+    title: "Submit the clip, and we verify the views",
+    body: "Paste a link to a clip you published for a campaign. An operator checks it and confirms the real view count — a number that has been measured, not one a link claimed. Once approved, that clip's money goes straight into your balance.",
+  },
+  {
+    to: "/dashboard/request",
+    kicker: "Step 5 · Brands",
+    title: "Running a brand? Request a campaign",
+    body: "Send the campaign name, the description, your budget and the photos, videos or links clippers should work from. An operator approves or declines it here — approved means live, and creators can join the same day.",
+  },
+  {
+    to: "/dashboard/payments",
+    kicker: "Step 6 · Payments",
+    title: "Get paid when you clear the minimum",
+    body: "Your balance holds everything approved clips have earned. Request a payout from the minimum upward, pick the network and address on the request itself, and follow it to paid from this same page. The bell at the top tells you when something needs you.",
+  },
+] as const;
+
+/**
  * What a view count is worth on a campaign, before it has been paid.
  *
  * The same rule the server pays by, shown on screen so the number an operator
