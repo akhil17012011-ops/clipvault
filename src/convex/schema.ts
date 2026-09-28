@@ -192,6 +192,39 @@ const schema = defineSchema(
       .index("by_user", ["userId"])
       .index("by_user_platform", ["userId", "platform"]),
 
+    /**
+     * The logged-in Instagram session used to read profiles when Instagram
+     * refuses anonymous lookups from this server. A singleton — one row, the
+     * fixed `_id` below — because it represents one configured test account,
+     * not per-user state.
+     *
+     * The credentials themselves are NOT stored here: they live in the
+     * deployment's environment (`IG_BOT_USERNAME` / `IG_BOT_PASSWORD`) and
+     * only ever appear inside the login routine. What is stored is the result
+     * of the login — the cookies that let later reads skip another login —
+     * plus the status so the dashboard can show a human what to do when
+     * Instagram asks the login to be confirmed.
+     */
+    igBotSessions: defineTable({
+      /** Singleton key; always "ig-bot". */
+      key: v.string(),
+      status: v.union(
+        v.literal("anonymous"),
+        v.literal("ok"),
+        v.literal("challenge"),
+        v.literal("error"),
+      ),
+      sessionid: v.optional(v.string()),
+      csrfToken: v.optional(v.string()),
+      dsUserId: v.optional(v.string()),
+      /** What happened, in words a human can act on. Never secrets. */
+      message: v.optional(v.string()),
+      loggedInAs: v.optional(v.string()),
+      lastLoginAt: v.optional(v.number()),
+      lastAttemptAt: v.optional(v.number()),
+      createdAt: v.number(),
+    }).index("by_key", ["key"]),
+
     // An outstanding email-verification challenge. Only the SHA-256 digest of
     // the code is stored, never the code itself.
     emailVerifications: defineTable({

@@ -63,6 +63,13 @@ export type ProfileResult =
  */
 export type ProfileOptions = {
   allowFallback?: boolean;
+  /**
+   * Reads the profile through a saved signed-in session (the bot account).
+   * Called only after the anonymous route is refused. Returning null means
+   * "no session story to tell" and the chain keeps going. It lives in the
+   * caller because only the caller can hold the database.
+   */
+  sessionReader?: (handle: string) => Promise<ProfileResult | null>;
 };
 
 /**
@@ -344,10 +351,14 @@ async function fetchInstagramDirect(
   const user = (payload as { data?: { user?: Record<string, unknown> } })?.data
     ?.user;
   if (!user || typeof user.username !== "string") {
-    return {
-      ok: false,
-      reason: `We couldn't find an Instagram account called @${handle}.`,
-    };
+    /* A 200 with no user is how Instagram answers when it has decided this
+       server isn't worth serving — not a verdict about the handle. Telling
+       the caller "couldn't find the account" here was worse than wrong:
+       it short-circuited the whole chain, so the signed-in read and the paid
+       fallback both never ran on exactly the days the IP was throttled, and
+       a verified creator was told their own account doesn't exist. Inconclusive
+       results come back as null so the next route gets its turn. */
+    return null;
   }
 
   return {
@@ -465,6 +476,270 @@ async function fetchInstagramViaApify(
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Authenticated reads — the configured bot account                     */
+
+/** Cookies from a successful sign-in. Persisted by the caller only. */
+export type IgSession = {
+  sessionid: string;
+  csrfToken: string;
+  dsUserId?: string;
+};
+
+type IgLoginResult =
+  | { ok: true; session: IgSession }
+  | {
+      ok: false;
+      reason: string;
+      /** Instagram wants a human to confirm this sign-in from the
+          account's own device before it will let it through. */
+      challenge?: boolean;
+    };
+
+/** Reads every cookie the server set on a response. */
+function parseSetCookies(response: Response): Record<string, string> {
+  const jar: Record<string, string> = {};
+  const headers = response.headers as Headers & { getSetCookie?: () => string[] };
+  const lines =
+    typeof headers.getSetCookie === "function"
+      ? headers.getSetCookie()
+      : (() => {
+          const single = response.headers.get("set-cookie");
+          return single ? [single] : [];
+        })();
+  for (const line of lines) {
+    const [pair] = line.split(";");
+    const eq = pair.indexOf("=");
+    if (eq <= 0) continue;
+    jar[pair.slice(0, eq).trim()] = pair.slice(eq + 1).trim();
+  }
+  return jar;
+}
+
+/**
+ * Signs the bot account in through Instagram's web login.
+ *
+ * This is the reverse-engineered browser flow — seed cookies, then a form
+ * POST carrying the password in Instagram's `#PWD_INSTAGRAM_BROWSER` format.
+ * It is deliberately the least certain part of this file: Instagram changes
+ * it without notice, rate-limits sign-ins from datacenter IPs hard, and may
+ * demand that a human confirm the new sign-in from the account's own phone.
+ * So every failure comes back as a sentence a person can act on, and no
+ * failure ever contains the password itself.
+ */
+export async function instagramLogin(
+  username: string,
+  password: string,
+): Promise<IgLoginResult> {
+  let landing: Response;
+  try {
+    landing = await fetch("https://www.instagram.com/", {
+      headers: { "user-agent": BROWSER_UA, accept: "text/html,*/*" },
+      redirect: "follow",
+    });
+  } catch {
+    return { ok: false, reason: "Instagram didn't answer the sign-in attempt. Try again shortly." };
+  }
+
+  const seed = parseSetCookies(landing);
+  const csrf = seed.csrftoken ?? "";
+  if (!landing.ok || !csrf) {
+    return {
+      ok: false,
+      reason: "Instagram refused to start a sign-in from this server. Try again shortly.",
+    };
+  }
+
+  const form = new URLSearchParams({
+    username,
+    /* Instagram's own browser format: the password sits behind a versioned
+       prefix and a unix timestamp. Not RSA — that left the browser flow
+       years ago; the prefix IS the marker of the format. */
+    enc_password: `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${password}`,
+    queryParams: "{}",
+    optIntoOneTap: "false",
+    trustedDeviceRecords: "{}",
+  });
+
+  let login: Response;
+  try {
+    login = await fetch("https://www.instagram.com/api/v1/accounts/login/ajax/", {
+      method: "POST",
+      redirect: "follow",
+      headers: {
+        "user-agent": BROWSER_UA,
+        accept: "*/*",
+        "content-type": "application/x-www-form-urlencoded",
+        "x-csrftoken": csrf,
+        "x-ig-app-id": INSTAGRAM_APP_ID,
+        "x-requested-with": "XMLHttpRequest",
+        origin: "https://www.instagram.com",
+        referer: "https://www.instagram.com/",
+        cookie: Object.entries(seed)
+          .map(([k, v]) => `${k}=${v}`)
+          .join("; "),
+      },
+      body: form.toString(),
+    });
+  } catch {
+    return { ok: false, reason: "Instagram didn't answer the sign-in attempt. Try again shortly." };
+  }
+
+  const jar = parseSetCookies(login);
+  let payload: Record<string, unknown> | null = null;
+  try {
+    const parsed: unknown = await login.json();
+    payload =
+      typeof parsed === "object" && parsed !== null
+        ? (parsed as Record<string, unknown>)
+        : null;
+  } catch {
+    payload = null;
+  }
+
+  const message = typeof payload?.message === "string" ? payload.message : "";
+
+  /* The human-confirmation case, recognised in every shape it has been
+     served in: as a message, as a challenge object, or as a redirect to a
+     challenge/checkpoint page instead of any JSON at all. */
+  if (
+    message === "challenge_required" ||
+    message === "checkpoint_required" ||
+    (payload != null && payload.challenge != null) ||
+    login.url.includes("/challenge") ||
+    login.url.includes("/checkpoint")
+  ) {
+    return {
+      ok: false,
+      challenge: true,
+      reason:
+        "Instagram wants this account to confirm the new sign-in. Open Instagram on that account's own phone, approve the request, then let the next refresh try again.",
+    };
+  }
+
+  if (
+    jar.sessionid &&
+    jar.sessionid !== "unset" &&
+    (payload?.authenticated === true || jar.ds_user_id)
+  ) {
+    return {
+      ok: true,
+      session: {
+        sessionid: jar.sessionid,
+        csrfToken: jar.csrftoken ?? csrf,
+        dsUserId: jar.ds_user_id,
+      },
+    };
+  }
+
+  if (login.status === 429) {
+    return {
+      ok: false,
+      reason: "Instagram is rate-limiting sign-ins from this server. Try again in a while.",
+    };
+  }
+  if (message === "bad_password" || message.includes("password")) {
+    return {
+      ok: false,
+      reason:
+        "Instagram rejected the configured bot account's sign-in details. Check IG_BOT_USERNAME and IG_BOT_PASSWORD.",
+    };
+  }
+  return {
+    ok: false,
+    reason:
+      "Instagram didn't complete the sign-in. Check that the bot account can log in normally on a phone.",
+  };
+}
+
+/** What a signed-in profile read concluded. */
+type IgRead =
+  | { ok: true; handle: string; bio: string; followers?: number; posts?: number }
+  | {
+      ok: false;
+      reason: string;
+      /** The session is no longer usable — drop it and sign in again. */
+      sessionDead?: boolean;
+      /** A blip, not a verdict: say nothing and try nothing else yet. */
+      transient?: boolean;
+    };
+
+/** Reads a profile as the signed-in bot account. */
+export async function fetchInstagramLoggedIn(
+  handle: string,
+  session: IgSession,
+): Promise<IgRead> {
+  const headers: Record<string, string> = {
+    "user-agent": BROWSER_UA,
+    accept: "*/*",
+    "x-ig-app-id": INSTAGRAM_APP_ID,
+    "x-csrftoken": session.csrfToken,
+    cookie: [
+      `sessionid=${session.sessionid}`,
+      `csrftoken=${session.csrfToken}`,
+      session.dsUserId ? `ds_user_id=${session.dsUserId}` : null,
+    ]
+      .filter(Boolean)
+      .join("; "),
+    referer: `https://www.instagram.com/${handle}/`,
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(handle)}`,
+      { headers, redirect: "follow" },
+    );
+  } catch {
+    return { ok: false, reason: "Instagram didn't answer the profile read.", transient: true };
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    return {
+      ok: false,
+      sessionDead: true,
+      reason: "The saved Instagram sign-in was rejected.",
+    };
+  }
+  if (response.status === 404) {
+    return {
+      ok: false,
+      reason: `We couldn't find an Instagram account called @${handle}.`,
+    };
+  }
+  if (!response.ok) {
+    return { ok: false, reason: "Instagram didn't answer the profile read.", transient: true };
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return { ok: false, reason: "Instagram didn't answer the profile read.", transient: true };
+  }
+
+  const user = (payload as { data?: { user?: Record<string, unknown> } })?.data
+    ?.user;
+  if (!user || typeof user.username !== "string") {
+    /* The account exists — it passed bio verification — so an empty answer
+       indicts the session, not the handle. */
+    return {
+      ok: false,
+      sessionDead: true,
+      reason: "The saved Instagram sign-in can't read profiles any more.",
+    };
+  }
+
+  const counts = instagramDirectCounts(user);
+  return {
+    ok: true,
+    handle: user.username.toLowerCase(),
+    bio: typeof user.biography === "string" ? user.biography : "",
+    ...(counts.followers !== undefined ? { followers: counts.followers } : {}),
+    ...(counts.posts !== undefined ? { posts: counts.posts } : {}),
+  };
+}
+
 async function fetchInstagram(
   handle: string,
   options: ProfileOptions,
@@ -473,17 +748,29 @@ async function fetchInstagram(
   const direct = await fetchInstagramDirect(handle);
   if (direct) return direct;
 
-  // The direct route was refused. The fallback bills per profile, so the
-  // caller decides whether this round is allowed to spend it.
+  /* The anonymous route was refused or inconclusive. A signed-in read is
+     still free, so it goes before the metered one — and whatever it says is
+     kept as the most useful explanation we have, preferred over the generic
+     wording below when everything ends up failing. */
+  let specific: string | null = null;
+  if (options.sessionReader) {
+    const viaSession = await options.sessionReader(handle);
+    if (viaSession) {
+      if (viaSession.ok) return viaSession;
+      specific = viaSession.reason;
+    }
+  }
+
   if (options.allowFallback === false) {
     return {
       ok: false,
       reason:
+        specific ??
         "Instagram isn't answering profile lookups from our servers right now. Try again in a few minutes.",
     };
   }
 
-  // Refused, so read the identical public profile through Apify instead.
+  // Still refused: the metered residential route.
   const viaApify = await fetchInstagramViaApify(handle);
   if (viaApify) return { ...viaApify, usedFallback: true };
 
@@ -491,6 +778,7 @@ async function fetchInstagram(
     ok: false,
     usedFallback: true,
     reason:
+      specific ??
       "Instagram isn't answering profile lookups from our servers right now. Try again in a few minutes.",
   };
 }

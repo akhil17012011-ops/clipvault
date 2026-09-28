@@ -2,6 +2,7 @@ import { Infer, v } from "convex/values";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireAdmin, requireUser } from "./access";
+import { createInstagramSessionReader } from "./igbot";
 import { fetchProfile } from "./platforms";
 
 /**
@@ -409,6 +410,10 @@ export const refreshStats = action({
 
     const profile = await fetchProfile(account.platform, account.handle, {
       allowFallback,
+      /* Instagram's anonymous route is refused from this server; the signed-in
+         bot account reads the same public data instead, before anything
+         metered is considered. */
+      sessionReader: createInstagramSessionReader(ctx),
     });
     /* Only rounds that actually exercised the paid route move the meter. A
        free read succeeding must never keep pushing the paid window forward,
@@ -566,7 +571,12 @@ export const verifyBio = action({
       };
     }
 
-    const profile = await fetchProfile(account.platform, account.handle);
+    const profile = await fetchProfile(account.platform, account.handle, {
+      /* Same routes as a count refresh. A human watching this screen can
+         tolerate a session sign-in happening behind it, and a bio read that
+         only worked once per IP was never dependable anyway. */
+      sessionReader: createInstagramSessionReader(ctx),
+    });
 
     if (!profile.ok) {
       await ctx.runMutation(internal.accounts.setStatus, {
