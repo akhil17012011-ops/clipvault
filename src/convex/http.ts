@@ -84,6 +84,56 @@ const http = httpRouter();
 
 auth.addHttpRoutes(http);
 
+/**
+ * The site root, as a way home.
+ *
+ * Convex Auth keeps the post-sign-in return path in a cookie, and if that
+ * cookie is not present when the OAuth provider calls back, the library falls
+ * back to the `SITE_URL` environment variable. On this project that variable
+ * names a *different* Convex site, which serves no app at all — so the browser
+ * used to land on Convex's "No matching routes found" page, with no sign-in
+ * and no explanation.
+ *
+ * This route makes that dead end recoverable. The root is never a page anyone
+ * wants to read: it is a sign-in that lost its way, so it forwards to the app,
+ * carrying the one-time `code` across if there is one — the client redeems that
+ * and the visitor is signed in after all.
+ */
+http.route({
+  path: "/",
+  method: "GET",
+  handler: httpActionGeneric(async (_ctx, request) => {
+    const url = new URL(request.url);
+    const base = requestedAppOrigin(url.searchParams.get("app")) ?? APP_URL;
+
+    const requested = url.searchParams.get("to") ?? "";
+    const safePath =
+      requested.startsWith("/") &&
+      !requested.startsWith("//") &&
+      !requested.includes("\\")
+        ? requested
+        : "/dashboard";
+
+    const destination = new URL(
+      /* Without a code there is nobody to sign in, so the app's sign-in page is
+         the honest place to land rather than a dashboard that bounces. */
+      url.searchParams.get("code") ? safePath : "/auth",
+      base,
+    );
+    const code = url.searchParams.get("code");
+    if (code) destination.searchParams.set("code", code);
+
+    return new Response(null, {
+      status: 302,
+      headers: {
+        location: destination.toString(),
+        "cache-control": "no-store",
+        "referrer-policy": "no-referrer",
+      },
+    });
+  }),
+});
+
 http.route({
   path: "/back-to-app",
   method: "GET",
