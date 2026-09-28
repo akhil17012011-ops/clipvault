@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
-import { fmtFull, fmtMoney, fmtViews, type Campaign } from "@/lib/clip-vault-data";
+import { fmtFull, fmtMoney, fmtViews, payoutPreview, type Campaign } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
@@ -58,7 +58,7 @@ export function CampaignModeration({ campaign }: { campaign: Campaign }) {
     }
   };
 
-  const confirm = async (id: string, current: number) => {
+  const confirm = async (id: string) => {
     const raw = (viewsDraft[id] ?? "").trim();
     if (!raw) return;
     const parsed = Number(raw.replace(/,/g, ""));
@@ -179,7 +179,7 @@ export function CampaignModeration({ campaign }: { campaign: Campaign }) {
                         }))
                       }
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") void confirm(clip.id, clip.views);
+                        if (e.key === "Enter") void confirm(clip.id);
                       }}
                       placeholder="set view count"
                       inputMode="numeric"
@@ -188,7 +188,7 @@ export function CampaignModeration({ campaign }: { campaign: Campaign }) {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => void confirm(clip.id, clip.views)}
+                      onClick={() => void confirm(clip.id)}
                       disabled={busyId === clip.id || !(viewsDraft[clip.id] ?? "").trim()}
                       className="h-8"
                     >
@@ -199,6 +199,42 @@ export function CampaignModeration({ campaign }: { campaign: Campaign }) {
                     </Button>
                   </span>
                 </div>
+
+                {/* What this count is worth, and what approving it pays. Shown
+                    before the decision so the money is never a surprise. */}
+                <p className="mt-2 text-[11.5px]">
+                  {(() => {
+                    const draft = Number(
+                      (viewsDraft[clip.id] ?? "").replace(/,/g, ""),
+                    );
+                    const count =
+                      viewsDraft[clip.id] && Number.isFinite(draft) && draft >= 0
+                        ? draft
+                        : clip.views;
+                    const preview = payoutPreview(
+                      count,
+                      campaign.ratePer1k,
+                      campaign.minViews,
+                    );
+                    return preview.qualifies ? (
+                      <span className="text-neon">
+                        {fmtFull(count)} views × ${campaign.ratePer1k}/1k ={" "}
+                        <span className="font-mono font-bold">
+                          {fmtMoney(preview.dollars)}
+                        </span>{" "}
+                        {clip.status === "active" || clip.status === "paid"
+                          ? "paid to their balance"
+                          : "goes to their balance on approval"}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Needs {fmtFull(campaign.minViews)} views to start
+                        earning — {fmtFull(preview.viewsNeeded)} to go at $
+                        {campaign.ratePer1k}/1k
+                      </span>
+                    );
+                  })()}
+                </p>
 
                 {tab === "pending" && (
                   <div className="mt-3">
@@ -248,6 +284,16 @@ export function CampaignModeration({ campaign }: { campaign: Campaign }) {
                             <Check className="h-3.5 w-3.5" />
                           )}
                           Approve
+                          {(() => {
+                            const preview = payoutPreview(
+                              clip.views,
+                              campaign.ratePer1k,
+                              campaign.minViews,
+                            );
+                            return preview.qualifies && preview.dollars > 0
+                              ? ` & pay ${fmtMoney(preview.dollars)}`
+                              : "";
+                          })()}
                         </Button>
                         <Button
                           size="sm"

@@ -26,6 +26,7 @@ import {
   fmtMoney,
   fmtViews,
   shortMonth,
+  payoutPreview,
   type Platform,
 } from "@/lib/clip-vault-data";
 import { useClipVault, useCreatorStats } from "@/lib/clip-vault-store";
@@ -494,6 +495,13 @@ export function CreatorView({
                         submission.campaignId,
                       );
                       const earned = earnedOf(submission, campaigns);
+                      const preview = campaign
+                        ? payoutPreview(
+                            submission.views,
+                            campaign.ratePer1k,
+                            campaign.minViews,
+                          )
+                        : null;
                       const qualifying =
                         campaign !== undefined &&
                         submission.views < campaign.minViews &&
@@ -555,7 +563,9 @@ export function CreatorView({
                               )}
                             {submission.status === "pending" && (
                               <span className="mt-1 block text-[10.5px] text-muted-foreground">
-                                Admin checking
+                                {campaign && earned > 0
+                                  ? `Pays ${fmtMoney(earned)} once approved`
+                                  : "Admin checking"}
                               </span>
                             )}
                           </TableCell>
@@ -563,9 +573,18 @@ export function CreatorView({
                             {submission.status === "rejected" ? (
                               <span className="text-muted-foreground">—</span>
                             ) : submission.status === "pending" ? (
-                              <span className="text-[11px] font-medium text-muted-foreground">
-                                on approval
-                              </span>
+                              preview && preview.qualifies && earned > 0 ? (
+                                <>
+                                  {fmtMoney(earned, true)}
+                                  <span className="mt-0.5 block text-[10.5px] font-medium text-muted-foreground">
+                                    on approval
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-[11px] font-medium text-muted-foreground">
+                                  on approval
+                                </span>
+                              )
                             ) : qualifying ? (
                               fmtMoney(earned, true)
                             ) : (

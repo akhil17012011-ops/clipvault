@@ -34,6 +34,7 @@ import {
   fmtMoney,
   fmtRate,
   fmtViews,
+  payoutPreview,
   type InvoiceStatus,
 } from "@/lib/clip-vault-data";
 import { useAdminStats, useClipVault } from "@/lib/clip-vault-store";
@@ -159,16 +160,27 @@ export function AdminView({
     { draft: 0, sent: 0, paid: 0 } as Record<InvoiceStatus, number>,
   );
 
-  /** Accept a reviewed clip — it is sent to the campaign and goes live. */
+  /** Accept a reviewed clip — it is sent to the campaign, and the money the
+      view count is worth lands in the creator's balance in the same step. */
   const acceptClip = (id: string) => {
     const submission = submissions.find((s) => s.id === id);
     if (!submission) return;
     const campaign = campaignById(campaigns, submission.campaignId);
+    const preview = campaign
+      ? payoutPreview(submission.views, campaign.ratePer1k, campaign.minViews)
+      : null;
     reviewSubmission(id, "accept");
     toast.success("Sent to campaign", {
-      description: `@${submission.author}'s clip is live on ${
-        campaign?.brand ?? "the campaign"
-      } and earning views.`,
+      description:
+        preview && preview.qualifies && preview.dollars > 0
+          ? `@${submission.author}'s clip is live on ${
+              campaign?.brand ?? "the campaign"
+            }, and ${fmtMoney(preview.dollars)} was added to their balance.`
+          : `@${submission.author}'s clip is live on ${
+              campaign?.brand ?? "the campaign"
+            }. It starts earning once it passes ${
+              campaign?.minViews?.toLocaleString("en-US") ?? "the"
+            } views.`,
     });
   };
 

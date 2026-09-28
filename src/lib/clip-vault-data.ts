@@ -529,6 +529,26 @@ export function earnedOf(
   return (submission.views / 1000) * campaign.ratePer1k;
 }
 
+/**
+ * What a view count is worth on a campaign, before it has been paid.
+ *
+ * The same rule the server pays by, shown on screen so the number an operator
+ * types and the money that lands in a creator's balance are visibly the same
+ * calculation: $1 per 1,000 views at 2,000 views is $2.
+ */
+export function payoutPreview(
+  views: number,
+  ratePer1k: number,
+  minViews: number,
+): { qualifies: boolean; dollars: number; viewsNeeded: number } {
+  const qualifies = views >= minViews;
+  return {
+    qualifies,
+    dollars: qualifies ? (views / 1000) * ratePer1k : 0,
+    viewsNeeded: Math.max(0, minViews - views),
+  };
+}
+
 export function fmtViews(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 100_000 ? 0 : 1)}K`;
