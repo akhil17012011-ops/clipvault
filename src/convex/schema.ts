@@ -181,10 +181,9 @@ const schema = defineSchema(
       /** When the follower/post counts were last re-read from the platform. */
       statsRefreshedAt: v.optional(v.number()),
       /**
-       * When Instagram's paid residential fallback (Apify) was last permitted
-       * to run for this account. The fallback bills per profile, so this is a
-       * spend meter: the free direct route runs every refresh, while the paid
-       * one only reopens its window after this much time has passed.
+       * RETIRED: the meter for the paid fallback route, which no longer
+       * exists. The field is kept in the schema — not written, not read — so
+       * any row that recorded it before the route was removed stays writable.
        */
       fallbackRefreshedAt: v.optional(v.number()),
       createdAt: v.number(),

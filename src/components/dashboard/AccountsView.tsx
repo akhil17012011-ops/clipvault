@@ -22,7 +22,7 @@ import {
   Trash2,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type Props = {
   accounts: LinkedAccount[];
@@ -66,12 +66,7 @@ export function AccountsView({
   /* Follower counts are re-read from the platforms every couple of seconds
      while this page is open, so the numbers here are the platform's current
      ones rather than whatever was true when the bio was verified. */
-  const { syncedAt, reason } = useLiveFollowers(accounts);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
-    return () => window.clearInterval(timer);
-  }, []);
+  const { reason } = useLiveFollowers(accounts);
 
   const connected = accounts.filter((a) => a.status === "connected");
   const pending = accounts.filter((a) => a.status !== "connected");
@@ -87,19 +82,14 @@ export function AccountsView({
   const anyFollowersKnown = connected.some((a) => a.followers != null);
   const anyPostsKnown = connected.some((a) => a.posts != null);
 
-  /* The hint has to say what actually happened. Green is reserved for a
-     count that is genuinely live; everything else is an honest amber note —
-     either the server's own explanation for the missing count, or "not
-     published" when a platform answered us without publishing one. */
-  const hintLive = anyFollowersKnown;
+  /* No "live" badge: the count itself is the signal now. The hint appears
+     only when a count is missing, and it says why — the server's own
+     explanation when there is one, or "not published" when a platform
+     answered us without publishing a number. */
   const liveNote =
-    connected.length === 0
+    connected.length === 0 || anyFollowersKnown
       ? null
-      : hintLive
-        ? syncedAt == null
-          ? "Reading live…"
-          : `Live · read ${Math.max(0, Math.round((now - syncedAt) / 1000))}s ago`
-        : (reason ?? "Not published by the platform");
+      : (reason ?? "Not published by the platform");
 
   const clipCount = stats.reduce((sum, s) => sum + s.clips, 0);
   const views = stats.reduce((sum, s) => sum + s.views, 0);
@@ -171,18 +161,8 @@ export function AccountsView({
                 {item.value}
               </dd>
               {item.hint && (
-                <p
-                  className={`mt-1 flex items-start gap-1.5 text-[10px] leading-snug font-semibold ${
-                    hintLive
-                      ? "text-neon"
-                      : "text-amber-500/90 dark:text-amber-300/90"
-                  }`}
-                >
-                  <span
-                    className={`mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
-                      hintLive ? "animate-pulse bg-neon" : "bg-amber-400"
-                    }`}
-                  />
+                <p className="mt-1 flex items-start gap-1.5 text-[10px] leading-snug font-semibold text-amber-500/90 dark:text-amber-300/90">
+                  <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                   <span className="min-w-0 break-words">{item.hint}</span>
                 </p>
               )}
@@ -321,9 +301,7 @@ export function AccountsView({
                       <p className="truncate text-[11px] text-muted-foreground">
                         {[
                           account.followers != null
-                            ? `${fmtViews(account.followers)} followers${
-                                liveNote ? " · live" : ""
-                              }`
+                            ? `${fmtViews(account.followers)} followers`
                             : null,
                           account.posts != null
                             ? `${fmtFull(account.posts)} posts`

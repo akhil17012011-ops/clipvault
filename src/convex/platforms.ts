@@ -11,8 +11,8 @@
  *  - X        the bio ships in the page's meta description
  *  - Instagram renders nothing server-side, so its public web profile API is
  *             used, which returns the `biography` field. Instagram throttles
- *             datacentre IPs wholesale, so this one falls back to Apify, which
- *             reads the same public profile from a residential IP.
+ *             datacentre IPs wholesale, so this one is read through the
+ *             configured bot account's signed-in session instead.
  *
  * Nothing here guesses. If a profile cannot be read the caller is told so
  * rather than being handed a fabricated bio.
@@ -34,18 +34,15 @@ const INSTAGRAM_APP_ID = "936619743392459";
 const READ_DEADLINE_MS = 10_000;
 /** The two-call sign-in handshake. */
 const LOGIN_DEADLINE_MS = 15_000;
-/** The paid run carries its own 120s server timeout; this sits above it. */
-const APIFY_DEADLINE_MS = 135_000;
 
 /**
  * A hard deadline for one outbound call.
  *
  * Without this the refresh loop could not keep its promise of a read every
- * ~15 seconds: the client ticks every couple of seconds and skips while a
- * batch is in flight, so one socket Instagram decides not to answer held the
- * entire loop until the runtime's multi-minute idle timeout gave up. Stall
- * after the headers instead of before them and the same signal cancels the
- * body read. The timer is deliberately left to fire once rather than
+ * second: the client ticks once a second and skips while a batch is in
+ * flight, so one socket Instagram decides not to answer held the entire loop
+ * until the runtime's multi-minute idle timeout gave up. Stall after the
+ * headers instead of before them and the same signal cancels the body read. The timer is deliberately left to fire once rather than
  * meticulously cleared — aborting an already-finished request is a no-op and
  * the reference is released right after.
  */
@@ -54,9 +51,6 @@ function withDeadline(ms: number): AbortSignal {
   setTimeout(() => controller.abort(), ms);
   return controller.signal;
 }
-
-/** Apify's official Instagram Profile Scraper. */
-const APIFY_ACTOR = "apify~instagram-profile-scraper";
 
 export type ProfileResult =
   | {
@@ -67,30 +61,13 @@ export type ProfileResult =
       followers?: number;
       /** Real post count, when the platform exposes it in what we read. */
       posts?: number;
-      /**
-       * True when the paid residential fallback was exercised to produce this
-       * result. Callers use it to meter the paid route — it costs money per
-       * run, so "it was allowed to run" has to be traceable to whoever pays
-       * the bill.
-       */
-      usedFallback?: boolean;
     }
-  | {
-      ok: false;
-      reason: string;
-      /** See the `ok: true` branch. */
-      usedFallback?: boolean;
-    };
+  | { ok: false; reason: string };
 
 /**
  * Options for a profile read.
- *
- * `allowFallback` gates Instagram's paid residential route (Apify). It exists
- * because that route bills per profile: a poller allowed to reach it at full
- * speed would turn a creator's open dashboard into a running meter.
  */
 export type ProfileOptions = {
-  allowFallback?: boolean;
   /**
    * Reads the profile through a saved signed-in session (the bot account).
    * Called only after the anonymous route is refused. Returning null means
@@ -387,10 +364,10 @@ async function fetchInstagramDirect(
     /* A 200 with no user is how Instagram answers when it has decided this
        server isn't worth serving — not a verdict about the handle. Telling
        the caller "couldn't find the account" here was worse than wrong:
-       it short-circuited the whole chain, so the signed-in read and the paid
-       fallback both never ran on exactly the days the IP was throttled, and
-       a verified creator was told their own account doesn't exist. Inconclusive
-       results come back as null so the next route gets its turn. */
+       it short-circuited the whole chain, so the signed-in read never ran on
+       exactly the days the IP was throttled, and a verified creator was told
+       their own account doesn't exist. Inconclusive results come back as null
+       so the next route gets its turn. */
     return null;
   }
 
@@ -399,114 +376,6 @@ async function fetchInstagramDirect(
     handle: user.username.toLowerCase(),
     bio: typeof user.biography === "string" ? user.biography : "",
     ...instagramDirectCounts(user),
-  };
-}
-
-/**
- * The same public profile, read through Apify.
- *
- * Instagram serves a blanket 429 to datacentre IP ranges — it does that even
- * for usernames that do not exist — so our own servers are routinely refused.
- * Apify fetches from residential IPs, which gets a normal answer.
- *
- * Apify charges per profile, so this runs only after the free direct lookup
- * has already been refused. `null` means "could not ask Apify at all" (not
- * configured, or the run failed), which is a different thing from Apify
- * running fine and reporting that the account does not exist.
- */
-async function fetchInstagramViaApify(
-  handle: string,
-): Promise<ProfileResult | null> {
-  const token = process.env.APIFY_TOKEN;
-  if (!token) {
-    // Operator-facing hint. Without this variable Instagram verification only
-    // works from networks Instagram happens not to be throttling.
-    console.log(
-      "APIFY_TOKEN is unset, so Instagram lookups are limited to the direct route",
-    );
-    return null;
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(
-      `https://api.apify.com/v2/acts/${APIFY_ACTOR}/run-sync-get-dataset-items?format=json&timeout=120`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          // Sent as a header rather than a query string so the token never
-          // ends up in a URL that could be logged.
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ usernames: [handle] }),
-        signal: withDeadline(APIFY_DEADLINE_MS),
-      },
-    );
-  } catch {
-    return null;
-  }
-
-  if (!response.ok) {
-    console.log("Apify Instagram lookup failed with status", response.status);
-    return null;
-  }
-
-  let items: unknown;
-  try {
-    items = await response.json();
-  } catch {
-    return null;
-  }
-
-  const first = (Array.isArray(items) ? items[0] : null) as Record<
-    string,
-    unknown
-  > | null;
-
-  // Apify ran successfully and matched nothing, so the handle really is not a
-  // public account rather than our request having been refused.
-  if (!first || typeof first.username !== "string") {
-    return {
-      ok: false,
-      reason: `We couldn't find an Instagram account called @${handle}.`,
-    };
-  }
-
-  /* The actor's field spellings have changed across versions: snake_case and
-     camelCase both appear in the wild, and the bio has been `biography` and
-     `bio`. Reading every plausible spelling costs nothing, while missing one
-     is exactly how a working token still produces a tile that says no count
-     was published. parseCount only accepts values that really look like
-     counts — an array or an object is ignored, never guessed at. */
-  const followers =
-    parseCount(first.followers_count) ??
-    parseCount(first.followersCount) ??
-    parseCount(first.followerCount) ??
-    parseCount(first.followers);
-  const posts =
-    parseCount(first.media_count) ??
-    parseCount(first.posts_count) ??
-    parseCount(first.mediaCount) ??
-    parseCount(first.postCount) ??
-    parseCount(first.posts);
-  const bioText = first.biography ?? first.bio;
-
-  if (followers === undefined) {
-    // Operator-facing: when the actor changes its output shape again, the
-    // names it now uses show up in the function logs instead of vanishing.
-    console.log(
-      "Apify profile item carried no follower count. Keys:",
-      Object.keys(first).slice(0, 50).join(", "),
-    );
-  }
-
-  return {
-    ok: true,
-    handle: first.username.toLowerCase(),
-    bio: typeof bioText === "string" ? bioText : "",
-    followers,
-    posts,
   };
 }
 
@@ -780,14 +649,12 @@ async function fetchInstagram(
   handle: string,
   options: ProfileOptions,
 ): Promise<ProfileResult> {
-  // Instagram directly first: free, fast, and it works from most networks.
-  const direct = await fetchInstagramDirect(handle);
-  if (direct) return direct;
-
-  /* The anonymous route was refused or inconclusive. A signed-in read is
-     still free, so it goes before the metered one — and whatever it says is
-     kept as the most useful explanation we have, preferred over the generic
-     wording below when everything ends up failing. */
+  /* The bot account leads. It is the route this product actually depends on,
+     and putting it first means a throttled anonymous read — which can sit on
+     its ten-second deadline — never delays a signed-in answer behind it.
+     Anonymous remains the fallback for when no session is configured or the
+     session is being challenged, and whatever the session route said is kept
+     as the most useful explanation when both end up failing. */
   let specific: string | null = null;
   if (options.sessionReader) {
     const viaSession = await options.sessionReader(handle);
@@ -797,22 +664,11 @@ async function fetchInstagram(
     }
   }
 
-  if (options.allowFallback === false) {
-    return {
-      ok: false,
-      reason:
-        specific ??
-        "Instagram isn't answering profile lookups from our servers right now. Try again in a few minutes.",
-    };
-  }
-
-  // Still refused: the metered residential route.
-  const viaApify = await fetchInstagramViaApify(handle);
-  if (viaApify) return { ...viaApify, usedFallback: true };
+  const direct = await fetchInstagramDirect(handle);
+  if (direct) return direct;
 
   return {
     ok: false,
-    usedFallback: true,
     reason:
       specific ??
       "Instagram isn't answering profile lookups from our servers right now. Try again in a few minutes.",

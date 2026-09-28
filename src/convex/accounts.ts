@@ -41,26 +41,14 @@ const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
 /**
  * Minimum time between real platform lookups for one account.
  *
- * The dashboard polls every 2 seconds for a live feel, but each poll is a
- * request from this deployment's shared IP, and the platforms throttle those
- * aggressively — Instagram already answers this deployment with degraded
- * responses. The cooldown is what keeps the poller from burning the very
- * access that bio verification depends on: polls inside the window are
- * answered from the stored row, at full speed.
+ * The dashboard ticks once a second and asks for a fresh read on each tick;
+ * this window sits just under that interval so every tick that is due gets a
+ * real read, while two ticks landing on the same instant cannot both fire
+ * one. It is deliberately not a protective throttle any more — the second-
+ * long cadence is the product now, chosen for an account whose job is to
+ * carry exactly this load.
  */
-const STATS_REFRESH_COOLDOWN_MS = 15_000;
-
-/**
- * Minimum time between *paid* Instagram fallback lookups for one account.
- *
- * The direct route is free and runs on its own cooldown above; this meter
- * exists only for the Apify route, which bills per profile. At a permissive
- * window an open dashboard would quietly rack up a bill, while a window that
- * never reopens would freeze the count forever. Ten minutes caps the spend
- * at roughly a dozen runs per account per hour, and only while Instagram's
- * free route is refusing us.
- */
-const APIFY_FALLBACK_COOLDOWN_MS = 10 * 60_000;
+const STATS_REFRESH_COOLDOWN_MS = 900;
 
 type Platform = Infer<typeof PLATFORM>;
 
@@ -403,24 +391,10 @@ export const refreshStats = action({
       };
     }
 
-    const allowFallback =
-      account.platform !== "instagram" ||
-      account.fallbackRefreshedAt == null ||
-      Date.now() - account.fallbackRefreshedAt >= APIFY_FALLBACK_COOLDOWN_MS;
-
     const profile = await fetchProfile(account.platform, account.handle, {
-      allowFallback,
-      /* Instagram's anonymous route is refused from this server; the signed-in
-         bot account reads the same public data instead, before anything
-         metered is considered. */
+      /* The bot account leads the chain; anonymous Instagram is the fallback. */
       sessionReader: createInstagramSessionReader(ctx),
     });
-    /* Only rounds that actually exercised the paid route move the meter. A
-       free read succeeding must never keep pushing the paid window forward,
-       or the fallback would stay shut exactly when Instagram starts
-       refusing us. */
-    const fallbackStamp =
-      profile.usedFallback === true ? { fallbackRefreshedAt: Date.now() } : {};
 
     if (!profile.ok) {
       /* The attempt itself is stamped even though nothing was read: without
@@ -430,7 +404,6 @@ export const refreshStats = action({
          zero. */
       await ctx.runMutation(internal.accounts.setStats, {
         accountId: account._id,
-        ...fallbackStamp,
       });
       return {
         ok: false,
@@ -449,7 +422,6 @@ export const refreshStats = action({
       accountId: account._id,
       ...(profile.followers !== undefined ? { followers: profile.followers } : {}),
       ...(profile.posts !== undefined ? { posts: profile.posts } : {}),
-      ...fallbackStamp,
     });
     return {
       ok: true,
@@ -480,7 +452,6 @@ export const getForStats = internalQuery({
       followers: account.followers,
       posts: account.posts,
       statsRefreshedAt: account.statsRefreshedAt,
-      fallbackRefreshedAt: account.fallbackRefreshedAt,
     };
   },
 });
@@ -498,8 +469,6 @@ export const setStats = internalMutation({
     accountId: v.id("connectedAccounts"),
     followers: v.optional(v.number()),
     posts: v.optional(v.number()),
-    /** Stamps the paid-fallback spend meter; omitted leaves it alone. */
-    fallbackRefreshedAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const account = await ctx.db.get(args.accountId);
@@ -508,9 +477,6 @@ export const setStats = internalMutation({
       followers: args.followers ?? account.followers,
       posts: args.posts ?? account.posts,
       statsRefreshedAt: Date.now(),
-      ...(args.fallbackRefreshedAt !== undefined
-        ? { fallbackRefreshedAt: args.fallbackRefreshedAt }
-        : {}),
     });
   },
 });

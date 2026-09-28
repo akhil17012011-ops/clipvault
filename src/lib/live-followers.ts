@@ -5,14 +5,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 /**
  * How often the page re-checks the counts of its connected accounts.
  *
- * This is the UI cadence, not the platform cadence: each tick asks the server,
- * and the server only re-reads a platform once per cooldown per account
- * (see `STATS_REFRESH_COOLDOWN_MS` in `convex/accounts.ts`), answering every
- * other tick from the row it already holds. That split is deliberate — the
- * platforms throttle the deployment's shared IP hard, and an unthrottled poll
- * would eventually cost us the very access bio verification depends on.
+ * Once a second. Each tick asks the server for a fresh read, and the
+ * server's own window (`STATS_REFRESH_COOLDOWN_MS` in `convex/accounts.ts`)
+ * sits just under this so the tick results in a real platform read rather
+ * than a cached row — the counts come from the bot account's signed-in
+ * session, which is the route built to carry exactly this cadence.
  */
-export const LIVE_FOLLOWER_INTERVAL_MS = 2_000;
+export const LIVE_FOLLOWER_INTERVAL_MS = 1_000;
 
 /**
  * Keeps the follower and post counts of the given accounts current.
