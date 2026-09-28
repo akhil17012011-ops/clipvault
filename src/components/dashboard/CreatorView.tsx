@@ -371,10 +371,7 @@ export function CreatorView({
             <ArrowLeft className="h-3.5 w-3.5" />
             All campaigns
           </button>
-          <CampaignDetail
-            campaign={openCampaign}
-            onBack={() => setOpenCampaignId(null)}
-          />
+          <CampaignDetail campaign={openCampaign} />
         </div>
       )}
 

@@ -301,6 +301,8 @@ export interface Campaign {
   /** Budget already committed to payouts. */
   spent: number;
   clippers: number;
+  /** Creators who have joined — the live count from the joins table. */
+  joinCount: number;
   guidelines: string[];
   status: CampaignStatus;
   invoice: InvoiceStatus;
@@ -618,6 +620,19 @@ export function fmtMoney(n: number, cents = false): string {
     minimumFractionDigits: cents ? 2 : 0,
     maximumFractionDigits: cents ? 2 : 0,
   });
+}
+
+/**
+ * Compact money for budget meters — the `55k/100k` shape, so a six-figure
+ * budget fits on a card without wrapping. Amounts under a thousand stay
+ * exact: rounding $850 to "$1k" would lie about money.
+ */
+export function fmtCompactMoney(n: number): string {
+  const trim = (value: number) => (Math.round(value * 10) / 10).toString();
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `$${trim(n / 1_000_000)}M`;
+  if (abs >= 1_000) return `$${trim(n / 1_000)}k`;
+  return `$${Math.round(n)}`;
 }
 
 export function fmtRate(ratePer1k: number): string {

@@ -40,13 +40,6 @@ function countedViews(submission: {
  * nothing: the mutation is the source of truth.
  */
 
-const PLATFORM = v.union(
-  v.literal("tiktok"),
-  v.literal("instagram"),
-  v.literal("youtube"),
-  v.literal("x"),
-);
-
 const METRICS = v.object({
   views: v.number(),
   likes: v.number(),
@@ -149,6 +142,16 @@ export const submit = mutation({
     if (campaign.status !== "active") {
       throw new NotAllowedError(
         "That campaign is not accepting clips right now.",
+      );
+    }
+
+    /* A campaign whose budget is gone has stopped: approving this clip would
+       commit money the brand is no longer offering. The gate lives here, not
+       only on the button, so no path can slip a clip in after the money ran
+       out — and an operator who raises the budget reopens it. */
+    if (campaign.spent >= campaign.budget) {
+      throw new NotAllowedError(
+        "This campaign's budget has been fully spent, so it is no longer accepting clips.",
       );
     }
 

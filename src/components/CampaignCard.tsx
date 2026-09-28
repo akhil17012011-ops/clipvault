@@ -2,7 +2,7 @@ import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI
 import { Button } from "@/components/ui/button";
 import { Check, Users } from "lucide-react";
 import type { Campaign } from "@/lib/clip-vault-data";
-import { fmtRate, fmtViews } from "@/lib/clip-vault-data";
+import { fmtCompactMoney, fmtRate, fmtViews } from "@/lib/clip-vault-data";
 
 /**
  * The campaign card shared by the landing page preview and the creator
@@ -23,6 +23,10 @@ export function CampaignCard({
     100,
     Math.round((campaign.spent / Math.max(campaign.budget, 1)) * 100),
   );
+  /* The budget is the campaign's life support: once every dollar is
+     committed to approved clips, nothing is left to pay a new member — the
+     campaign stops here, and the server enforces the same line. */
+  const exhausted = campaign.spent >= campaign.budget;
 
   return (
     <article
@@ -122,14 +126,26 @@ export function CampaignCard({
         <div>
           <div className="mb-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>
-              ${campaign.spent.toLocaleString("en-US")} of $
-              {campaign.budget.toLocaleString("en-US")} budget
+              {fmtCompactMoney(campaign.spent)}/
+              {fmtCompactMoney(campaign.budget)} budget
             </span>
-            <span>{budgetPct}%</span>
+            <span
+              className={
+                exhausted
+                  ? "font-bold text-amber-600 dark:text-amber-400"
+                  : undefined
+              }
+            >
+              {exhausted ? "Fully spent" : `${budgetPct}%`}
+            </span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-brand to-[#a78bfa]"
+              className={`h-full rounded-full ${
+                exhausted
+                  ? "bg-amber-500"
+                  : "bg-gradient-to-r from-brand to-[#a78bfa]"
+              }`}
               style={{ width: `${budgetPct}%` }}
             />
           </div>
@@ -138,7 +154,12 @@ export function CampaignCard({
         <div className="flex items-center justify-between gap-3">
           <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
             <Users className="h-3.5 w-3.5" />
-            {campaign.clippers.toLocaleString("en-US")} clippers
+            {campaign.joinCount.toLocaleString("en-US")} joined
+            {campaign.clippers > 0 && (
+              <span className="text-muted-foreground/70">
+                · {campaign.clippers.toLocaleString("en-US")} approved
+              </span>
+            )}
           </span>
           {onJoin &&
             (campaign.status === "paused" ? (
@@ -149,6 +170,15 @@ export function CampaignCard({
                 disabled
               >
                 Campaign paused
+              </Button>
+            ) : exhausted && !campaign.joined ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="cursor-not-allowed opacity-50"
+                disabled
+              >
+                Budget spent
               </Button>
             ) : campaign.joined ? (
               <Button

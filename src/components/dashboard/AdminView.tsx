@@ -32,6 +32,7 @@ import {
   earnedOf,
   fmtFull,
   fmtCents,
+  fmtCompactMoney,
   fmtMoney,
   fmtRate,
   fmtViews,
@@ -594,6 +595,7 @@ export function AdminView({
                     (campaign.spent / Math.max(campaign.budget, 1)) * 100,
                   ),
                 );
+                const exhausted = campaign.spent >= campaign.budget;
                 return (
                   <TableRow key={campaign.id}>
                     <TableCell>
@@ -607,7 +609,8 @@ export function AdminView({
                             {campaign.brand}
                           </p>
                           <p className="truncate text-[11px] text-muted-foreground">
-                            {campaign.title} · {campaign.clippers} clippers
+                            {campaign.title} · {campaign.joinCount} joined ·{" "}
+                            {campaign.clippers} approved
                           </p>
                         </div>
                       </div>
@@ -624,14 +627,26 @@ export function AdminView({
                       <div className="w-36">
                         <div className="flex justify-between text-[10.5px] text-muted-foreground">
                           <span>
-                            {fmtMoney(campaign.spent)}/
-                            {fmtMoney(campaign.budget)}
+                            {fmtCompactMoney(campaign.spent)}/
+                            {fmtCompactMoney(campaign.budget)}
                           </span>
-                          <span>{pct}%</span>
+                          <span
+                            className={
+                              exhausted
+                                ? "font-bold text-amber-600 dark:text-amber-400"
+                                : undefined
+                            }
+                          >
+                            {exhausted ? "spent" : `${pct}%`}
+                          </span>
                         </div>
                         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-brand to-[#a78bfa]"
+                            className={`h-full rounded-full ${
+                              exhausted
+                                ? "bg-amber-500"
+                                : "bg-gradient-to-r from-brand to-[#a78bfa]"
+                            }`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>

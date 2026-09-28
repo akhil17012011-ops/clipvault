@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireAdmin, requireUser } from "./access";
+import { NotAllowedError, requireAdmin, requireUser } from "./access";
 
 /**
  * Campaigns, joined campaigns, and the admin-side campaign controls.
@@ -68,20 +68,32 @@ const CAMPAIGN_FIELDS = v.object({
   ),
 });
 
-/** Every campaign, newest first, with a `joined` flag for the caller. */
+/**
+ * Every campaign, newest first, with a `joined` flag for the caller and the
+ * total number of creators who joined it. Join totals are counted in one
+ * pass over the joins table rather than one query per campaign — a feed of
+ * twenty campaigns would otherwise read it twenty times.
+ */
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx);
     const campaigns = await ctx.db.query("campaigns").collect();
-    const joins = await ctx.db
-      .query("campaignJoins")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+    const joins = await ctx.db.query("campaignJoins").collect();
 
-    const joinedIds = new Set(joins.map((join) => join.campaignId));
+    const joinedIds = new Set<string>();
+    const counts = new Map<string, number>();
+    for (const join of joins) {
+      counts.set(join.campaignId, (counts.get(join.campaignId) ?? 0) + 1);
+      if (join.userId === user._id) joinedIds.add(join.campaignId);
+    }
+
     return campaigns
-      .map((campaign) => ({ ...campaign, joined: joinedIds.has(campaign._id) }))
+      .map((campaign) => ({
+        ...campaign,
+        joined: joinedIds.has(campaign._id),
+        joinCount: counts.get(campaign._id) ?? 0,
+      }))
       .sort((a, b) => b.createdAt - a.createdAt);
   },
 });
@@ -94,8 +106,19 @@ export const publicList = query({
   args: {},
   handler: async (ctx) => {
     const campaigns = await ctx.db.query("campaigns").collect();
+    const joins = await ctx.db.query("campaignJoins").collect();
+
+    const counts = new Map<string, number>();
+    for (const join of joins) {
+      counts.set(join.campaignId, (counts.get(join.campaignId) ?? 0) + 1);
+    }
+
     return campaigns
-      .map((campaign) => ({ ...campaign, joined: false }))
+      .map((campaign) => ({
+        ...campaign,
+        joined: false,
+        joinCount: counts.get(campaign._id) ?? 0,
+      }))
       .sort((a, b) => b.createdAt - a.createdAt);
   },
 });
@@ -240,6 +263,16 @@ export const join = mutation({
       .first();
 
     if (existing) return;
+
+    /* The budget is the campaign's life support: every approved clip takes
+       money out of it, and once it is gone there is nothing left to pay a new
+       member with — so the door closes here, server-side, not just on the
+       button. An operator can reopen simply by raising the budget. */
+    if (campaign.spent >= campaign.budget) {
+      throw new NotAllowedError(
+        "This campaign's budget has been fully spent, so it isn't taking new members.",
+      );
+    }
 
     await ctx.db.insert("campaignJoins", {
       campaignId: args.campaignId,

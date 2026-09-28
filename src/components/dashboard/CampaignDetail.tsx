@@ -1,7 +1,6 @@
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   PLATFORM_META,
   fmtFull,
@@ -20,7 +19,6 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useState } from "react";
 import {
-  ArrowLeft,
   Check,
   Download,
   Eye,
@@ -39,10 +37,8 @@ import {
  */
 export function CampaignDetail({
   campaign,
-  onBack,
 }: {
   campaign: Campaign;
-  onBack: () => void;
 }) {
   const { accounts, submitClip } = useClipVault();
   const convex = useConvex();
@@ -62,6 +58,9 @@ export function CampaignDetail({
     100,
     Math.round((campaign.spent / Math.max(campaign.budget, 1)) * 100),
   );
+  /* Every dollar of budget is already committed to approved clips — the
+     campaign takes no new work, and the server refuses it too. */
+  const exhausted = campaign.spent >= campaign.budget;
 
   const handleSubmit = async () => {
     const result = validateClip({
@@ -171,9 +170,9 @@ export function CampaignDetail({
               hint="per clip to qualify"
             />
             <Stat
-              label="Clippers"
-              value={`${campaign.clippers}`}
-              hint="on this campaign"
+              label="Joined"
+              value={`${campaign.joinCount}`}
+              hint={campaign.joinCount === 1 ? "creator on this campaign" : "creators on this campaign"}
             />
             <Stat
               label="Budget left"
@@ -319,6 +318,13 @@ export function CampaignDetail({
               </div>
             )}
 
+            {exhausted && (
+              <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.08] px-3.5 py-3 text-[12px] font-medium text-amber-700 dark:text-amber-200">
+                This campaign&apos;s budget is fully spent, so it has stopped
+                accepting clips.
+              </div>
+            )}
+
             <label className="block">
               <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 Clip link
@@ -383,10 +389,14 @@ export function CampaignDetail({
             <Button
               className="w-full gap-1.5 glow-primary"
               onClick={handleSubmit}
-              disabled={busy}
+              disabled={busy || exhausted}
             >
               <Send className="h-4 w-4" />
-              {busy ? "Checking…" : "Scan & submit"}
+              {exhausted
+                ? "Budget spent"
+                : busy
+                  ? "Checking…"
+                  : "Scan & submit"}
             </Button>
 
             <p className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">

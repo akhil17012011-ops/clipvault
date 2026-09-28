@@ -1,6 +1,7 @@
 import { api } from "@/convex/_generated/api";
 import type { GenericId } from "convex/values";
 import { useConvex, useConvexAuth, useMutation, useQuery } from "convex/react";
+import { toast } from "sonner";
 import {
   createContext,
   useCallback,
@@ -239,6 +240,7 @@ const toCampaign = (row: {
   budget: number;
   spent: number;
   clippers: number;
+  joinCount: number;
   guidelines: string[];
   status: Campaign["status"];
   invoice: Campaign["invoice"];
@@ -259,6 +261,7 @@ const toCampaign = (row: {
   budget: row.budget,
   spent: row.spent,
   clippers: row.clippers,
+  joinCount: row.joinCount,
   guidelines: row.guidelines,
   status: row.status,
   invoice: row.invoice,
@@ -601,10 +604,23 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       if (!isAuthenticated) return;
       const campaign = (rawCampaigns ?? []).find((row) => row._id === id);
       if (!campaign) return;
-      if (campaign.joined) {
-        await leaveCampaign({ campaignId: campaignId(id) });
-      } else {
-        await joinCampaign({ campaignId: campaignId(id) });
+      try {
+        if (campaign.joined) {
+          await leaveCampaign({ campaignId: campaignId(id) });
+        } else {
+          await joinCampaign({ campaignId: campaignId(id) });
+        }
+      } catch (err) {
+        /* The server has the real answer — a spent budget, a paused
+           campaign — and without this the rejection disappeared as an
+           unhandled promise, leaving a Join button that silently did
+           nothing. */
+        toast.error("Couldn't update that campaign", {
+          description:
+            err instanceof Error && err.message
+              ? err.message
+              : "Please try again in a moment.",
+        });
       }
     },
     [isAuthenticated, rawCampaigns, joinCampaign, leaveCampaign],
@@ -651,10 +667,12 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
 
   const updateCampaign = useCallback(
     async (id: string, patch: Partial<Campaign>) => {
-      /* `id` and `joined` are client-only fields the server does not own. */
-      const { id: _id, joined: _joined, ...rest } = patch;
+      /* `id`, `joined` and `joinCount` are client-only fields the server does
+         not own — sending them would fail the patch validator. */
+      const { id: _id, joined: _joined, joinCount: _joinCount, ...rest } = patch;
       void _id;
       void _joined;
+      void _joinCount;
       await updateCampaignMutation({ campaignId: campaignId(id), patch: rest });
     },
     [updateCampaignMutation],
