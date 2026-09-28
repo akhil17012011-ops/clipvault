@@ -1,0 +1,1 @@
+import{c as s}from"./index-C0wfW4SG.js";const t=[["path",{d:"M7 7h10v10",key:"1tivn9"}],["path",{d:"M7 17 17 7",key:"1vkiza"}]],o=s("arrow-up-right",t),a=[.16,1,.3,1],i={type:"spring",stiffness:260,damping:32,mass:.9},e={type:"spring",stiffness:420,damping:34,mass:.7},p={duration:.62,ease:a};export{o as A,a as E,i as S,e as a,p as b};
