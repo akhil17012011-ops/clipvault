@@ -9,6 +9,7 @@ import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
 import { AdminMessages } from "@/components/dashboard/AdminMessages";
 import { AdminPayouts } from "@/components/dashboard/AdminPayouts";
 import { AdminCampaignRequests } from "@/components/dashboard/AdminCampaignRequests";
+import { Leaderboard } from "@/components/dashboard/Leaderboard";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { ShortcutGrid } from "@/components/dashboard/ShortcutGrid";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,7 @@ export type AdminSection =
   | "creators"
   | "users"
   | "messages"
+  | "leaderboard"
   | "requests"
   | "payouts"
   | "invoices"
@@ -226,6 +228,12 @@ export function AdminView({
       description:
         "Send one creator a note, or announce something to everyone.",
     },
+    leaderboard: {
+      kicker: "Standings",
+      title: "Leaderboard",
+      description:
+        "Every creator ranked by what they have earned, the views they have produced and the reach they bring.",
+    },
     requests: {
       kicker: "Brands",
       title: "Campaign requests",
@@ -312,10 +320,14 @@ export function AdminView({
               {page.description}
             </p>
           </div>
-          <Button className="gap-1.5 glow-primary" onClick={onCreateCampaign}>
-            <Plus className="h-4 w-4" />
-            Create campaign
-          </Button>
+          {/* A campaign is created on the campaigns page, so the button that
+              creates one only lives there. */}
+          {section === "campaigns" && (
+            <Button className="gap-1.5 glow-primary" onClick={onCreateCampaign}>
+              <Plus className="h-4 w-4" />
+              Create campaign
+            </Button>
+          )}
         </div>
       </div>
 
@@ -413,6 +425,19 @@ export function AdminView({
           className="glass-panel rounded-2xl p-5"
         >
           <AdminCampaignRequests />
+        </motion.section>
+      )}
+
+      {section === "leaderboard" && (
+        <motion.section
+          id="leaderboard"
+          initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.78, ease: EASE }}
+          className="space-y-5"
+        >
+          <Leaderboard />
         </motion.section>
       )}
 

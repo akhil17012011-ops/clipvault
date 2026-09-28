@@ -24,6 +24,7 @@ import {
   ReceiptText,
   Search,
   ShieldCheck,
+  Trophy,
   UserRound,
   Users,
   MessageSquare,
@@ -72,6 +73,12 @@ const NAV: Record<DashboardView, NavItem[]> = {
       group: "Workspace",
     },
     {
+      to: "/dashboard/leaderboard",
+      label: "Leaderboard",
+      icon: Trophy,
+      group: "Workspace",
+    },
+    {
       to: "/dashboard/payments",
       label: "Payments",
       icon: Wallet,
@@ -97,6 +104,12 @@ const NAV: Record<DashboardView, NavItem[]> = {
       to: "/dashboard/requests",
       label: "Campaign requests",
       icon: Megaphone,
+      group: "Workspace",
+    },
+    {
+      to: "/dashboard/leaderboard",
+      label: "Leaderboard",
+      icon: Trophy,
       group: "Workspace",
     },
     {

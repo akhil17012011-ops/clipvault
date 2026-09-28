@@ -21,6 +21,7 @@ const CREATOR_SECTIONS: CreatorSection[] = [
   "clips",
   "payments",
   "accounts",
+  "leaderboard",
   "request",
 ];
 const ADMIN_SECTIONS: AdminSection[] = [
@@ -28,6 +29,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
   "creators",
   "users",
   "messages",
+  "leaderboard",
   "requests",
   "payouts",
   "invoices",

@@ -9,6 +9,7 @@ import {
   type AccountStats,
   type LinkedAccount,
   type Platform,
+  type Submission,
 } from "@/lib/clip-vault-data";
 import { motion } from "framer-motion";
 import {
@@ -25,6 +26,8 @@ import { useState } from "react";
 type Props = {
   accounts: LinkedAccount[];
   stats: AccountStats[];
+  /** The creator's own clips, for the averages this page shows. */
+  clips: Submission[];
   onConnect: (platform?: Platform) => void;
   onRemove: (id: string) => void;
 };
@@ -49,7 +52,13 @@ function joined(ms: number | undefined): string | null {
  * More than one account per platform is normal, so the add buttons name the
  * platform instead of offering a single ambiguous "connect".
  */
-export function AccountsView({ accounts, stats, onConnect, onRemove }: Props) {
+export function AccountsView({
+  accounts,
+  stats,
+  clips,
+  onConnect,
+  onRemove,
+}: Props) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -59,9 +68,13 @@ export function AccountsView({ accounts, stats, onConnect, onRemove }: Props) {
     (sum, a) => sum + (a.followers ?? 0),
     0,
   );
-  const clips = stats.reduce((sum, s) => sum + s.clips, 0);
+  const clipCount = stats.reduce((sum, s) => sum + s.clips, 0);
   const views = stats.reduce((sum, s) => sum + s.views, 0);
   const earned = stats.reduce((sum, s) => sum + s.earned, 0);
+  const live = clips.filter((c) => c.status !== "rejected");
+  const avgViews = live.length > 0 ? Math.round(views / live.length) : 0;
+  const bestViews = live.reduce((max, c) => Math.max(max, c.views), 0);
+  const platforms = [...new Set(connected.map((a) => a.platform))];
 
   const countOn = (platform: Platform) =>
     accounts.filter((a) => a.platform === platform).length;
@@ -107,7 +120,7 @@ export function AccountsView({ accounts, stats, onConnect, onRemove }: Props) {
           {[
             { label: "Verified", value: `${connected.length}` },
             { label: "Followers", value: fmtViews(followers) },
-            { label: "Clips", value: fmtFull(clips) },
+            { label: "Clips", value: fmtFull(clipCount) },
             { label: "Views", value: fmtViews(views) },
           ].map((item) => (
             <div
@@ -133,6 +146,29 @@ export function AccountsView({ accounts, stats, onConnect, onRemove }: Props) {
             so far.
           </p>
         )}
+
+        {/* The averages a creator actually judges themselves by, computed from
+            the same clips the payouts are made from. */}
+        <dl className="mt-4 grid grid-cols-2 gap-2.5 border-t border-white/[0.07] pt-4 sm:grid-cols-4">
+          {[
+            { label: "Avg views / clip", value: fmtViews(avgViews) },
+            { label: "Best clip", value: fmtViews(bestViews) },
+            {
+              label: "Platforms",
+              value: platforms.length > 0 ? `${platforms.length}` : "—",
+            },
+            { label: "Posts live", value: fmtFull(connected.reduce((sum, a) => sum + (a.posts ?? 0), 0)) },
+          ].map((item) => (
+            <div key={item.label}>
+              <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                {item.label}
+              </dt>
+              <dd className="mt-1 font-mono text-[15px] font-extrabold tracking-tight">
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </motion.section>
 
       {pending.length > 0 && (

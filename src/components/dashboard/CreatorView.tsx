@@ -35,6 +35,7 @@ import { MessagesInbox } from "@/components/dashboard/MessagesInbox";
 import { RequestCampaignView } from "@/components/dashboard/RequestCampaignView";
 import { AccountsView } from "@/components/dashboard/AccountsView";
 import { BrandRequestPanel } from "@/components/dashboard/BrandRequestPanel";
+import { Leaderboard } from "@/components/dashboard/Leaderboard";
 import {
   PayoutHistory,
   PayoutRequestCard,
@@ -64,6 +65,7 @@ export type CreatorSection =
   | "clips"
   | "payments"
   | "accounts"
+  | "leaderboard"
   | "request"
   | "messages";
 
@@ -144,7 +146,13 @@ export function CreatorView({
       title: "Accounts",
       description:
         "Bio-verified handles that Clip Vault tracks views back to you for.",
-    },    request: {
+    },    leaderboard: {
+      kicker: "Standings",
+      title: "Leaderboard",
+      description:
+        "Who is earning and getting reach on Clip Vault — ranked from the same numbers your payouts are made from.",
+    },
+    request: {
       kicker: "Brands",
       title: "Request a campaign",
       description:
@@ -609,6 +617,8 @@ export function CreatorView({
           </motion.section>
       )}
 
+      {section === "leaderboard" && <Leaderboard />}
+
       {section === "request" && <RequestCampaignView />}
 
       {section === "messages" && <MessagesInbox />}
@@ -618,6 +628,7 @@ export function CreatorView({
           <AccountsView
             accounts={accounts}
             stats={accountStats}
+            clips={stats.mine}
             onConnect={onConnect}
             onRemove={removeAccount}
           />

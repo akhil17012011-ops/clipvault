@@ -1,5 +1,3 @@
-import { PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -8,10 +6,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { ChevronDown, Users as UsersIcon } from "lucide-react";
-import { fmtCents, fmtFull, fmtViews, type AdminUser } from "@/lib/clip-vault-data";
+import { ChevronRight, Users as UsersIcon } from "lucide-react";
+import { fmtCents, fmtViews } from "@/lib/clip-vault-data";
+import type { Id } from "@/convex/_generated/dataModel";
+import { UserDetail } from "@/components/dashboard/UserDetail";
 import { useClipVault } from "@/lib/clip-vault-store";
 
 function joinedLabel(ts: number): string {
@@ -30,7 +30,9 @@ function joinedLabel(ts: number): string {
  */
 export function UsersTable() {
   const { adminUsers } = useClipVault();
-  const [expanded, setExpanded] = useState<string | null>(null);
+  /* Clicking a row opens the full profile — accounts, reach, latest uploads and
+     the averages — rather than only expanding an inline list of handles. */
+  const [detailId, setDetailId] = useState<Id<"users"> | null>(null);
 
   const totalViews = adminUsers.reduce((sum, u) => sum + u.views, 0);
   const totalEarned = adminUsers.reduce((sum, u) => sum + u.availableCents, 0);
@@ -84,24 +86,20 @@ export function UsersTable() {
             </TableHeader>
             <TableBody>
               {adminUsers.map((user) => {
-                const open = expanded === user.userId;
                 return (
                   <>
                     <TableRow
                       key={user.userId}
                       onClick={() =>
-                        setExpanded(open ? null : user.userId)
+                        setDetailId(user.userId as Id<"users">)
                       }
+                      title="Open this creator's profile"
                       className="cursor-pointer transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                     >
                       <TableCell>
-                        <motion.span
-                          animate={{ rotate: open ? 180 : 0 }}
-                          transition={{ duration: 0.25, ease: "easeOut" }}
-                          className="block text-muted-foreground"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </motion.span>
+                        <span className="block text-muted-foreground">
+                          <ChevronRight className="h-4 w-4" />
+                        </span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2.5">
@@ -161,59 +159,6 @@ export function UsersTable() {
                       </TableCell>
                     </TableRow>
 
-                    {open && (
-                      <TableRow key={`${user.userId}-accounts`}>
-                        <TableCell colSpan={8} className="bg-black/[0.02] px-4 py-3 dark:bg-white/[0.02]">
-                          {user.accounts.length === 0 ? (
-                            <p className="text-[12px] text-muted-foreground">
-                              No accounts connected yet.
-                            </p>
-                          ) : (
-                            <ul className="space-y-2">
-                              {user.accounts.map((account) => (
-                                <li
-                                  key={account.id}
-                                  className="glass-chip flex flex-wrap items-center gap-3 rounded-lg px-3 py-2"
-                                >
-                                  <PlatformChip platform={account.platform} size="sm" />
-                                  <span className="text-[13px] font-semibold">
-                                    @{account.handle}
-                                  </span>
-                                  <StatusBadge status={account.status} />
-                                  <span className="text-[11px] text-muted-foreground">
-                                    {account.followers != null
-                                      ? `${fmtViews(account.followers)} followers`
-                                      : null}
-                                    {account.followers != null &&
-                                    account.posts != null
-                                      ? " · "
-                                      : null}
-                                    {account.posts != null
-                                      ? `${fmtFull(account.posts)} posts`
-                                      : null}
-                                    {account.followers == null &&
-                                    account.posts == null
-                                      ? "Reach not published by this platform"
-                                      : null}
-                                  </span>
-                                  {account.connectedAt ? (
-                                    <span className="ml-auto text-[11px] text-muted-foreground">
-                                      verified{" "}
-                                      {new Date(
-                                        account.connectedAt,
-                                      ).toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                      })}
-                                    </span>
-                                  ) : null}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </>
                 );
               })}
@@ -221,6 +166,12 @@ export function UsersTable() {
           </Table>
         </div>
       )}
+
+      <AnimatePresence>
+        {detailId && (
+          <UserDetail userId={detailId} onClose={() => setDetailId(null)} />
+        )}
+      </AnimatePresence>
     </motion.section>
   );
 }
