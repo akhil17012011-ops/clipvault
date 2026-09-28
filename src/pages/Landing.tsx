@@ -417,12 +417,12 @@ function Hero() {
             <Link
               to={
                 isAuthenticated
-                  ? "/dashboard"
-                  : "/auth?returnTo=/dashboard"
+                  ? "/dashboard/request"
+                  : "/auth?returnTo=/dashboard/request"
               }
             >
               <Megaphone className="mr-2 h-4 w-4" />
-              {isAuthenticated ? "Admin console" : "Start campaign"}
+              {isAuthenticated ? "Request a campaign" : "Start a campaign"}
             </Link>
           </Button>
         </motion.div>
@@ -1099,16 +1099,16 @@ function TwoSides() {
     {
       icon: Megaphone,
       title: "Brands",
-      desc: "Reach you only pay for when it's verified. Set the rate, the rules and the budget — creators do the rest.",
+      desc: "Reach you only pay for when it's verified. Send your campaign details, we set the rate, the rules and the budget — creators do the rest.",
       bullets: [
+        "Request a campaign in one form",
+        "An operator sets up the rate and rules",
         "Verified views only, bot-filtered",
-        "Full control of rate, rules and budget",
-        "Invoice tracking and payout reporting",
       ],
-      cta: isAuthenticated ? "Open admin console" : "Start a campaign",
+      cta: isAuthenticated ? "Request a campaign" : "Start a campaign",
       to: isAuthenticated
-        ? "/dashboard"
-        : "/auth?returnTo=/dashboard",
+        ? "/dashboard/request"
+        : "/auth?returnTo=/dashboard/request",
       accent: "from-brand/15 to-transparent",
       iconColor: "text-brand bg-brand/10 border-brand/30",
     },
@@ -1406,11 +1406,11 @@ function FinalCTA() {
               <Link
                 to={
                   isAuthenticated
-                    ? "/dashboard"
-                    : "/auth?returnTo=/dashboard"
+                    ? "/dashboard/request"
+                    : "/auth?returnTo=/dashboard/request"
                 }
               >
-                {isAuthenticated ? "Admin console" : "Start campaign"}
+                {isAuthenticated ? "Request a campaign" : "Start a campaign"}
               </Link>
             </Button>
           </div>

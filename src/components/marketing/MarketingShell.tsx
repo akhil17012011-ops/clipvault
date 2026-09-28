@@ -38,7 +38,7 @@ export const MARKETING_LINKS: {
     title: "Brands",
     links: [
       { label: "How to start", to: "/brands" },
-      { label: "Start a campaign", to: "/auth?returnTo=/dashboard/campaigns" },
+      { label: "Start a campaign", to: "/auth?returnTo=/dashboard/request" },
       { label: "Campaign rules", to: "/brands#rules" },
       { label: "Creator payouts", to: "/creators#payouts" },
       { label: "Brand invoicing", to: "/brands#invoicing" },
@@ -234,7 +234,7 @@ export function MarketingCTA({
   body: string;
   /** Offer the Discord invite alongside the auth button. */
   discord?: boolean;
-  /** Main call to action. Brands land on the booking page, not the console. */
+  /** Main call to action. Brands land on the campaign request, not the console. */
   primaryLabel?: string;
   primaryTo?: string;
 }) {
