@@ -4,11 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <!-- The tab icon is the brand's raster artwork, not the vector mark.
-       The ?v= is deliberate: browsers key their favicon cache on the exact
-       URL, so without it a visitor who loaded an earlier icon keeps seeing it
-       even after the file behind the URL changed. -->
-  <link rel="icon" type="image/jpeg" href="/assets/1000007882.jpg?v=1" />
-  <link rel="apple-touch-icon" href="/assets/1000007882.jpg?v=1" />
+       The path itself is the cache-buster: Android Chrome keys its favicon
+       cache on the URL path and often ignores query-string changes, so the
+       file lives at a path no previous favicon used. When this artwork
+       changes again, ship the new file at a NEW path rather than adding a
+       query string to this one. -->
+  <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+  <link rel="apple-touch-icon" href="/favicon.jpg" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#160B33" />
