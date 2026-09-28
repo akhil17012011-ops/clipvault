@@ -84,13 +84,6 @@ const schema = defineSchema(
 
       role: v.optional(roleValidator), // role of the user. do not remove
 
-      /**
-       * When this account last finished the first-run tour of the console.
-       * Stored on the user rather than in the browser so a new device does not
-       * greet someone who already knows the product with it again.
-       */
-      tourCompletedAt: v.optional(v.number()),
-
       /* There is deliberately no payout address on the user row. A creator
          picks the currency, network and address on the payout request itself —
          see the `payoutRequests` table — so a stale wallet can never be paid by

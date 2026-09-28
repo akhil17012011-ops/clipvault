@@ -5,7 +5,6 @@ import { CreatorView } from "@/components/dashboard/CreatorView";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { SubmitClipModal } from "@/components/dashboard/SubmitClipModal";
 import { TopBar, type DashboardView } from "@/components/dashboard/TopBar";
-import { DashboardTour } from "@/components/dashboard/DashboardTour";
 import type { AdminSection } from "@/components/dashboard/AdminView";
 import type { CreatorSection } from "@/components/dashboard/CreatorView";
 import { useAuth } from "@/hooks/use-auth";
@@ -46,9 +45,6 @@ export default function Dashboard() {
   const [modal, setModal] = useState<ModalKind>(null);
   /** Which platform the connect wizard opens on, so "add another" is unambiguous. */
   const [connectPlatform, setConnectPlatform] = useState<Platform>("tiktok");
-  /* The first-run tour. It opens itself for an account that has never seen it,
-     and the sidebar can bring it back on demand. */
-  const [tourOpen, setTourOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [onboardingSkipped, setOnboardingSkipped] = useState(false);
   const onboardedOnce = useRef(accounts.length > 0);
@@ -107,7 +103,6 @@ export default function Dashboard() {
         role={view}
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        onStartTour={() => setTourOpen(true)}
       />
 
       <div className="relative lg:pl-[264px]">
@@ -150,8 +145,6 @@ export default function Dashboard() {
           your account.
         </footer>
       </div>
-
-      <DashboardTour open={tourOpen} onOpenChange={setTourOpen} />
 
       {modal === "connect" && (
         <ConnectAccountModal
