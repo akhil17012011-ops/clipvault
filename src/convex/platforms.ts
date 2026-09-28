@@ -27,6 +27,34 @@ const BROWSER_UA =
 /** Instagram's web app identifies itself with this public constant header. */
 const INSTAGRAM_APP_ID = "936619743392459";
 
+/* ------------------------------------------------------------------ */
+/* Deadlines                                                           */
+
+/** Profile/API reads and page loads. */
+const READ_DEADLINE_MS = 10_000;
+/** The two-call sign-in handshake. */
+const LOGIN_DEADLINE_MS = 15_000;
+/** The paid run carries its own 120s server timeout; this sits above it. */
+const APIFY_DEADLINE_MS = 135_000;
+
+/**
+ * A hard deadline for one outbound call.
+ *
+ * Without this the refresh loop could not keep its promise of a read every
+ * ~15 seconds: the client ticks every couple of seconds and skips while a
+ * batch is in flight, so one socket Instagram decides not to answer held the
+ * entire loop until the runtime's multi-minute idle timeout gave up. Stall
+ * after the headers instead of before them and the same signal cancels the
+ * body read. The timer is deliberately left to fire once rather than
+ * meticulously cleared — aborting an already-finished request is a no-op and
+ * the reference is released right after.
+ */
+function withDeadline(ms: number): AbortSignal {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 /** Apify's official Instagram Profile Scraper. */
 const APIFY_ACTOR = "apify~instagram-profile-scraper";
 
@@ -130,6 +158,7 @@ async function fetchText(url: string, headers: HeadersInit = {}): Promise<string
     const response = await fetch(url, {
       headers: { "user-agent": BROWSER_UA, accept: "text/html,*/*", ...headers },
       redirect: "follow",
+      signal: withDeadline(READ_DEADLINE_MS),
     });
     if (!response.ok) return null;
     return await response.text();
@@ -326,7 +355,11 @@ async function fetchInstagramDirect(
 
   let response: Response;
   try {
-    response = await fetch(url, { headers, redirect: "follow" });
+    response = await fetch(url, {
+      headers,
+      redirect: "follow",
+      signal: withDeadline(READ_DEADLINE_MS),
+    });
   } catch {
     return null;
   }
@@ -407,6 +440,7 @@ async function fetchInstagramViaApify(
           authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ usernames: [handle] }),
+        signal: withDeadline(APIFY_DEADLINE_MS),
       },
     );
   } catch {
@@ -536,6 +570,7 @@ export async function instagramLogin(
     landing = await fetch("https://www.instagram.com/", {
       headers: { "user-agent": BROWSER_UA, accept: "text/html,*/*" },
       redirect: "follow",
+      signal: withDeadline(LOGIN_DEADLINE_MS),
     });
   } catch {
     return { ok: false, reason: "Instagram didn't answer the sign-in attempt. Try again shortly." };
@@ -580,6 +615,7 @@ export async function instagramLogin(
           .join("; "),
       },
       body: form.toString(),
+      signal: withDeadline(LOGIN_DEADLINE_MS),
     });
   } catch {
     return { ok: false, reason: "Instagram didn't answer the sign-in attempt. Try again shortly." };
@@ -688,7 +724,7 @@ export async function fetchInstagramLoggedIn(
   try {
     response = await fetch(
       `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(handle)}`,
-      { headers, redirect: "follow" },
+      { headers, redirect: "follow", signal: withDeadline(READ_DEADLINE_MS) },
     );
   } catch {
     return { ok: false, reason: "Instagram didn't answer the profile read.", transient: true };
