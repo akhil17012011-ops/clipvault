@@ -9,10 +9,10 @@
  *  - YouTube  the channel description ships in the page's meta description
  *  - TikTok   the bio is in the `signature` field of the embedded page JSON
  *  - X        the bio ships in the page's meta description
- *  - Instagram renders nothing server-side, so its public web profile API is
- *             used, which returns the `biography` field. Instagram throttles
- *             datacentre IPs wholesale, so this one is read through the
- *             configured bot account's signed-in session instead.
+ *  - Instagram renders nothing server-side and blocks datacentre addresses
+ *             outright, so it is read through the configured bot account's
+ *             signed-in session, and failing that through a hosted reader
+ *             running from an address Instagram does not block.
  *
  * Nothing here guesses. If a profile cannot be read the caller is told so
  * rather than being handed a fabricated bio.
@@ -75,6 +75,14 @@ export type ProfileOptions = {
    * caller because only the caller can hold the database.
    */
   sessionReader?: (handle: string) => Promise<ProfileResult | null>;
+  /**
+   * The API token for a hosted reader, when one is configured.
+   *
+   * This is what carries Instagram once every direct route is refused. Read
+   * from the environment inside the reader itself, so no key is ever handed
+   * through a query result or a browser bundle.
+   */
+  scraperToken?: string | null;
 };
 
 /**
@@ -667,6 +675,15 @@ async function fetchInstagram(
   const direct = await fetchInstagramDirect(handle);
   if (direct) return direct;
 
+  /* Last, and only because it is the only one that survives a datacentre IP:
+     the hosted reader. It is tried after the free routes so that on a network
+     Instagram has not blocked us, nothing is ever paid for. */
+  const viaReader = await fetchInstagramViaReader(
+    options.scraperToken ?? "",
+    handle,
+  );
+  if (viaReader) return viaReader;
+
   return {
     ok: false,
     reason:
@@ -798,4 +815,175 @@ export async function fetchInstagramGraph(
     ...(followers !== undefined ? { followers } : {}),
     ...(posts !== undefined ? { posts } : {}),
   };
+}
+
+/* ---------------------------------------------------------------------------
+ * Instagram, via a hosted reader.
+ * ------------------------------------------------------------------------- */
+
+/** How long one hosted-reader run may take, start to finish. */
+const SCRAPER_RUN_DEADLINE_MS = 120_000;
+
+/** Apify's own "give up" deadline, sent so a stuck run cannot outlive ours. */
+const SCRAPER_RUN_WAIT_SECONDS = 110;
+
+const SCRAPER_ACTOR = "apify~instagram-profile-scraper";
+const SCRAPER_API = "https://api.apify.com/v2";
+
+/**
+ * The real follower count, read by Apify rather than by this deployment.
+ *
+ * Why this exists: Instagram blocks datacentre addresses. Verified against this
+ * server while writing it — the anonymous profile endpoint answers `429` /
+ * `401 require_login`, the `/embed/` page is the same 640KB shell for every
+ * handle, and the bot sign-in route now 404s. The mirrors that are still up
+ * (dumpor, greatfon) answer `200` with a byte-identical page for three
+ * different handles, so their "200" is a static shell, not a count.
+ *
+ * Apify runs the scrape from its own rotating residential addresses, which is
+ * why it is the one thing that still answers. It costs a fraction of a cent
+ * per profile, which on a free plan is a very large number of syncs per month,
+ * and it needs no Meta app, no professional-account conversion, and no creator
+ * to do anything at all.
+ *
+ * What it is *not*: a bypass of anything the creator agreed to. It reads the
+ * same public profile page any visitor sees, and it is used for the same thing
+ * the official token is used for — reading a public number so the operator can
+ * see it. The Graph API stays the better route where a creator has offered a
+ * token, because a token is exact and costs nothing at all.
+ *
+ * Returns null when no token is configured, so the chain can keep its other
+ * routes and this stays an optional reader rather than a hard dependency.
+ */
+export async function fetchInstagramViaReader(
+  token: string,
+  expectedHandle: string,
+): Promise<ProfileResult | null> {
+  const wanted = expectedHandle.trim().toLowerCase();
+  if (!token) return null;
+
+  let runId: string | null = null;
+  let datasetId: string | null = null;
+
+  try {
+    const start = await fetch(
+      `${SCRAPER_API}/acts/${SCRAPER_ACTOR}/runs?token=${encodeURIComponent(
+        token,
+      )}&waitForFinish=${SCRAPER_RUN_WAIT_SECONDS}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ usernames: [wanted] }),
+        signal: withDeadline(SCRAPER_RUN_DEADLINE_MS),
+      },
+    );
+
+    /* A refusal here is about the account, not the profile: a free plan that
+       has run out of credit, a suspended token, an actor that has been
+       renamed. Those are worth saying out loud, because "try again later"
+       would send an operator to wait for a platform that is not the problem. */
+    if (!start.ok) {
+      return {
+        ok: false,
+        reason: readerRefusal(start.status),
+      };
+    }
+
+    const started: unknown = await start.json();
+    const run = (started as { data?: { id?: string; defaultDatasetId?: string } })
+      ?.data;
+    runId = run?.id ?? null;
+    datasetId = run?.defaultDatasetId ?? null;
+
+    if (!runId || !datasetId) {
+      return {
+        ok: false,
+        reason: "The profile reader didn't return a readable result.",
+      };
+    }
+  } catch {
+    return {
+      ok: false,
+      reason: "The profile reader didn't respond. Try pressing Sync again.",
+    };
+  }
+
+  try {
+    const items: unknown = await (
+      await fetch(
+        `${SCRAPER_API}/datasets/${datasetId}/items?token=${encodeURIComponent(
+          token,
+        )}&clean=true&limit=1`,
+        { signal: withDeadline(20_000) },
+      )
+    ).json();
+
+    const item = (Array.isArray(items) ? items[0] : null) as Record<
+      string,
+      unknown
+    > | null;
+
+    /* An empty dataset means the profile is gone, renamed, or private. Said as
+       a fact about the profile, never as "we could not read it" — the reader
+       answered, and its answer was "there is nothing there". */
+    if (!item) {
+      return {
+        ok: false,
+        reason: `@${expectedHandle} doesn't exist, is private, or was renamed.`,
+      };
+    }
+
+    const username =
+      typeof item.username === "string" ? item.username.toLowerCase() : null;
+    if (!username) {
+      return {
+        ok: false,
+        reason: `The profile reader found no profile for @${expectedHandle}.`,
+      };
+    }
+
+    const followers =
+      typeof item.followersCount === "number" ? item.followersCount : undefined;
+    const posts =
+      typeof item.postsCount === "number" ? item.postsCount : undefined;
+
+    return {
+      ok: true,
+      handle: username,
+      bio: typeof item.biography === "string" ? item.biography : "",
+      ...(followers !== undefined ? { followers } : {}),
+      ...(posts !== undefined ? { posts } : {}),
+    };
+  } catch {
+    return {
+      ok: false,
+      reason:
+        "The profile reader finished but we could not load its result. Try again.",
+    };
+  } finally {
+    /* Every run is a stored dataset on somebody's account. It is read once,
+       here, and has no reason to outlive that read, so it is deleted on the way
+       out — including on the failure paths, which is the whole reason this is
+       in a `finally` rather than at the end of the happy path. */
+    if (runId) {
+      void fetch(
+        `${SCRAPER_API}/actor-runs/${runId}?token=${encodeURIComponent(token)}`,
+        { method: "DELETE" },
+      ).catch(() => {
+        /* A run left behind is Apify's problem to expire, not a reason to fail
+           a read that already succeeded. */
+      });
+    }
+  }
+}
+
+/** Turns a refusal status into something a person can act on. */
+function readerRefusal(status: number): string {
+  if (status === 401 || status === 403) {
+    return "The profile reader's API key was refused. Add a valid APIFY_TOKEN to the Keys tab.";
+  }
+  if (status === 429) {
+    return "The profile reader is out of monthly credit or rate-limited. Try again once it resets.";
+  }
+  return `The profile reader refused the request (HTTP ${status}).`;
 }

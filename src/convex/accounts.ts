@@ -462,9 +462,19 @@ export const refreshStats = action({
       account.platform === "instagram" && account.graphToken
         ? await fetchInstagramGraph(account.graphToken, account.handle)
         : await fetchProfile(account.platform, account.handle, {
-            /* The bot account leads the chain; anonymous Instagram is the
-               fallback. */
+            /* The bot account leads the chain; anonymous Instagram and the
+               hosted reader follow it. The reader's key is read here, inside
+               an action, from the environment — it is never stored on the row
+               and never returned to a browser. */
             sessionReader: createInstagramSessionReader(ctx),
+            /* Only a person pressing Sync reaches the hosted reader. The
+               one-second poller must not: a paid reader on a one-second timer
+               is ~86,000 reads a day per account, which would drain a free
+               plan in minutes. The free routes are what the timer uses, and
+               they are free exactly because they are cheap. */
+            scraperToken: args.force
+              ? (process.env.APIFY_TOKEN ?? null)
+              : null,
           });
 
     if (!profile.ok) {
@@ -725,6 +735,7 @@ export const verifyBio = action({
          tolerate a session sign-in happening behind it, and a bio read that
          only worked once per IP was never dependable anyway. */
       sessionReader: createInstagramSessionReader(ctx),
+      scraperToken: process.env.APIFY_TOKEN ?? null,
     });
 
     if (!profile.ok) {
