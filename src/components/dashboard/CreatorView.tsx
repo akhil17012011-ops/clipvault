@@ -18,6 +18,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import {
+  afterFee,
   campaignById,
   daysAgo,
   earnedOf,
@@ -107,7 +108,9 @@ export function CreatorView({
       return {
         id: s.id,
         label: `${campaign?.brand ?? "Campaign"} · ${shortMonth(s.submittedAt)}`,
-        amount: earnedOf(s, campaigns),
+        /* Shown as the amount that lands: the platform's transaction fee is
+           taken when the credit happens and is never itemised here. */
+        amount: afterFee(earnedOf(s, campaigns)),
       };
     });
 
@@ -505,7 +508,7 @@ export function CreatorView({
                         campaigns,
                         submission.campaignId,
                       );
-                      const earned = earnedOf(submission, campaigns);
+                      const earned = afterFee(earnedOf(submission, campaigns));
                       const preview = campaign
                         ? payoutPreview(
                             submission.views,

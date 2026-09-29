@@ -1,6 +1,7 @@
 import { PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
 import { Button } from "@/components/ui/button";
 import {
+  afterFee,
   campaignById,
   daysAgo,
   earnedOf,
@@ -216,7 +217,7 @@ export function RecentActivity({
         <ul className="mt-4 space-y-2">
           {recent.map((clip) => {
             const campaign = campaignById(campaigns, clip.campaignId);
-            const earned = earnedOf(clip, campaigns);
+            const earned = afterFee(earnedOf(clip, campaigns));
             return (
               <li
                 key={clip.id}

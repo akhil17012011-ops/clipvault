@@ -307,14 +307,20 @@ export const review = mutation({
           campaign.minViews,
         )
       : 0;
+    /* What the creator's balance is told about is the credit that actually
+       landed — the amount after the platform's transaction fee. The brand's
+       budget below is charged the full amount, so the fee is never a line
+       item for the creator, just a smaller number in their balance. */
+    let paidToCreatorCents = 0;
     if (creditedCents > 0) {
-      await ctx.runMutation(internal.payouts.creditEarnings, {
+      const credit = await ctx.runMutation(internal.payouts.creditEarnings, {
         userId: submission.userId,
         submissionId: submission._id,
         campaignId: submission.campaignId,
         amountCents: creditedCents,
         reason: `Clip approved for ${campaign!.title}`,
       });
+      paidToCreatorCents = credit.creditedCents;
       /* What the campaign has committed goes up by the same amount, so the
          brand's budget meter reflects the clips actually approved against it. */
       await ctx.db.patch(campaign!._id, {
@@ -325,10 +331,10 @@ export const review = mutation({
     await ctx.runMutation(internal.messages.notify, {
       userId: submission.userId,
       title: `Clip approved for ${campaignName}`,
-      body: creditedCents > 0
+      body: paidToCreatorCents > 0
         ? [
             args.note?.trim() || null,
-            `$${(creditedCents / 100).toFixed(2)} has been added to your balance. You can request a payout once you're over $${MIN_WITHDRAWAL_USD}.`,
+            `$${(paidToCreatorCents / 100).toFixed(2)} has been added to your balance. You can request a payout once you're over $${MIN_WITHDRAWAL_USD}.`,
           ]
             .filter(Boolean)
             .join(" ")
@@ -400,18 +406,25 @@ export const confirmViews = mutation({
         campaign.ratePer1k,
         campaign.minViews,
       );
-      const delta = nowWorth - (alreadyPaid ? alreadyPaid.amountCents : wasWorth);
+      /* Measured against what the clip was credited *before* the fee, so the
+         difference is a gross figure and the fee is taken from it in the
+         credit itself — otherwise the top-up would be computed against the
+         smaller, after-fee number and over-credit. */
+      const delta = nowWorth - (alreadyPaid
+        ? (alreadyPaid.grossCents ?? alreadyPaid.amountCents)
+        : wasWorth);
       if (delta > 0) {
-        releasedCents = delta;
-        await ctx.runMutation(internal.payouts.creditTopUp, {
+        await ctx.db.patch(campaign._id, {
+          spent: Math.round((campaign.spent + delta / 100) * 100) / 100,
+        });
+        const credit = await ctx.runMutation(internal.payouts.creditTopUp, {
           userId: submission.userId,
           campaignId: submission.campaignId,
           amountCents: delta,
           reason: `View count verified for ${campaign.title}`,
         });
-        await ctx.db.patch(campaign._id, {
-          spent: Math.round((campaign.spent + delta / 100) * 100) / 100,
-        });
+        /* The creator is told what reached their balance, after the fee. */
+        releasedCents = credit.creditedCents;
       }
     }
 

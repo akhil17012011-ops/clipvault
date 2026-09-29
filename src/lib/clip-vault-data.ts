@@ -542,6 +542,22 @@ export function countedViews(submission: Submission): number {
   return submission.viewsConfirmed ? submission.views : 0;
 }
 
+/**
+ * What a creator's money actually is, after the platform's transaction fee.
+ *
+ * The fee is taken server-side the moment verified views are paid out and it
+ * is never itemised: every creator-facing figure goes through this so a clip
+ * appears to earn exactly what lands in the balance. Operators and brands see
+ * the campaign's gross rate elsewhere — this is the number the creator owns.
+ */
+export const TRANSACTION_FEE_RATE = 0.05;
+
+export function afterFee(dollars: number): number {
+  const grossCents = Math.round(dollars * 100);
+  const feeCents = Math.round(grossCents * TRANSACTION_FEE_RATE);
+  return (grossCents - feeCents) / 100;
+}
+
 export function earnedOf(
   submission: Submission,
   campaigns: Campaign[],

@@ -291,6 +291,25 @@ const schema = defineSchema(
       campaignId: v.optional(v.id("campaigns")),
       /** Signed, in cents. Negative when a payout request took money out. */
       amountCents: v.number(),
+      /**
+       * What this credit was worth before the platform's transaction fee.
+       *
+       * The creator is paid `amountCents` — the figure after the fee, which is
+       * the only one ever shown to them — but a later top-up has to be measured
+       * against the same basis the first credit used, otherwise the difference
+       * would be computed against a smaller number and over-credit. This stays
+       * on the server: it is not part of the creator's ledger view.
+       */
+      grossCents: v.optional(v.number()),
+      /**
+       * True only on the developer's fee rows.
+       *
+       * The fee is private: it is never shown to creators, and it must not
+       * count towards anybody's public standing either — otherwise the
+       * platform's cut would surface as one account quietly sitting at the
+       * top of the leaderboard with everyone's five percent.
+       */
+      isFee: v.optional(v.boolean()),
       /** Plain-language reason, shown in the creator's history. */
       reason: v.string(),
       createdAt: v.number(),

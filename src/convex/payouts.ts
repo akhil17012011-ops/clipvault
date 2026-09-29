@@ -7,6 +7,7 @@ import {
   usdtNetworkValidator,
 } from "./schema";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 
 /**
  * Creator wallets and payout requests.
@@ -105,6 +106,127 @@ async function readWallet(ctx: Ctx, userId: UserId) {
     .query("wallets")
     .withIndex("by_user", (q) => q.eq("userId", userId))
     .first();
+}
+
+/* ------------------------------------------------------------------ */
+/* The platform's transaction fee                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Every verified payout is charged a 5% transaction fee, and the fee is paid
+ * into the developer's own wallet instead of the creator's.
+ *
+ * Two rules make this invisible to the people paying it:
+ *
+ *  - the fee is taken at the moment of crediting, so a creator's balance,
+ *    ledger and messages only ever contain the amount after it ($5 becomes
+ *    $4.75, never "$5 minus a fee"), and
+ *  - if the developer account does not exist on this deployment, or the
+ *    credit is going to the developer himself, no fee is taken at all — money
+ *    is never credited into nowhere, and nobody pays a fee to themselves.
+ *
+ * The brand's budget is charged the full amount (`spent` in clip review), so
+ * the fee is the platform's margin on top of what the campaign committed.
+ */
+const TRANSACTION_FEE_BPS = 500;
+
+/** The account every transaction fee is paid into. */
+const DEVELOPER_EMAIL = "akhil17012011@gmail.com";
+
+/** Splits a gross credit into what the creator gets and what the fee is. */
+function splitFee(grossCents: number): { netCents: number; feeCents: number } {
+  const feeCents = Math.round((grossCents * TRANSACTION_FEE_BPS) / 10_000);
+  return { netCents: grossCents - feeCents, feeCents };
+}
+
+/** The developer's user id, or null when this deployment has no such account. */
+async function developerId(ctx: MutationCtx): Promise<UserId | null> {
+  const row = await ctx.db
+    .query("users")
+    .filter((q) => q.eq(q.field("email"), DEVELOPER_EMAIL))
+    .first();
+  return row?._id ?? null;
+}
+
+/** Adds to a wallet's available and lifetime balance, creating it if needed. */
+async function addToWallet(
+  ctx: MutationCtx,
+  userId: UserId,
+  cents: number,
+): Promise<void> {
+  if (cents <= 0) return;
+  const now = Date.now();
+  const wallet = await readWallet(ctx, userId);
+  if (wallet) {
+    await ctx.db.patch(wallet._id, {
+      availableCents: wallet.availableCents + cents,
+      lifetimeCents: wallet.lifetimeCents + cents,
+      updatedAt: now,
+    });
+  } else {
+    await ctx.db.insert("wallets", {
+      userId,
+      availableCents: cents,
+      pendingCents: 0,
+      lifetimeCents: cents,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+}
+
+/**
+ * Credits a creator the amount after the fee, and pays the fee into the
+ * developer's wallet — both in the same transaction as the caller's own
+ * writes, so a balance can never end up credited twice or half-way.
+ *
+ * Returns what was actually added to the creator, which is the number their
+ * message and their balance will show.
+ */
+async function creditWithFee(
+  ctx: MutationCtx,
+  args: {
+    userId: UserId;
+    submissionId?: Id<"submissions">;
+    campaignId?: Id<"campaigns">;
+    grossCents: number;
+    reason: string;
+  },
+): Promise<{ creditedCents: number; feeCents: number }> {
+  const now = Date.now();
+  const developer = await developerId(ctx);
+  const feeCents =
+    developer && developer !== args.userId
+      ? splitFee(args.grossCents).feeCents
+      : 0;
+  const creditedCents = args.grossCents - feeCents;
+
+  await addToWallet(ctx, args.userId, creditedCents);
+  await ctx.db.insert("earnings", {
+    userId: args.userId,
+    submissionId: args.submissionId,
+    campaignId: args.campaignId,
+    amountCents: creditedCents,
+    grossCents: args.grossCents,
+    reason: args.reason,
+    createdAt: now,
+  });
+
+  if (feeCents > 0 && developer) {
+    await addToWallet(ctx, developer, feeCents);
+    await ctx.db.insert("earnings", {
+      userId: developer,
+      submissionId: args.submissionId,
+      campaignId: args.campaignId,
+      amountCents: feeCents,
+      grossCents: feeCents,
+      isFee: true,
+      reason: `${args.reason} (transaction fee)`,
+      createdAt: now,
+    });
+  }
+
+  return { creditedCents, feeCents };
 }
 
 /* ------------------------------------------------------------------ */
@@ -449,6 +571,10 @@ export const markRejected = mutation({
  *
  * Called from clip review rather than from the client, and safe to call twice:
  * if this clip has already paid out, it does nothing.
+ *
+ * The creator receives the amount after the 5% transaction fee; the fee is
+ * paid into the developer's wallet in the same transaction. The returned
+ * `creditedCents` is what the creator's balance and message will show.
  */
 export const creditEarnings = internalMutation({
   args: {
@@ -465,38 +591,16 @@ export const creditEarnings = internalMutation({
         .withIndex("by_user", (q) => q.eq("userId", args.userId))
         .filter((q) => q.eq(q.field("submissionId"), args.submissionId))
         .first();
-      if (already) return false;
+      if (already) return { creditedCents: 0, feeCents: 0 };
     }
 
-    const now = Date.now();
-    const wallet = await readWallet(ctx, args.userId);
-    if (wallet) {
-      await ctx.db.patch(wallet._id, {
-        availableCents: wallet.availableCents + args.amountCents,
-        lifetimeCents: wallet.lifetimeCents + args.amountCents,
-        updatedAt: now,
-      });
-    } else {
-      await ctx.db.insert("wallets", {
-        userId: args.userId,
-        availableCents: args.amountCents,
-        pendingCents: 0,
-        lifetimeCents: args.amountCents,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-
-    await ctx.db.insert("earnings", {
+    return creditWithFee(ctx, {
       userId: args.userId,
       submissionId: args.submissionId,
       campaignId: args.campaignId,
-      amountCents: args.amountCents,
+      grossCents: args.amountCents,
       reason: args.reason,
-      createdAt: now,
     });
-
-    return true;
   },
 });
 
@@ -517,35 +621,15 @@ export const creditTopUp = internalMutation({
     reason: v.string(),
   },
   handler: async (ctx, args) => {
-    if (args.amountCents <= 0) return false;
+    if (args.amountCents <= 0) return { creditedCents: 0, feeCents: 0 };
 
-    const now = Date.now();
-    const wallet = await readWallet(ctx, args.userId);
-    if (wallet) {
-      await ctx.db.patch(wallet._id, {
-        availableCents: wallet.availableCents + args.amountCents,
-        lifetimeCents: wallet.lifetimeCents + args.amountCents,
-        updatedAt: now,
-      });
-    } else {
-      await ctx.db.insert("wallets", {
-        userId: args.userId,
-        availableCents: args.amountCents,
-        pendingCents: 0,
-        lifetimeCents: args.amountCents,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-
-    await ctx.db.insert("earnings", {
+    /* Same split as an approval: the creator is topped up by the amount
+       after the 5% fee, and the fee lands in the developer's wallet. */
+    return creditWithFee(ctx, {
       userId: args.userId,
       campaignId: args.campaignId,
-      amountCents: args.amountCents,
+      grossCents: args.amountCents,
       reason: args.reason,
-      createdAt: now,
     });
-
-    return true;
   },
 });

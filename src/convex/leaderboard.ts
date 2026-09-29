@@ -29,7 +29,9 @@ export const board = query({
     const rateById = new Map(campaigns.map((c) => [c._id, c]));
 
     const rows = users.map((user) => {
-      const mine = earnings.filter((e) => e.userId === user._id);
+      const mine = earnings.filter(
+        (e) => e.userId === user._id && !e.isFee,
+      );
       const clips = submissions.filter((s) => s.userId === user._id);
       const handles = accounts.filter((a) => a.userId === user._id);
 
