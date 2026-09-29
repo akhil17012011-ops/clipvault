@@ -5,7 +5,8 @@ import { RequireVerified } from "@/components/VerifyEmailGate";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ClipVaultProvider } from "@/lib/clip-vault-store";
-import { startDeployWatch } from "@/lib/deploy-watch";
+import { startDeployWatch, NEW_BUILD_EVENT } from "@/lib/deploy-watch";
+import { toast } from "sonner";
 import {
   ensureSmoothScroll,
   resetScroll,
@@ -98,12 +99,29 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 
 /**
- * Reloads the tab when a new build is deployed, so nobody is left clicking
- * through a UI the server has already moved on from. Renders nothing.
+ * Tells the tab when a new build is live.
+ *
+ * It used to reload the page by itself. Now it only offers: a quiet notice
+ * with a Refresh button, which disappears on its own. The page never changes
+ * underneath anyone, and a form mid-typing is never thrown away — the refresh
+ * happens when, and only when, the person asks for it.
  */
 function DeployWatcher() {
   useEffect(() => {
     startDeployWatch();
+    const onNewBuild = () => {
+      toast("A new version of Clip Vault is ready", {
+        id: "clipvault-new-build",
+        description: "Refresh whenever you like — nothing is lost by waiting.",
+        action: {
+          label: "Refresh",
+          onClick: () => window.location.reload(),
+        },
+        duration: 15_000,
+      });
+    };
+    window.addEventListener(NEW_BUILD_EVENT, onNewBuild);
+    return () => window.removeEventListener(NEW_BUILD_EVENT, onNewBuild);
   }, []);
   return null;
 }

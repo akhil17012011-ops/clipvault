@@ -39,6 +39,9 @@ const ADMIN_SECTIONS: AdminSection[] = [
 
 type ModalKind = "connect" | "submit" | "create" | null;
 
+/** Set once the creator has been shown the connect prompt and closed it. */
+const ONBOARDING_DISMISSED_KEY = "clipvault:connect-prompt-dismissed";
+
 export default function Dashboard() {
   const { accounts } = useClipVault();
   /* The role is read from the server's user record, not from the email. */
@@ -48,7 +51,29 @@ export default function Dashboard() {
   /** Which platform the connect wizard opens on, so "add another" is unambiguous. */
   const [connectPlatform, setConnectPlatform] = useState<Platform>("tiktok");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [onboardingSkipped, setOnboardingSkipped] = useState(false);
+  /* Whether the bio-verification prompt has already been turned down.
+
+     This is remembered in the browser, not just in component state. It used to
+     live only in a ref, which a reload wiped — so the connect dialog was
+     waiting again on the next visit, every single time, for as long as the
+     account had no connected handle. Being asked once and saying "not now"
+     has to mean it. */
+  const [onboardingSkipped, setOnboardingSkipped] = useState(() => {
+    try {
+      return window.localStorage.getItem(ONBOARDING_DISMISSED_KEY) === "1";
+    } catch {
+      /* Private mode, or storage disabled: behave as if never asked. */
+      return false;
+    }
+  });
+  const rememberOnboardingDismissed = () => {
+    setOnboardingSkipped(true);
+    try {
+      window.localStorage.setItem(ONBOARDING_DISMISSED_KEY, "1");
+    } catch {
+      /* Nothing to do — the in-memory flag still holds for this visit. */
+    }
+  };
   const onboardedOnce = useRef(accounts.length > 0);
   const navigate = useNavigate();
   const params = useParams();
@@ -87,7 +112,7 @@ export default function Dashboard() {
       return;
     }
     setModal((current) => (current === "connect" ? null : current));
-    if (accounts.length === 0) setOnboardingSkipped(true);
+    if (accounts.length === 0) rememberOnboardingDismissed();
   };
 
   return (

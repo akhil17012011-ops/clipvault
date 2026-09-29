@@ -1,90 +1,101 @@
 /**
- * Keeps open tabs on the deployed build they were loaded with.
+ * Notices when a new build has been deployed, and says so — quietly.
  *
  * A publish swaps the hashed asset filenames in `index.html` but cannot reach
- * into tabs that are already open — they keep running the JavaScript they
- * started with. That is how a user ends up staring at a bug that was fixed
- * minutes ago, or clicking through a UI that no longer matches the server.
+ * into tabs that are already open, so those keep running the JavaScript they
+ * started with.
  *
- * Rather than asking anyone to refresh, this watches for a new build and
- * reloads on its own.
+ * This used to solve that by reloading the tab on its own. It does not any
+ * more, and that is deliberate: a page that reappears by itself is a page that
+ * interrupts. People lose what they were typing, people are thrown out of the
+ * view they were reading, and — because the check also ran on window focus —
+ * it felt like the site was refreshing at random moments. So the only thing
+ * this file does now is *offer* the refresh, and the person decides.
  *
- * How the version is detected: the app's entry script is content-hashed, so a
- * code change necessarily produces a new filename. The currently-loaded
- * fingerprint of every script and stylesheet is compared against the one in a
- * freshly fetched `index.html`. No build step, no version file, no deploy
- * hook — it works with whatever static host serves the app, and a no-op in
- * development where the filenames do not change on a hot edit.
+ * How a new build is detected: the entry script is content-hashed, so any code
+ * change produces a new filename. An asset this tab is running that the server
+ * is no longer serving is a new build. The comparison deliberately goes in one
+ * direction only — see `hasNewBuild` — because the page gains runtime scripts
+ * and styles of its own after load, and treating those as evidence of a deploy
+ * is what made the old check fire on a perfectly current build.
  */
 
 const POLL_INTERVAL_MS = 60_000;
 
-/** Cooldown after a reload, so a mismatch can never become a reload loop. */
-const RELOAD_GUARD_MS = 5_000;
+/** What the app listens for to show the "a new version is ready" notice. */
+export const NEW_BUILD_EVENT = "clipvault:new-build";
 
-let lastReloadAt = 0;
+/** Remembers the build we already offered, so it is never announced twice. */
+const ANNOUNCED_KEY = "clipvault:announced-build";
+
+/** A change has to survive this many consecutive checks to count as a deploy. */
+const CONFIRMATIONS_NEEDED = 2;
+
 let checking = false;
+let confirmations = 0;
 
 /**
  * Normalises an asset URL to just its path.
  *
  * Query strings are dropped because a dev server appends a changing `?t=`
  * cache-buster to every module it serves, and a CDN appends its own. Neither
- * means a new build — only the content-hashed filename does. Without this the
- * watcher would see a "new build" on every hot edit in development.
+ * means a new build — only the content-hashed filename does.
  */
 function normalize(url: string): string {
   return url.split("#")[0].split("?")[0];
 }
 
-/**
- * A stable fingerprint of the build currently in the document.
- *
- * Includes every script and stylesheet, not just the entry, so a change to any
- * lazily-loaded chunk's hash — which happens when shared code moves between
- * them — is caught too. Sorted so document order cannot cause a false positive.
- */
-function currentFingerprint(): string {
-  const assets = [
-    ...document.querySelectorAll<HTMLScriptElement>("script[src]"),
-    ...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]'),
+function assetPaths(root: ParentNode): string[] {
+  return [
+    ...root.querySelectorAll<HTMLScriptElement>("script[src]"),
+    ...root.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]'),
   ]
     .map((el) => el.getAttribute("src") ?? el.getAttribute("href") ?? "")
     .filter(Boolean)
-    .map(normalize)
-    .sort();
-
-  return assets.join("|");
+    .map(normalize);
 }
 
-/** The same fingerprint, read out of a freshly fetched index.html. */
-function fingerprintFrom(html: string): string | null {
+/** The assets this tab is actually running. */
+function currentAssets(): Set<string> {
+  return new Set(assetPaths(document));
+}
+
+/** The assets the server is currently serving, from a fetched index.html. */
+function servedAssets(html: string): Set<string> {
   const doc = new DOMParser().parseFromString(html, "text/html");
-
-  const assets = [
-    ...doc.querySelectorAll<HTMLScriptElement>("script[src]"),
-    ...doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]'),
-  ]
-    .map((el) => el.getAttribute("src") ?? el.getAttribute("href") ?? "")
-    .filter(Boolean)
-    .map(normalize)
-    .sort();
-
-  return assets.length > 0 ? assets.join("|") : null;
+  return new Set(assetPaths(doc));
 }
 
 /**
- * True when someone is part-way through typing something they would not want
- * to lose. Reloading mid-form is the one genuinely destructive thing this
- * watcher could do, so it waits.
+ * The hash-free name of a built asset: `/assets/index-DiwrgTda.js` becomes
+ * `/assets/index-.js`.
+ *
+ * Two builds of the same app put different hashes in the same slot, which is
+ * what makes "did the build change?" answerable without a version file.
  */
-function isUserEditing(): boolean {
-  const el = document.activeElement;
-  if (!el) return false;
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-    return true;
+function slotOf(path: string): string {
+  return path.replace(/-[A-Za-z0-9_-]{8,}(\.[a-z0-9]+)$/i, "-$1");
+}
+
+/**
+ * True when this tab is running a build the server has moved past.
+ *
+ * An asset counts as stale only when the server still serves *its slot* under
+ * a different hash — that is a rebuilt file, and only that. Assets with no
+ * matching slot are things the page injected into itself after load (the dev
+ * toolbar, runtime integrations, analytics): they were never part of the
+ * build, so their absence from the HTML is not a deploy and must never be
+ * treated as one. That distinction is the whole reason this check exists in
+ * this shape — comparing the two sets for equality reports a new build on
+ * every poll, which is what made the tab reload itself at random.
+ */
+function hasNewBuild(served: Set<string>): boolean {
+  const servedSlots = new Set([...served].map(slotOf));
+  for (const asset of currentAssets()) {
+    if (served.has(asset)) continue;
+    if (servedSlots.has(slotOf(asset))) return true;
   }
-  return el instanceof HTMLElement && el.isContentEditable;
+  return false;
 }
 
 async function checkForNewBuild(): Promise<void> {
@@ -99,23 +110,28 @@ async function checkForNewBuild(): Promise<void> {
     });
     if (!response.ok) return;
 
-    const served = fingerprintFrom(await response.text());
-    if (!served) return;
+    const served = servedAssets(await response.text());
+    /* An index.html with no assets is a truncated or intercepted response,
+       not a deploy, and must never be treated as one. */
+    if (served.size === 0) return;
 
-    /* A changed fingerprint is a new build. A fingerprint that is somehow
-       * *missing* assets is a truncated or intercepted response, not a deploy,
-       and must never trigger a reload. */
-    if (served === currentFingerprint()) return;
+    if (!hasNewBuild(served)) {
+      confirmations = 0;
+      return;
+    }
 
-    if (Date.now() - lastReloadAt < RELOAD_GUARD_MS) return;
-    if (isUserEditing()) return;
+    /* A single poll can catch a response mid-deploy, or a proxy answering for
+       a moment. A real deploy shows up on the next check as well. */
+    confirmations += 1;
+    if (confirmations < CONFIRMATIONS_NEEDED) return;
 
-    lastReloadAt = Date.now();
+    const build = [...served].sort().join("|");
+    if (sessionStorage.getItem(ANNOUNCED_KEY) === build) return;
+    sessionStorage.setItem(ANNOUNCED_KEY, build);
 
-    /* `location.replace` rather than `reload()` so the reload does not add
-       another entry to the back-button history — the user is not going back to
-       the broken build, they are moving onto the new one. */
-    window.location.replace(window.location.href);
+    /* Announced, not performed. Nothing about this page changes until the
+       person chooses to refresh. */
+    window.dispatchEvent(new Event(NEW_BUILD_EVENT));
   } catch {
     /* Offline, or the request was blocked. A watcher that throws on every
        failed poll would be noise, so this is deliberately silent: the next
@@ -134,29 +150,23 @@ export function startDeployWatch(): void {
   /* Development is a hard no-op.
 
      The dev server rewrites module URLs with a changing `?t=` cache-buster and
-     injects proxy scripts that come and go, so a fingerprint taken here would
-     differ from the last one on almost every hot edit. Reloading in response
-     would fight Vite's own fast refresh and make the app feel broken while
-     someone is actively editing it. Only a real deployment needs watching. */
+     injects proxy scripts that come and go, so any comparison here would fire
+     on a hot edit. Only a real deployment is worth watching. */
   if (import.meta.env.DEV) return;
 
   if (startDeployWatch.started) return;
   startDeployWatch.started = true;
 
-  /* Poll while the tab is visible. A hidden tab is not being looked at, and
-     there is no reason to spend requests on it. */
+  /* A quiet poll while the tab is in front of somebody.
+
+     There are no focus, online or visibilitychange triggers here on purpose.
+     Those fire constantly — every tab switch, every network blip, every
+     return to the window — and they are what turned a background freshness
+     check into something that interrupted the user at random. A minute of
+     staleness costs nothing; a surprise reload costs a form. */
   window.setInterval(() => {
     if (document.visibilityState === "visible") void checkForNewBuild();
   }, POLL_INTERVAL_MS);
-
-  /* The cases a 60s poll handles badly: someone leaves a tab open and comes
-     back to it hours later, or was offline and just reconnected. Both want an
-     immediate check rather than a wait. */
-  window.addEventListener("focus", () => void checkForNewBuild());
-  window.addEventListener("online", () => void checkForNewBuild());
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") void checkForNewBuild();
-  });
 }
 
 startDeployWatch.started = false;
