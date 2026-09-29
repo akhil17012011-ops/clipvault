@@ -162,7 +162,7 @@ export function PayoutRequestCard() {
       </div>
 
       {selected.networks ? (
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {selected.networks.map((option) => (
             <button
               key={option.id}

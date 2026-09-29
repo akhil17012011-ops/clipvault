@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import {
   Clock3,
   ExternalLink,
   Megaphone,
+  Menu,
   MessagesSquare,
   MousePointerClick,
   Play,
@@ -31,6 +32,7 @@ import {
   ShieldCheck,
   Sparkles,
   Wallet,
+  X,
   Zap,
 } from "lucide-react";
 
@@ -57,12 +59,25 @@ function SiteNav() {
     mass: 0.3,
   });
   const [scrolled, setScrolled] = useState(false);
+  /* The nav links are a desktop row. On a phone they collapse into this panel
+     instead of simply disappearing — a link you cannot reach on the device
+     most people first meet the site on is a broken link, not a hidden one. */
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  /* A tap anywhere else closes the panel, and Escape closes it for keyboards. */
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 transition-all duration-300 sm:px-5 sm:pt-4">
@@ -91,6 +106,19 @@ function SiteNav() {
           </Link>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/8 text-muted-foreground transition-colors hover:border-brand/40 hover:text-foreground dark:border-white/10 md:hidden"
+          >
+            {menuOpen ? (
+              <X className="h-4.5 w-4.5" />
+            ) : (
+              <Menu className="h-4.5 w-4.5" />
+            )}
+          </button>
           <a
             href={DISCORD_INVITE}
             target="_blank"
@@ -130,6 +158,47 @@ function SiteNav() {
           style={{ scaleX: progress }}
           className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-gradient-to-r from-[#8B3FE2] via-[#8B5CF6] to-[#8B3FE2]"
         />
+
+        {/* Phone menu. Anchored to the bar it belongs to, and it closes on
+            every link tap so a navigation never leaves it hanging open. */}
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              key="mobile-menu"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="glass absolute inset-x-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 p-2 shadow-[0_30px_60px_-30px_rgb(76_29_149/0.6)] md:hidden"
+            >
+              {[
+                { to: "/how-it-works", label: "How it works" },
+                { to: "/campaigns", label: "Campaigns" },
+                { to: "/pricing", label: "Pricing" },
+                { to: "/faq", label: "FAQ" },
+              ].map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex h-11 items-center justify-between rounded-xl px-3 text-sm font-medium text-foreground/85 transition-colors hover:bg-white/[0.06]"
+                >
+                  {item.label}
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                </Link>
+              ))}
+              <div className="mt-1 border-t border-white/[0.07] pt-1 sm:hidden">
+                <Link
+                  to={isAuthenticated ? "/dashboard" : "/auth"}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex h-11 items-center rounded-xl px-3 text-sm font-semibold text-brand transition-colors hover:bg-white/[0.06]"
+                >
+                  {isAuthenticated ? "Open dashboard" : "Sign in"}
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
     </header>
   );

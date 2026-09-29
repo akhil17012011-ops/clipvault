@@ -194,7 +194,7 @@ export function UserDetail({
                         </span>
                       )}
                     </div>
-                    <dl className="mt-2.5 grid grid-cols-4 gap-2 border-t border-white/[0.07] pt-2.5">
+                    <dl className="mt-2.5 grid grid-cols-2 gap-2 border-t border-white/[0.07] pt-2.5 sm:grid-cols-4">
                       {[
                         ["Followers", account.followers != null ? fmtViews(account.followers) : "—"],
                         ["Posts", account.posts != null ? fmtFull(account.posts) : "—"],

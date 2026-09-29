@@ -121,7 +121,11 @@ export function ProfileEditor({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] overflow-hidden gap-0 p-0 sm:max-w-md">
+      {/* Scrolls inside the viewport: the profile form plus the password
+          section is taller than a phone in landscape, and without this the
+          bottom of it — including the save button — was simply clipped with
+          no way to reach it. */}
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-md [&>button]:z-20">
         <div className="relative overflow-hidden rounded-2xl">
           <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[#8B3FE2]/20 blur-[80px]" />
 

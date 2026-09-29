@@ -158,6 +158,10 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    /* A decorative glow wider than a phone must never turn into a sideways
+       scrollbar: `clip` trims the overflow without making the body a scroll
+       container, which would break the sticky headers. */
+    overflow-x: clip;
   }
   html {
     scroll-behavior: smooth;

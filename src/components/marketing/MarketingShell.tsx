@@ -104,6 +104,31 @@ function MarketingHeader() {
           </Button>
         </div>
       </div>
+
+      {/* Below `md` the desktop nav row is gone, so the same four links run as
+          a scrollable strip under the bar rather than becoming unreachable. */}
+      <nav className="mx-auto -mt-0.5 flex max-w-5xl items-center gap-5 overflow-x-auto pb-2 text-sm font-medium text-muted-foreground md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {[
+          { to: "/how-it-works", label: "How it works" },
+          { to: "/campaigns", label: "Campaigns" },
+          { to: "/pricing", label: "Pricing" },
+          { to: "/faq", label: "FAQ" },
+        ].map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className="shrink-0 whitespace-nowrap py-1 transition-colors hover:text-foreground"
+          >
+            {item.label}
+          </Link>
+        ))}
+        <Link
+          to={isAuthenticated ? "/dashboard" : "/auth"}
+          className="shrink-0 whitespace-nowrap py-1 font-semibold text-brand"
+        >
+          {isAuthenticated ? "Dashboard" : "Sign in"}
+        </Link>
+      </nav>
     </header>
   );
 }

@@ -93,12 +93,20 @@ function Carousel({
 
   React.useEffect(() => {
     if (!api) return
-    onSelect(api)
-    api.on("reInit", onSelect)
-    api.on("select", onSelect)
+    /* The initial read of "can I scroll?" is a measurement of the external
+       carousel, not a state change this component decided. It is therefore
+       subscribed to like every later one, rather than written synchronously
+       during the effect — which would make React re-render in a cascade for
+       a value it is about to derive anyway. */
+    const sync = () => onSelect(api)
+    const frame = requestAnimationFrame(sync)
+    api.on("reInit", sync)
+    api.on("select", sync)
 
     return () => {
-      api?.off("select", onSelect)
+      cancelAnimationFrame(frame)
+      api.off("reInit", sync)
+      api.off("select", sync)
     }
   }, [api, onSelect])
 
