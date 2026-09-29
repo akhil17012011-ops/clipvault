@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { fmtCents, fmtFull, fmtViews } from "@/lib/clip-vault-data";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
 import {
   BadgeCheck,
@@ -11,11 +12,13 @@ import {
   Clapperboard,
   Eye,
   Loader2,
+  RefreshCw,
   UserRound,
   Wallet,
   X,
 } from "lucide-react";
 import { useQuery } from "convex/react";
+import { useCallback, useState } from "react";
 
 function when(ts: number): string {
   const days = Math.floor((Date.now() - ts) / 86_400_000);
@@ -48,6 +51,49 @@ export function UserDetail({
   const detail = useQuery(
     api.leaderboard.userDetail,
     userId ? { userId } : "skip",
+  );
+
+  const { refreshAccountStats } = useClipVault();
+  const [syncing, setSyncing] = useState<string[]>([]);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
+
+  /* One forced read per press.
+     The panel is the operator's own view, so it deliberately does not poll on
+     a timer: a background tick would keep spending this deployment's shared IP
+     on platforms that are already refusing us. A press is a person saying
+     "ask again", and the server skips both its cooldown and its backoff for
+     exactly that. */
+  const syncOne = useCallback(
+    async (id: string) => {
+      setSyncing((current) =>
+        current.includes(id) ? current : [...current, id],
+      );
+      setSyncNote(null);
+      try {
+        const result = await refreshAccountStats(id, { force: true });
+        if (result.ok) {
+          setSyncNote(
+            result.fetched
+              ? "Read the platform just now."
+              : "Too soon for another read — showing the last stored numbers.",
+          );
+        } else {
+          setSyncNote(
+            result.reason ??
+              "The platform did not return a follower count. Try again in a minute.",
+          );
+        }
+      } catch (err) {
+        setSyncNote(
+          err instanceof Error && err.message
+            ? err.message
+            : "We couldn't reach Clip Vault to sync that account.",
+        );
+      } finally {
+        setSyncing((current) => current.filter((value) => value !== id));
+      }
+    },
+    [refreshAccountStats],
   );
 
   if (!userId) return null;
@@ -211,9 +257,47 @@ export function UserDetail({
                         </div>
                       ))}
                     </dl>
+                    {account.status === "connected" && (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void syncOne(account.id)}
+                          disabled={syncing.includes(account.id)}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2 py-1 text-[10.5px] font-semibold text-muted-foreground transition-colors hover:border-brand/40 hover:text-brand disabled:opacity-50"
+                        >
+                          <RefreshCw
+                            className={`h-3 w-3${syncing.includes(account.id) ? " animate-spin" : ""}`}
+                          />
+                          Sync
+                        </button>
+                        {account.statsRefreshedAt != null && (
+                          <span className="text-[10.5px] text-muted-foreground">
+                            read {when(account.statsRefreshedAt)}
+                          </span>
+                        )}
+                        {account.hasGraphToken && (
+                          <span className="text-[10.5px] text-muted-foreground">
+                            · Instagram API
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {syncNote && account.status === "connected" && (
+                      <p className="mt-1.5 text-[10.5px] leading-relaxed text-brand">
+                        {syncNote}
+                      </p>
+                    )}
+
                     {account.followers == null && account.status === "connected" && (
-                      <p className="mt-1.5 text-[10.5px] text-muted-foreground">
-                        This platform does not publish a follower count.
+                      /* The reason the count is missing, in the server's own
+                         words. This used to read "This platform does not publish
+                         a follower count", which blamed Instagram for a
+                         refusal that was ours — the operator looking at this
+                         panel is exactly the person who can fix it. */
+                      <p className="mt-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
+                        {account.statsNote ??
+                          "No follower count read for this account yet. Press Sync to ask the platform now."}
                       </p>
                     )}
                   </li>

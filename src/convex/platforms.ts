@@ -692,3 +692,110 @@ export function fetchProfile(
       return fetchInstagram(handle, options);
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Instagram, the sanctioned way.
+ * ------------------------------------------------------------------------- */
+
+/**
+ * The follower count, from Instagram's own Graph API.
+ *
+ * The web routes above are the reason this file exists at all, and for TikTok,
+ * YouTube and X they work. Instagram is the exception, and it is not a bug we
+ * can retry our way out of: from a datacentre address the anonymous profile
+ * endpoint answers `401 "Please wait a few minutes before you try again"` with
+ * `require_login: true`, and the browser sign-in endpoint this deployment used
+ * to get around it now returns a 404 page — Instagram removed it. Verified
+ * against this deployment, both routes, while writing this.
+ *
+ * The Graph API is the route Instagram intends apps to use. A creator with an
+ * Instagram *professional* account (Business or Creator) linked to a Facebook
+ * Page can grant a long-lived token, and that token answers with the real
+ * `followers_count` and `media_count` — no scraping, no shared bot sign-in, no
+ * IP to get blocked, and it keeps working for as long as the token lives.
+ *
+ * `expectedHandle` is checked, not assumed. A token belongs to one account, so
+ * reading it against a row that names a different handle means the token was
+ * pasted onto the wrong account, and writing that count here would attribute
+ * one creator's audience to another.
+ */
+export async function fetchInstagramGraph(
+  accessToken: string,
+  expectedHandle: string,
+): Promise<ProfileResult> {
+  const query = new URLSearchParams({
+    fields: "id,username,followers_count,media_count,biography",
+    access_token: accessToken,
+  });
+
+  let response: Response;
+  try {
+    response = await fetch(`https://graph.instagram.com/me?${query}`, {
+      headers: { accept: "application/json" },
+      signal: withDeadline(READ_DEADLINE_MS),
+    });
+  } catch {
+    return {
+      ok: false,
+      reason: "Instagram's Graph API didn't answer. Try again shortly.",
+    };
+  }
+
+  let payload: Record<string, unknown> | null = null;
+  try {
+    const parsed: unknown = await response.json();
+    payload =
+      typeof parsed === "object" && parsed !== null
+        ? (parsed as Record<string, unknown>)
+        : null;
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    /* Meta sends the reason as `error.message`, and it is the difference
+       between "paste a new token" and "your app is not approved for this",
+       which a person cannot guess. */
+    const error = payload?.error as
+      | { message?: string; error_subcode?: number }
+      | undefined;
+    const detail =
+      typeof error?.message === "string" ? error.message : "the token was refused";
+    return {
+      ok: false,
+      reason: `Instagram's Graph API refused that token: ${detail}`,
+    };
+  }
+
+  const username =
+    typeof payload?.username === "string" ? payload.username.toLowerCase() : null;
+  if (!username) {
+    return {
+      ok: false,
+      reason:
+        "That token isn't linked to an Instagram professional account yet. Connect the account to a Facebook Page, then try again.",
+    };
+  }
+
+  /* A token that reads a different profile than the row names. Reported as a
+     failure, never as a count: the number belongs to somebody else. */
+  if (username !== expectedHandle.trim().toLowerCase()) {
+    return {
+      ok: false,
+      reason: `That token belongs to @${username}, not @${expectedHandle}.`,
+    };
+  }
+
+  const followers =
+    typeof payload?.followers_count === "number" ? payload.followers_count : undefined;
+  const posts =
+    typeof payload?.media_count === "number" ? payload.media_count : undefined;
+
+  return {
+    ok: true,
+    handle: username,
+    bio: typeof payload?.biography === "string" ? payload.biography : "",
+    ...(followers !== undefined ? { followers } : {}),
+    ...(posts !== undefined ? { posts } : {}),
+  };
+}

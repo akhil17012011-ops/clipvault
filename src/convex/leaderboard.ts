@@ -149,6 +149,13 @@ export const userDetail = query({
           followers: account.followers ?? null,
           posts: account.posts ?? null,
           connectedAt: account.connectedAt ?? null,
+          /* When the platform was last really asked, and what it said when it
+             refused. Both are needed for the Sync button in the operator's
+             panel to be honest rather than decorative. The Graph token itself
+             never leaves the server — only whether one is attached. */
+          statsRefreshedAt: account.statsRefreshedAt ?? null,
+          statsNote: account.statsNote ?? null,
+          hasGraphToken: Boolean(account.graphToken),
           createdAt: account.createdAt,
           clips: clips.length,
           views,

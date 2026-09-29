@@ -29,6 +29,34 @@ export type Role = "admin" | "member" | "developer";
  */
 const BUILT_IN_OPERATOR_EMAILS = ["support.clipvault.ae@gmail.com"];
 
+/**
+ * The address that owns the platform's own cut of the transaction fee.
+ *
+ * The developer is deliberately *not* an operator: they get no access to the
+ * admin console, and every admin guard still tests for "admin". What they do
+ * get is a labelled role, and a withdrawal floor of one cent instead of five
+ * dollars (that floor lives in `payouts.ts`, keyed on the same address).
+ *
+ * This list is applied on sign-in rather than written once by hand, because a
+ * role written by hand only exists in the database it was written to. A
+ * deployment published from the same code would come up with a different
+ * database, and the label would silently be gone. Re-asserting it here means
+ * the developer is the developer on every deployment, including one published
+ * later, with no migration and no CLI access to the production database.
+ */
+const BUILT_IN_DEVELOPER_EMAILS = ["akhil17012011@gmail.com"];
+
+function developerEmails(): string[] {
+  return [...BUILT_IN_DEVELOPER_EMAILS, ...(process.env.DEVELOPER_EMAILS ?? "").split(",")]
+    .map((address) => address.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function isDeveloperEmailRole(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return developerEmails().includes(email.trim().toLowerCase());
+}
+
 function operatorEmails(): string[] {
   return [...BUILT_IN_OPERATOR_EMAILS, ...(process.env.OPERATOR_EMAILS ?? "").split(",")]
     .map((address) => address.trim().toLowerCase())
@@ -395,16 +423,45 @@ export const callerOperatorAccount = internalMutation({
  */
 export const ensureOperatorRole = mutation({
   args: {},
-  handler: async (ctx): Promise<{ isOperator: boolean; merged: number }> => {
+  handler: async (ctx): Promise<{
+    isOperator: boolean;
+    isDeveloper: boolean;
+    merged: number;
+  }> => {
     const userId = await auth.getUserId(ctx);
-    if (!userId) return { isOperator: false, merged: 0 };
+    if (!userId) return { isOperator: false, isDeveloper: false, merged: 0 };
 
     const user = await ctx.db.get(userId);
     const email = user?.email;
-    if (!isOperatorEmail(email)) return { isOperator: false, merged: 0 };
 
-    const result = await repairOperator(ctx, email!, userId);
-    return { isOperator: result.ok, merged: result.merged };
+    /* An operator is also entitled to the developer label only if an operator
+       has not handed them a higher role, so the operator path runs first. */
+    if (isOperatorEmail(email)) {
+      const result = await repairOperator(ctx, email!, userId);
+      return { isOperator: result.ok, isDeveloper: false, merged: result.merged };
+    }
+
+    if (!isDeveloperEmailRole(email)) {
+      return { isOperator: false, isDeveloper: false, merged: 0 };
+    }
+
+    /* Every row for the address, not just this session's row: signing in on a
+       second device must not leave one account labelled and another not. */
+    const rows = await usersWithEmail(ctx, email!.trim());
+    let applied = 0;
+    for (const row of rows) {
+      /* Never step on a role somebody was promoted to. An admin who happens to
+         use this address stays an admin. */
+      if (row.role === "developer") {
+        applied += 1;
+        continue;
+      }
+      if (row.role === "admin" || row.role === undefined) {
+        await ctx.db.patch(row._id, { role: "developer" });
+      }
+      applied += 1;
+    }
+    return { isOperator: false, isDeveloper: applied > 0, merged: 0 };
   },
 });
 

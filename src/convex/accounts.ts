@@ -3,7 +3,7 @@ import { action, internalMutation, internalQuery, mutation, query } from "./_gen
 import { internal } from "./_generated/api";
 import { requireAdmin, requireUser } from "./access";
 import { createInstagramSessionReader } from "./igbot";
-import { fetchProfile } from "./platforms";
+import { fetchInstagramGraph, fetchProfile } from "./platforms";
 
 /**
  * Social accounts a creator has bio-verified.
@@ -114,7 +114,26 @@ export const listMine = query({
       .query("connectedAccounts")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
-    return accounts.sort((a, b) => a.createdAt - b.createdAt);
+    /* Copied field by field for the same reason as `listAll`: the Graph API
+       token is a bearer credential and must not reach the browser, not even
+       on the creator's own page. */
+    return accounts
+      .map((account) => ({
+        _id: account._id,
+        userId: account.userId,
+        platform: account.platform,
+        handle: account.handle,
+        code: account.code,
+        status: account.status,
+        connectedAt: account.connectedAt,
+        followers: account.followers,
+        posts: account.posts,
+        statsRefreshedAt: account.statsRefreshedAt,
+        statsNote: account.statsNote,
+        hasGraphToken: Boolean(account.graphToken),
+        createdAt: account.createdAt,
+      }))
+      .sort((a, b) => a.createdAt - b.createdAt);
   },
 });
 
@@ -200,7 +219,23 @@ export const listAll = query({
     );
     return accounts
       .map((account) => ({
-        ...account,
+        /* The row is copied field by field rather than spread. Spreading it
+           would ship the Graph API token to the browser, where it would sit in
+           a network response and in any devtools panel open on this page. The
+           operator is told only that a token exists. */
+        _id: account._id,
+        userId: account.userId,
+        platform: account.platform,
+        handle: account.handle,
+        code: account.code,
+        status: account.status,
+        connectedAt: account.connectedAt,
+        followers: account.followers,
+        posts: account.posts,
+        statsRefreshedAt: account.statsRefreshedAt,
+        statsNote: account.statsNote,
+        hasGraphToken: Boolean(account.graphToken),
+        createdAt: account.createdAt,
         ownerName:
           byId.get(account.userId)?.name ??
           byId.get(account.userId)?.email?.split("@")[0] ??
@@ -343,7 +378,20 @@ type CheckResult = {
  * Callers are their own owner, or an operator looking at that creator.
  */
 export const refreshStats = action({
-  args: { accountId: v.id("connectedAccounts") },
+  args: {
+    accountId: v.id("connectedAccounts"),
+    /**
+     * Asked for by a person, not by the poller.
+     *
+     * A press of Sync skips the cooldown and the backoff, because a human has
+     * decided the answer changed — usually right after posting, or after
+     * pasting a new token. This is the only way to reach a platform that has
+     * been refusing us, and it is deliberately one request per press: a
+     * button that spammed on hold would reproduce the very rate limit the
+     * backoff exists to avoid.
+     */
+    force: v.optional(v.boolean()),
+  },
   handler: async (ctx, args): Promise<{
     ok: boolean;
     /** True when the platform itself was asked on this call. */
@@ -372,38 +420,62 @@ export const refreshStats = action({
       };
     }
 
-    /* The dashboard polls every couple of seconds, but every poll is a real
-       request from this deployment's shared IP — and the platforms throttle
-       those hard (Instagram already serves this deployment degraded
-       responses). A poller that outruns the cooldown is answered from the
-       stored row instead, so the page stays live while the platform sees at
-       most one request per account per interval. */
-    if (
-      account.statsRefreshedAt != null &&
-      Date.now() - account.statsRefreshedAt < STATS_REFRESH_COOLDOWN_MS
-    ) {
-      return {
-        ok: true,
-        fetched: false,
-        followers: account.followers ?? null,
-        posts: account.posts ?? null,
-        refreshedAt: account.statsRefreshedAt,
-      };
+    /* The poller asks every second. Every ask is a real request from this
+       deployment's shared IP, and the platforms throttle those hard — the
+       backoff is what stops a refusal from becoming permanent. A person
+       pressing Sync is exempt: that is the escape hatch the backoff leaves
+       open, and it is also how a fresh token is tested the moment it lands. */
+    if (!args.force) {
+      if (
+        account.statsRetryAfter != null &&
+        Date.now() < account.statsRetryAfter
+      ) {
+        return {
+          ok: false,
+          fetched: false,
+          followers: account.followers ?? null,
+          posts: account.posts ?? null,
+          refreshedAt: account.statsRefreshedAt ?? null,
+          reason:
+            account.statsNote ??
+            "The platform is not answering right now. Press Sync to try again.",
+        };
+      }
+      if (
+        account.statsRefreshedAt != null &&
+        Date.now() - account.statsRefreshedAt < STATS_REFRESH_COOLDOWN_MS
+      ) {
+        return {
+          ok: true,
+          fetched: false,
+          followers: account.followers ?? null,
+          posts: account.posts ?? null,
+          refreshedAt: account.statsRefreshedAt,
+        };
+      }
     }
 
-    const profile = await fetchProfile(account.platform, account.handle, {
-      /* The bot account leads the chain; anonymous Instagram is the fallback. */
-      sessionReader: createInstagramSessionReader(ctx),
-    });
+    /* Instagram first goes to its own API when a token is attached. That route
+       is the one that actually answers from this server, and it is also the
+       one that does not spend this deployment's IP on every poll. */
+    const profile =
+      account.platform === "instagram" && account.graphToken
+        ? await fetchInstagramGraph(account.graphToken, account.handle)
+        : await fetchProfile(account.platform, account.handle, {
+            /* The bot account leads the chain; anonymous Instagram is the
+               fallback. */
+            sessionReader: createInstagramSessionReader(ctx),
+          });
 
     if (!profile.ok) {
-      /* The attempt itself is stamped even though nothing was read: without
-         it, every refused lookup would be retried at full poll speed and the
-         throttling would only deepen. The count we already hold is untouched
-         — one refused lookup must never turn a real follower count into a
-         zero. */
+      /* The attempt itself is stamped even though nothing was read, and the
+         failure is counted so the next ask waits longer than the last. The
+         count we already hold is untouched — one refused lookup must never
+         turn a real follower count into a zero. */
       await ctx.runMutation(internal.accounts.setStats, {
         accountId: account._id,
+        failed: true,
+        note: profile.reason,
       });
       return {
         ok: false,
@@ -417,7 +489,8 @@ export const refreshStats = action({
 
     /* Only the fields the platform actually published are passed on. A field
        it did not publish is simply omitted, and `setStats` leaves the stored
-       value untouched. */
+       value untouched. A success clears the failure count and the sentence,
+       so a fixed problem stops being reported. */
     await ctx.runMutation(internal.accounts.setStats, {
       accountId: account._id,
       ...(profile.followers !== undefined ? { followers: profile.followers } : {}),
@@ -430,6 +503,72 @@ export const refreshStats = action({
       posts: profile.posts ?? account.posts ?? null,
       refreshedAt: Date.now(),
     };
+  },
+});
+
+/**
+ * Attaches (or replaces) the Instagram Graph API token for one account.
+ *
+ * The token is a bearer credential for somebody's Instagram account, so it
+ * goes straight into the row and is never returned, logged, or put in a query
+ * result — `getForStats` reads it inside an action, and everything the browser
+ * sees is `hasGraphToken`, a boolean. Attaching clears the stored failure
+ * sentence and the backoff, because the whole point is that something just
+ * changed; the next poll goes out immediately instead of waiting out a
+ * backoff earned against the previous token.
+ */
+export const attachGraphToken = mutation({
+  args: {
+    accountId: v.id("connectedAccounts"),
+    token: v.string(),
+  },
+  handler: async (ctx, args): Promise<{ ok: boolean; message: string }> => {
+    const token = args.token.trim();
+    if (token.length < 20) {
+      return {
+        ok: false,
+        message: "That doesn't look like an Instagram access token.",
+      };
+    }
+
+    const account = await ctx.db.get(args.accountId);
+    if (!account) {
+      return { ok: false, message: "That connection request no longer exists." };
+    }
+    const user = await requireUser(ctx);
+    if (account.userId !== user._id && user.role !== "admin") {
+      return { ok: false, message: "That account isn't yours." };
+    }
+    if (account.platform !== "instagram") {
+      return {
+        ok: false,
+        message: "Only Instagram accounts use the Graph API token.",
+      };
+    }
+
+    await ctx.db.patch(args.accountId, {
+      graphToken: token,
+      statsNote: undefined,
+      statsFailures: undefined,
+      statsRetryAfter: undefined,
+    });
+    return {
+      ok: true,
+      message: "Token saved. Press Sync to read the real follower count.",
+    };
+  },
+});
+
+/** Removes the token. The counts already read are kept. */
+export const detachGraphToken = mutation({
+  args: { accountId: v.id("connectedAccounts") },
+  handler: async (ctx, args): Promise<{ ok: boolean }> => {
+    const account = await ctx.db.get(args.accountId);
+    if (!account) return { ok: false };
+    const user = await requireUser(ctx);
+    if (account.userId !== user._id && user.role !== "admin") return { ok: false };
+    await ctx.db.patch(args.accountId, { graphToken: undefined });
+    return { ok: true };
   },
 });
 
@@ -452,6 +591,10 @@ export const getForStats = internalQuery({
       followers: account.followers,
       posts: account.posts,
       statsRefreshedAt: account.statsRefreshedAt,
+      statsNote: account.statsNote,
+      statsRetryAfter: account.statsRetryAfter,
+      /* Read by the action and never by the browser. */
+      graphToken: account.graphToken,
     };
   },
 });
@@ -463,20 +606,60 @@ export const getForStats = internalQuery({
  * them omits that field and the stored number survives; only a field the
  * platform genuinely published is written back. Nothing here ever writes a
  * zero over a real count, and nothing is written at all when the lookup failed.
+ *
+ * A failure records two things: the sentence, so whoever looks next knows what
+ * is actually wrong, and a backoff window, so the poller stops asking a
+ * platform that has already said no. The window grows with each consecutive
+ * failure and is wiped by the first success.
  */
+/**
+ * How long to wait after a failed read, given how many have failed in a row.
+ *
+ * Doubling from a minute and capped at half an hour. The point is not to be
+ * clever: it is to stop a poller from turning a refusal into a block. A
+ * platform that says no once is usually a rate limit, and a rate limit that
+ * keeps being hit never lifts.
+ */
+function backoffMs(consecutiveFailures: number): number {
+  const capped = Math.min(Math.max(consecutiveFailures, 1), 5);
+  return Math.min(60_000 * 2 ** (capped - 1), 30 * 60_000);
+}
+
 export const setStats = internalMutation({
   args: {
     accountId: v.id("connectedAccounts"),
     followers: v.optional(v.number()),
     posts: v.optional(v.number()),
+    /** True when this write records a failed read rather than counts. */
+    failed: v.optional(v.boolean()),
+    note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const account = await ctx.db.get(args.accountId);
     if (!account) return;
+
+    if (args.failed) {
+      const failures = (account.statsFailures ?? 0) + 1;
+      await ctx.db.patch(args.accountId, {
+        statsRefreshedAt: Date.now(),
+        statsNote: args.note,
+        statsFailures: failures,
+        /* A minute, doubling up to half an hour. Long enough that a rate limit
+           gets a chance to expire, short enough that a token fixed in the
+           meantime starts counting again without anyone filing a ticket. */
+        statsRetryAfter: Date.now() + backoffMs(failures),
+      });
+      return;
+    }
+
     await ctx.db.patch(args.accountId, {
       followers: args.followers ?? account.followers,
       posts: args.posts ?? account.posts,
       statsRefreshedAt: Date.now(),
+      /* A success ends the sentence and the waiting. */
+      statsNote: undefined,
+      statsFailures: undefined,
+      statsRetryAfter: undefined,
     });
   },
 });

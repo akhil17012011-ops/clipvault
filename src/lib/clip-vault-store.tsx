@@ -131,6 +131,14 @@ interface ClipVaultContextValue {
    */
   refreshAccountStats: (
     id: string,
+    options?: {
+      /**
+       * Skip the poller's cooldown and backoff, because a person asked. This
+       * is what the Sync button sends, and it is the only way to reach a
+       * platform that has been refusing us.
+       */
+      force?: boolean;
+    },
   ) => Promise<{
     ok: boolean;
     fetched: boolean;
@@ -139,6 +147,17 @@ interface ClipVaultContextValue {
     refreshedAt: number | null;
     reason?: string;
   }>;
+  /**
+   * Attaches an Instagram Graph API token to an account, so the follower
+   * count can be read from Instagram's own API. The token goes to the server
+   * and is never read back.
+   */
+  attachGraphToken: (
+    id: string,
+    token: string,
+  ) => Promise<{ ok: boolean; message: string }>;
+  /** Removes the token. Counts already read are kept. */
+  detachGraphToken: (id: string) => Promise<{ ok: boolean }>;
   removeAccount: (id: string) => Promise<void>;
 
   toggleJoinCampaign: (id: string) => Promise<void>;
@@ -211,6 +230,9 @@ type AccountRow = {
   ownerName?: string;
   followers?: number | null;
   posts?: number | null;
+  statsRefreshedAt?: number | null;
+  statsNote?: string | null;
+  hasGraphToken?: boolean;
 };
 
 const toAccount = (row: AccountRow, mine: boolean): LinkedAccount => ({
@@ -225,6 +247,9 @@ const toAccount = (row: AccountRow, mine: boolean): LinkedAccount => ({
   ownerName: row.ownerName,
   followers: row.followers ?? null,
   posts: row.posts ?? null,
+  statsRefreshedAt: row.statsRefreshedAt ?? null,
+  statsNote: row.statsNote ?? null,
+  hasGraphToken: row.hasGraphToken ?? false,
 });
 
 const toCampaign = (row: {
@@ -379,6 +404,8 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
 
   const requestAccount = useMutation(api.accounts.request);
   const removeAccountMutation = useMutation(api.accounts.remove);
+  const attachGraphTokenMutation = useMutation(api.accounts.attachGraphToken);
+  const detachGraphTokenMutation = useMutation(api.accounts.detachGraphToken);
   const joinCampaign = useMutation(api.campaigns.join);
   const leaveCampaign = useMutation(api.campaigns.leave);
   const submitClipMutation = useMutation(api.submissions.submit);
@@ -581,23 +608,38 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
   );
 
   const refreshAccountStats = useCallback(
-    async (id: string) => {
+    async (
+      id: string,
+      options?: { force?: boolean },
+    ): Promise<{
+      ok: boolean;
+      fetched: boolean;
+      followers: number | null;
+      posts: number | null;
+      refreshedAt: number | null;
+      reason?: string;
+    }> => {
       /* Deliberately not reading the row out of `rawAccounts` first: the
          server checks that this caller owns the account anyway, and a stable
          callback keeps the 2-second poller from restarting on every render. */
-      const result = (await convex.action(api.accounts.refreshStats, {
+      const result = await convex.action(api.accounts.refreshStats, {
         accountId: accountId(id),
-      })) as {
-        ok: boolean;
-        fetched: boolean;
-        followers: number | null;
-        posts: number | null;
-        refreshedAt: number | null;
-        reason?: string;
-      };
+        ...(options?.force ? { force: true } : {}),
+      });
       return result;
     },
     [convex],
+  );
+
+  const attachGraphToken = useCallback(
+    async (id: string, token: string) =>
+      await attachGraphTokenMutation({ accountId: accountId(id), token }),
+    [attachGraphTokenMutation],
+  );
+
+  const detachGraphToken = useCallback(
+    async (id: string) => await detachGraphTokenMutation({ accountId: accountId(id) }),
+    [detachGraphTokenMutation],
   );
 
   const removeAccount = useCallback(
@@ -754,6 +796,8 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       addAccount,
       verifyAccount,
       refreshAccountStats,
+      attachGraphToken,
+      detachGraphToken,
       removeAccount,
       toggleJoinCampaign,
       submitClip,
@@ -793,6 +837,8 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       addAccount,
       verifyAccount,
       refreshAccountStats,
+      attachGraphToken,
+      detachGraphToken,
       removeAccount,
       toggleJoinCampaign,
       submitClip,

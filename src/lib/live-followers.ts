@@ -1,6 +1,6 @@
 import { useClipVault } from "@/lib/clip-vault-store";
 import type { LinkedAccount } from "@/lib/clip-vault-data";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * How often the page re-checks the counts of its connected accounts.
@@ -30,7 +30,22 @@ export const LIVE_FOLLOWER_INTERVAL_MS = 1_000;
 export function useLiveFollowers(
   accounts: LinkedAccount[],
   enabled = true,
-): { syncedAt: number | null; reason: string | null } {
+): {
+  syncedAt: number | null;
+  reason: string | null;
+  /**
+   * Asks one account to be re-read now, ignoring the cooldown and the backoff.
+   *
+   * This is what the Sync button calls. The poller deliberately gives up on a
+   * platform that is refusing us and waits, which is right for a background
+   * read and useless for a person who has just posted or just pasted a new
+   * token — so the escape hatch is a single explicit request, not a faster
+   * timer.
+   */
+  syncNow: (id: string) => Promise<void>;
+  /** Ids with a read in flight, for the button's own spinner. */
+  syncing: string[];
+} {
   const { refreshAccountStats } = useClipVault();
   /* When the platforms were last really asked, as reported by the server.
      This is deliberately not "when we last polled": inside the server's
@@ -55,6 +70,33 @@ export function useLiveFollowers(
   );
 
   const inFlight = useRef(false);
+  const [syncing, setSyncing] = useState<string[]>([]);
+
+  const syncNow = useCallback(
+    async (id: string) => {
+      setSyncing((current) =>
+        current.includes(id) ? current : [...current, id],
+      );
+      try {
+        const result = await refreshAccountStats(id, { force: true });
+        setReason(result.ok ? null : (result.reason ?? null));
+        if (result.refreshedAt != null) {
+          setSyncedAt((prev) => Math.max(prev ?? 0, result.refreshedAt!));
+        }
+      } catch (err) {
+        /* A failed press still has to say something. A Sync button that
+           silently does nothing is indistinguishable from a broken one. */
+        setReason(
+          err instanceof Error && err.message
+            ? err.message
+            : "We couldn't reach Clip Vault to sync that account.",
+        );
+      } finally {
+        setSyncing((current) => current.filter((value) => value !== id));
+      }
+    },
+    [refreshAccountStats],
+  );
 
   useEffect(() => {
     if (!enabled || !ids) return;
@@ -132,5 +174,5 @@ export function useLiveFollowers(
     };
   }, [enabled, ids, refreshAccountStats]);
 
-  return { syncedAt, reason };
+  return { syncedAt, reason, syncNow, syncing };
 }

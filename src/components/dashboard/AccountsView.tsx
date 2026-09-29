@@ -11,13 +11,16 @@ import {
   type Platform,
   type Submission,
 } from "@/lib/clip-vault-data";
+import { useClipVault } from "@/lib/clip-vault-store";
 import { useLiveFollowers } from "@/lib/live-followers";
 import { motion } from "framer-motion";
 import {
   BadgeCheck,
   Check,
+  KeyRound,
   Link2,
   Plus,
+  RefreshCw,
   ScanSearch,
   Trash2,
   TriangleAlert,
@@ -66,7 +69,36 @@ export function AccountsView({
   /* Follower counts are re-read from the platforms every couple of seconds
      while this page is open, so the numbers here are the platform's current
      ones rather than whatever was true when the bio was verified. */
-  const { reason } = useLiveFollowers(accounts);
+  const { reason, syncNow, syncing } = useLiveFollowers(accounts);
+  const { attachGraphToken } = useClipVault();
+  const [tokenFor, setTokenFor] = useState<string | null>(null);
+  const [tokenValue, setTokenValue] = useState("");
+  const [tokenNote, setTokenNote] = useState<string | null>(null);
+  const [tokenBusy, setTokenBusy] = useState(false);
+
+  const saveToken = async (id: string) => {
+    setTokenBusy(true);
+    setTokenNote(null);
+    try {
+      const result = await attachGraphToken(id, tokenValue);
+      setTokenNote(result.message);
+      if (result.ok) {
+        setTokenFor(null);
+        setTokenValue("");
+        /* Read it straight away: the whole point of attaching a token is to
+           stop waiting, and the next scheduled poll could be a minute out. */
+        void syncNow(id);
+      }
+    } catch (err) {
+      setTokenNote(
+        err instanceof Error && err.message
+          ? err.message
+          : "We couldn't save that token.",
+      );
+    } finally {
+      setTokenBusy(false);
+    }
+  };
 
   const connected = accounts.filter((a) => a.status === "connected");
   const pending = accounts.filter((a) => a.status !== "connected");
@@ -322,6 +354,18 @@ export function AccountsView({
                     <StatusBadge status={account.status} />
                     <button
                       type="button"
+                      onClick={() => void syncNow(account.id)}
+                      disabled={syncing.includes(account.id)}
+                      title="Re-read this account's follower count now"
+                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-brand disabled:opacity-50"
+                    >
+                      <RefreshCw
+                        className={`h-3.5 w-3.5${syncing.includes(account.id) ? " animate-spin" : ""}`}
+                      />
+                      Sync
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setConfirmId(account.id)}
                       title="Disconnect account"
                       className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-red-500"
@@ -329,6 +373,83 @@ export function AccountsView({
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
+
+                  {(account.followers == null || account.statsNote) && (
+                    <p className="mt-2 text-[10.5px] leading-relaxed text-muted-foreground">
+                      {account.statsNote ??
+                        "We haven't read a follower count for this account yet."}
+                    </p>
+                  )}
+
+                  {account.platform === "instagram" &&
+                    (account.hasGraphToken ? (
+                      <p className="mt-1.5 text-[10.5px] text-muted-foreground">
+                        Follower count comes from Instagram's own API.
+                      </p>
+                    ) : tokenFor === account.id ? (
+                      <div className="mt-2.5 rounded-lg border border-white/[0.08] bg-black/[0.02] p-3 dark:bg-white/[0.02]">
+                        <label
+                          htmlFor={`ig-token-${account.id}`}
+                          className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
+                        >
+                          Instagram access token
+                        </label>
+                        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                          Instagram blocks follower counts for apps that aren't
+                          using its API. Paste a long-lived token for this
+                          professional account and Clip Vault will read the real
+                          number from Instagram itself. The token is stored on
+                          the server and never shown again.
+                        </p>
+                        <input
+                          id={`ig-token-${account.id}`}
+                          type="password"
+                          value={tokenValue}
+                          autoComplete="off"
+                          onChange={(e) => setTokenValue(e.target.value)}
+                          placeholder="Paste the long-lived token"
+                          className="mt-2 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-xs outline-none focus:border-brand/60"
+                        />
+                        {tokenNote && (
+                          <p className="mt-1.5 text-[11px] text-amber-500">
+                            {tokenNote}
+                          </p>
+                        )}
+                        <div className="mt-2.5 flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => void saveToken(account.id)}
+                            disabled={tokenBusy || tokenValue.trim().length < 20}
+                          >
+                            {tokenBusy ? "Saving…" : "Save and sync"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setTokenFor(null);
+                              setTokenValue("");
+                              setTokenNote(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTokenFor(account.id);
+                          setTokenValue("");
+                          setTokenNote(null);
+                        }}
+                        className="mt-1.5 inline-flex items-center gap-1.5 text-[10.5px] font-semibold text-brand hover:underline"
+                      >
+                        <KeyRound className="h-3 w-3" />
+                        Add an Instagram token for live follower counts
+                      </button>
+                    ))}
 
                   {stat && (
                     <div className="mt-2.5 grid grid-cols-3 gap-2 border-t border-white/[0.07] pt-2.5">

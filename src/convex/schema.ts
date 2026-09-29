@@ -194,6 +194,38 @@ const schema = defineSchema(
       /** When the follower/post counts were last re-read from the platform. */
       statsRefreshedAt: v.optional(v.number()),
       /**
+       * Why the last read failed, in a sentence a human can act on.
+       *
+       * Stored rather than kept in the browser because the person who needs to
+       * fix it is often not the person looking at the screen: a creator sees a
+       * dash in their own list, and the operator sees the reason in the admin
+       * console. Blank means the last read worked, so a stale sentence can
+       * never outlive the problem.
+       */
+      statsNote: v.optional(v.string()),
+      /**
+       * Consecutive failed reads. Drives the backoff below.
+       *
+       * A platform that is refusing us does not start answering because we ask
+       * again a second later — it answers less. Counting the failures is what
+       * lets a working account stay live while a blocked one stops hammering
+       * a route that is already closed to us.
+       */
+      statsFailures: v.optional(v.number()),
+      /**
+       * The server does not ask the platform again before this time, unless a
+       * person explicitly presses Sync. A real count is minutes old long
+       * before this expires; a refused lookup retried every second is how a
+       * rate limit becomes a permanent block.
+       */
+      statsRetryAfter: v.optional(v.number()),
+      /**
+       * A long-lived Instagram Graph API token, for the official follower
+       * count. Never leaves the server: it is not in any query return value,
+       * and the client is only ever told whether one is attached.
+       */
+      graphToken: v.optional(v.string()),
+      /**
        * RETIRED: the meter for the paid fallback route, which no longer
        * exists. The field is kept in the schema — not written, not read — so
        * any row that recorded it before the route was removed stays writable.

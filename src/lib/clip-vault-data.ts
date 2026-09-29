@@ -83,6 +83,21 @@ export interface LinkedAccount {
   /** Real counts read from the platform. Null when it does not publish them. */
   followers?: number | null;
   posts?: number | null;
+  /**
+   * When the counts were last really re-read from the platform.
+   *
+   * The platform's own timestamp, not "when this page last polled" — inside the
+   * server's cooldown a poll is answered from the stored row, so a local timer
+   * would claim numbers are seconds old when they are minutes old.
+   */
+  statsRefreshedAt?: number | null;
+  /**
+   * Why the last read failed, in the server's own words. Absent means the last
+   * read worked, so a fixed problem stops being reported.
+   */
+  statsNote?: string | null;
+  /** True when an Instagram Graph API token is attached (never the token). */
+  hasGraphToken?: boolean;
 }
 
 /** A message in a creator's inbox. */
