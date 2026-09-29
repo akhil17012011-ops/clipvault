@@ -23,6 +23,7 @@ import {
   Megaphone,
   ReceiptText,
   Search,
+  UserCheck,
   ShieldCheck,
   Trophy,
   UserRound,
@@ -224,6 +225,16 @@ function SidebarBody({
   const [query, setQuery] = useState("");
   const location = useLocation();
 
+  /* The bot-connection entry is for the developer only, and the answer comes
+     from the server: `allowed` is true for the developer address and nobody
+     else. Skipped entirely otherwise, so the query is never even sent for
+     other accounts. */
+  const botAccess = useQuery(
+    api.botaccount.botStatus,
+    useAuth().accountRole === "developer" ? {} : "skip",
+  );
+  const isDeveloper = botAccess?.allowed === true;
+
   const name =
     profile?.name ?? user?.name ?? user?.email?.split("@")[0] ?? "Creator";
   const email = profile?.email ?? user?.email ?? "";
@@ -259,7 +270,23 @@ function SidebarBody({
     window.location.href = href;
   };
 
-  const filtered = items.filter((item) =>
+  /* The bot-connection entry is appended for the developer only. It is not
+     part of the static NAV because who may see it is a server decision, not a
+     property of the role: a developer is a creator, so it lives in the creator
+     list and is filtered in here. */
+  const navItems = isDeveloper
+    ? [
+        ...items,
+        {
+          to: "/dashboard/bot",
+          label: "Instagram bot",
+          icon: UserCheck,
+          group: "Manage" as const,
+        },
+      ]
+    : items;
+
+  const filtered = navItems.filter((item) =>
     item.label.toLowerCase().includes(query.trim().toLowerCase()),
   );
 

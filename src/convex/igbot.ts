@@ -5,7 +5,6 @@ import type { GenericActionCtx } from "convex/server";
 import { v } from "convex/values";
 import {
   fetchInstagramLoggedIn,
-  instagramLogin,
   type ProfileResult,
 } from "./platforms";
 
@@ -31,9 +30,6 @@ import {
 type ActionCtx = GenericActionCtx<DataModel>;
 
 const ROW_KEY = "ig-bot";
-
-/** Never sign in more often than this, even when asked to. */
-const LOGIN_MIN_GAP_MS = 10 * 60_000;
 
 /** How long a demanded human confirmation blocks further sign-in attempts. */
 const CHALLENGE_LOCK_MS = 30 * 60_000;
@@ -162,10 +158,6 @@ export function createInstagramSessionReader(
   ctx: ActionCtx,
 ): (handle: string) => Promise<ProfileResult | null> {
   return async (handle: string): Promise<ProfileResult | null> => {
-    const username = process.env.IG_BOT_USERNAME;
-    const password = process.env.IG_BOT_PASSWORD;
-    if (!username || !password) return null;
-
     let row = await ctx.runQuery(internal.igbot.get, {});
     const now = Date.now();
 
@@ -210,48 +202,16 @@ export function createInstagramSessionReader(
       row = null;
     }
 
-    /* Sign-in meter. After a dead-session retirement this round still gets
-       one attempt — `row` was just cleared — but the attempt stamps the
-       meter, so the *next* round waits. A datacentre IP that signs in every
-       fifteen seconds is how the account gets locked. */
-    if (row?.lastLoginAt != null && now - row.lastLoginAt < LOGIN_MIN_GAP_MS) {
-      return {
-        ok: false,
-        reason:
-          row.message ??
-          "The saved Instagram sign-in isn't ready yet — waiting before signing in again.",
-      };
-    }
-
-    const login = await instagramLogin(username, password);
-    if (login.ok) {
-      await ctx.runMutation(internal.igbot.save, {
-        status: "ok",
-        sessionid: login.session.sessionid,
-        csrfToken: login.session.csrfToken,
-        dsUserId: login.session.dsUserId,
-        loggedInAs: username,
-        lastLoginAt: now,
-      });
-      const read = await fetchInstagramLoggedIn(handle, login.session);
-      if (read.ok) {
-        return {
-          ok: true,
-          handle: read.handle,
-          bio: read.bio,
-          ...(read.followers !== undefined ? { followers: read.followers } : {}),
-          ...(read.posts !== undefined ? { posts: read.posts } : {}),
-        };
-      }
-      if (read.transient) return null;
-      return { ok: false, reason: read.reason };
-    }
-
-    await ctx.runMutation(internal.igbot.save, {
-      status: login.challenge ? "challenge" : "error",
-      lastLoginAt: now,
-      message: login.reason,
-    });
-    return { ok: false, reason: login.reason };
+    /* No automatic sign-in any more.
+     *
+       Signing in from a datacentre address does not work — Instagram answers
+       with an anti-bot checkpoint that only a real browser can clear, so the
+       attempt could never produce a session. It could only spend the account's
+       goodwill: each attempt is another "new device" report against a real
+       account, which is how an account gets locked. The session is now captured
+       once, by hand, on the developer's own screen (`botaccount.ts`).
+       So this reader uses a stored session and otherwise keeps quiet, letting
+       the chain fall through to the routes that still answer. */
+    return null;
   };
 }

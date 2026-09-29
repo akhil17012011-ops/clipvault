@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 import {
   action,
   internalMutation,
+  internalQuery,
   mutation,
   query,
   type MutationCtx,
@@ -584,6 +585,25 @@ export const assertEmailAvailable = mutation({
       .first();
 
     return { inUse: existing !== null };
+  },
+});
+
+/**
+ * Whether the signed-in caller is the developer.
+ *
+ * Lives here rather than beside the feature that needs it because an action
+ * has no `ctx.db`, so the ownership decision has to be re-runnable from
+ * another module. It matches the built-in developer address plus anything in
+ * `DEVELOPER_EMAILS`, applied to the email stored on the user's row — a
+ * verified Google sign-in proves the address, and so does a password sign-in.
+ */
+export const callerIsDeveloper = internalQuery({
+  args: {},
+  handler: async (ctx): Promise<{ isDeveloper: boolean }> => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) return { isDeveloper: false };
+    const user = await ctx.db.get(userId);
+    return { isDeveloper: isDeveloperEmailRole(user?.email) };
   },
 });
 

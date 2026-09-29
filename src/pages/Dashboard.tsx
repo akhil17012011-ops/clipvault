@@ -1,4 +1,5 @@
 import { AdminView } from "@/components/dashboard/AdminView";
+import { BotAccountView } from "@/components/dashboard/BotAccountView";
 import { ConnectAccountModal } from "@/components/dashboard/ConnectAccountModal";
 import { CreateCampaignModal } from "@/components/dashboard/CreateCampaignModal";
 import { CreatorView } from "@/components/dashboard/CreatorView";
@@ -9,6 +10,9 @@ import type { AdminSection } from "@/components/dashboard/AdminView";
 import type { CreatorSection } from "@/components/dashboard/CreatorView";
 import { useAuth } from "@/hooks/use-auth";
 import { useClipVault } from "@/lib/clip-vault-store";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
+
 import { SECTION_TRANSITION } from "@/lib/motion";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -45,7 +49,7 @@ const ONBOARDING_DISMISSED_KEY = "clipvault:connect-prompt-dismissed";
 export default function Dashboard() {
   const { accounts } = useClipVault();
   /* The role is read from the server's user record, not from the email. */
-  const { role } = useAuth();
+  const { role, accountRole } = useAuth();
   const view: DashboardView = role;
   const [modal, setModal] = useState<ModalKind>(null);
   /** Which platform the connect wizard opens on, so "add another" is unambiguous. */
@@ -80,8 +84,19 @@ export default function Dashboard() {
 
   /* One page per sidebar section: /dashboard/:section, validated per role. */
   const requested = params.section ?? "overview";
-  const allowed: string[] =
-    view === "admin" ? ADMIN_SECTIONS : CREATOR_SECTIONS;
+  /* The bot section is developer-only, and that is decided by the server, so
+     it is only added to the allowed list once the server says so. Typing the
+     URL as anybody else lands on the overview instead. */
+  const botAccess = useQuery(
+    api.botaccount.botStatus,
+    accountRole === "developer" ? {} : "skip",
+  );
+  const isDeveloper = botAccess?.allowed === true;
+  const allowed: string[] = isDeveloper
+    ? [...(view === "admin" ? ADMIN_SECTIONS : CREATOR_SECTIONS), "bot"]
+    : view === "admin"
+      ? ADMIN_SECTIONS
+      : CREATOR_SECTIONS;
   const section = allowed.includes(requested) ? requested : "overview";
 
   useEffect(() => {
@@ -143,7 +158,9 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -12, filter: "blur(6px)" }}
               transition={SECTION_TRANSITION}
             >
-              {view === "creator" ? (
+              {section === "bot" && isDeveloper ? (
+                <BotAccountView />
+              ) : view === "creator" ? (
                 <CreatorView
                   section={section as CreatorSection}
                   onConnect={(platform) => {
