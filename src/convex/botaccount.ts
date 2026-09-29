@@ -39,6 +39,40 @@ const MIN_COOKIE_LENGTH = 20;
 const MAX_COOKIE_LENGTH = 400;
 
 /**
+ * Pulls the three cookies we need out of a whole `Cookie:` header.
+ *
+ * Every entry is `name=value; name=value`, and the values may themselves
+ * contain `=` (base64 padding) and `%` escapes, so the split is on the *first*
+ * `=` of each pair and nothing else. Percent escapes are decoded, because
+ * these values are stored encoded and an encoded `sessionid` sent verbatim
+ * simply never authenticates — which looks exactly like a dead cookie and is
+ * the easiest way to spend an hour on a session that was never broken.
+ */
+function parseCookieHeader(header: string): {
+  sessionid?: string;
+  csrftoken?: string;
+  ds_user_id?: string;
+} {
+  const wanted = ["sessionid", "csrftoken", "ds_user_id"] as const;
+  const found: Partial<Record<(typeof wanted)[number], string>> = {};
+
+  for (const pair of header.split(";")) {
+    const eq = pair.indexOf("=");
+    if (eq <= 0) continue;
+    const name = pair.slice(0, eq).trim();
+    if (!(wanted as readonly string[]).includes(name)) continue;
+    const raw = pair.slice(eq + 1).trim();
+    try {
+      found[name as (typeof wanted)[number]] = decodeURIComponent(raw);
+    } catch {
+      /* A malformed escape is not a reason to drop the whole paste. */
+      found[name as (typeof wanted)[number]] = raw;
+    }
+  }
+  return found;
+}
+
+/**
  * The signed-in developer's account, or null for everybody else.
  */
 export const botStatus = query({
@@ -108,8 +142,19 @@ export const botStatus = query({
  */
 export const saveBotSession = mutation({
   args: {
-    sessionid: v.string(),
-    csrfToken: v.string(),
+    /**
+     * The whole `Cookie:` header, as one string.
+     *
+     * This is the easier of the two ways in, and the one that works on a
+     * phone: a browser extension that can see cookies on Android hands back
+     * one long string, whereas picking three individual values out of a list
+     * on a small screen is fiddly and easy to get wrong. The three named
+     * fields below still work for anybody who copied them separately, and
+     * anything passed here wins, so a partial header is still useful.
+     */
+    cookieHeader: v.optional(v.string()),
+    sessionid: v.optional(v.string()),
+    csrfToken: v.optional(v.string()),
     dsUserId: v.optional(v.string()),
     loggedInAs: v.string(),
   },
@@ -122,8 +167,16 @@ export const saveBotSession = mutation({
       throw new Error("Only the Clip Vault developer account can do that.");
     }
 
-    const sessionid = args.sessionid.trim();
-    const csrfToken = args.csrfToken.trim();
+    /* Whatever the header carried, then overridden by anything typed
+       separately. `decodeURIComponent` because every one of these values is
+       percent-encoded, and Instagram's own endpoints expect that form — an
+       encoded `sessionid` read as a literal is a sessionid that never works. */
+    const parsed = parseCookieHeader(args.cookieHeader ?? "");
+    const sessionid =
+      args.sessionid?.trim() || parsed.sessionid || "";
+    const csrfToken = args.csrfToken?.trim() || parsed.csrftoken || "";
+    const dsUserId = args.dsUserId?.trim() || parsed.ds_user_id;
+
     if (
       sessionid.length < MIN_COOKIE_LENGTH ||
       sessionid.length > MAX_COOKIE_LENGTH
@@ -131,13 +184,14 @@ export const saveBotSession = mutation({
       return {
         ok: false,
         message:
-          "That sessionid doesn't look right — it should be a long string of letters, digits and % characters.",
+          "No sessionid was found. Paste the whole cookie string from the site, or the sessionid value on its own.",
       };
     }
     if (csrfToken.length < 8) {
       return {
         ok: false,
-        message: "The csrftoken looks incomplete. Copy it again from the same cookie list.",
+        message:
+          "No csrftoken was found. It is usually the last entry in the same cookie list.",
       };
     }
 
@@ -145,7 +199,7 @@ export const saveBotSession = mutation({
       status: "ok",
       sessionid,
       csrfToken,
-      ...(args.dsUserId?.trim() ? { dsUserId: args.dsUserId.trim() } : {}),
+      ...(dsUserId ? { dsUserId } : {}),
       loggedInAs: args.loggedInAs.trim().toLowerCase(),
       lastLoginAt: Date.now(),
     });

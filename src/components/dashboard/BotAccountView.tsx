@@ -45,6 +45,7 @@ export function BotAccountView() {
   const [sessionid, setSessionid] = useState("");
   const [csrfToken, setCsrfToken] = useState("");
   const [dsUserId, setDsUserId] = useState("");
+  const [cookieHeader, setCookieHeader] = useState("");
   const [handle, setHandle] = useState("");
   const [busy, setBusy] = useState<"save" | "clear" | "test" | null>(null);
   const [note, setNote] = useState<{ tone: "ok" | "bad"; text: string } | null>(
@@ -72,8 +73,9 @@ export function BotAccountView() {
     setNote(null);
     try {
       const result = await save({
-        sessionid: sessionid.trim(),
-        csrfToken: csrfToken.trim(),
+        cookieHeader: cookieHeader.trim() || undefined,
+        sessionid: sessionid.trim() || undefined,
+        csrfToken: csrfToken.trim() || undefined,
         dsUserId: dsUserId.trim() || undefined,
         loggedInAs: "clipzx.studio",
       });
@@ -82,6 +84,7 @@ export function BotAccountView() {
         setSessionid("");
         setCsrfToken("");
         setDsUserId("");
+        setCookieHeader("");
       }
     } catch (error) {
       setNote({
@@ -213,15 +216,15 @@ export function BotAccountView() {
         {[
           {
             title: "Sign in to the bot account",
-            body: "In a normal browser, go to instagram.com and sign in as the Clip Vault bot account. Approve anything Instagram asks — a new-device prompt means the session below will keep working.",
+            body: "A laptop is easiest — the session belongs to the account, not the device, so a desktop sign-in works perfectly well. On Android, see the note below the steps.",
           },
           {
-            title: "Open the cookies",
-            body: "Browser devtools → Application (or Storage) → Cookies → https://www.instagram.com. You need sessionid, csrftoken and ds_user_id.",
+            title: "Get the cookie string",
+            body: "Desktop: devtools → Application → Cookies → https://www.instagram.com, then copy the cookies as one string. Android: use Kiwi Browser (Chrome with extension support) and any cookie-viewer extension, or Firefox for Android with a cookies extension.",
           },
           {
-            title: "Paste them below",
-            body: "Paste the full value of each. They go straight to the server and are never shown again — this page can only display the last four characters.",
+            title: "Paste it below",
+            body: "One long paste is enough — we pull out sessionid, csrftoken and ds_user_id and ignore the rest. It goes straight to the server and is never shown again.",
           },
         ].map((step, index) => (
           <li
@@ -248,31 +251,64 @@ export function BotAccountView() {
           Session cookies
         </p>
 
-        <Field
-          label="sessionid"
-          value={sessionid}
-          onChange={setSessionid}
-          placeholder="1234%3Aabcd…"
-        />
-        <Field
-          label="csrftoken"
-          value={csrfToken}
-          onChange={setCsrfToken}
-          placeholder="abcdef0123456789"
-        />
-        <Field
-          label="ds_user_id (optional)"
-          value={dsUserId}
-          onChange={setDsUserId}
-          placeholder="12345678"
-          optional
-        />
+        {/* The easy path, and the one that works on a phone: one long paste.
+            The individual fields below stay for anyone who copied them out of a
+            desktop devtools panel. */}
+        <div>
+          <label
+            htmlFor="bot-cookie-header"
+            className="mb-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
+          >
+            Whole cookie string — easiest
+          </label>
+          <textarea
+            id="bot-cookie-header"
+            value={cookieHeader}
+            onChange={(event) => setCookieHeader(event.target.value)}
+            rows={3}
+            placeholder="sessionid=1234%3Aabc…; csrftoken=def…; ds_user_id=12345678"
+            className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-[11.5px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/40"
+            {...COOKIE}
+          />
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            Paste the lot — we pull out the three we need and ignore the rest.
+          </p>
+        </div>
+
+        <details className="group">
+          <summary className="cursor-pointer list-none text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground">
+            Or paste the three values separately
+          </summary>
+          <div className="mt-2.5 space-y-3">
+            <Field
+              label="sessionid"
+              value={sessionid}
+              onChange={setSessionid}
+              placeholder="1234%3Aabcd…"
+            />
+            <Field
+              label="csrftoken"
+              value={csrfToken}
+              onChange={setCsrfToken}
+              placeholder="abcdef0123456789"
+            />
+            <Field
+              label="ds_user_id (optional)"
+              value={dsUserId}
+              onChange={setDsUserId}
+              placeholder="12345678"
+              optional
+            />
+          </div>
+        </details>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <Button
             onClick={onSave}
             disabled={
-              busy !== null || !sessionid.trim() || !csrfToken.trim()
+              busy !== null ||
+              (!cookieHeader.trim() &&
+                !(sessionid.trim() && csrfToken.trim()))
             }
             size="sm"
           >
@@ -328,6 +364,36 @@ export function BotAccountView() {
             Clear
           </Button>
         </div>
+      </div>
+
+      {/* Android has no DevTools, so the desktop instructions above do not
+          apply. These are the routes that do, in the order they usually work. */}
+      <div className="rounded-2xl border border-white/[0.07] bg-black/[0.02] p-4 dark:bg-white/[0.02]">
+        <p className="text-[12px] font-bold">On Android</p>
+        <ul className="mt-2 space-y-1.5 text-[11.5px] leading-relaxed text-muted-foreground">
+          <li>
+            <span className="font-semibold text-foreground">Kiwi Browser</span> — a
+            Chrome for Android that runs Chrome extensions. Install a cookie
+            viewer there, open instagram.com, and copy the cookie string.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">Firefox for Android</span>{" "}
+            — add the “cookies.txt” extension from the Add-ons collection, then
+            export for instagram.com.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">Or just use a
+            laptop.</span> The session is tied to the account, not the phone, so
+            signing in on any computer and pasting from there gives exactly the
+            same result.
+          </li>
+        </ul>
+        <p className="mt-2.5 text-[11px] leading-relaxed text-muted-foreground">
+          Chrome on Android has no developer-tools panel, so there is no way to
+          read these cookies out of it directly. A bookmarklet will not help
+          either — the session cookie is marked HttpOnly precisely so that
+          page scripts cannot read it.
+        </p>
       </div>
 
       {note && (
