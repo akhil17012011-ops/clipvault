@@ -87,12 +87,15 @@ export function checkAddress(
   }
 }
 
-function checkAmountCents(cents: number): string | null {
+function checkAmountCents(
+  cents: number,
+  minCents: number = MIN_CENTS,
+): string | null {
   if (!Number.isInteger(cents)) {
     return "That amount isn't a whole number of cents.";
   }
-  if (cents < MIN_CENTS) {
-    return `The minimum withdrawal is $${MIN_WITHDRAWAL_USD}.`;
+  if (cents < minCents) {
+    return `The minimum withdrawal is $${(minCents / 100).toFixed(2)}.`;
   }
   if (cents > MAX_CENTS) {
     return "Ask support about balances above $100,000.";
@@ -132,6 +135,26 @@ const TRANSACTION_FEE_BPS = 500;
 
 /** The account every transaction fee is paid into. */
 const DEVELOPER_EMAIL = "akhil17012011@gmail.com";
+
+/**
+ * The developer's withdrawal floor: a cent.
+ *
+ * The $5 minimum exists so a creator is not paying a network fee to move a
+ * dollar. The developer is withdrawing the platform's own cut of verified
+ * views, which is exactly the money that would otherwise sit in an account
+ * they cannot move — so they are exempt from the floor and can take the
+ * balance whenever there is any, without waiting to accumulate $5 first.
+ * The address is read from the signed-in user's own row, never from the
+ * request, so nobody can ask to be treated as the developer.
+ */
+const DEVELOPER_MIN_CENTS = 1;
+
+function isDeveloperEmail(email: string | null | undefined): boolean {
+  return (
+    typeof email === "string" &&
+    email.trim().toLowerCase() === DEVELOPER_EMAIL
+  );
+}
 
 /** Splits a gross credit into what the creator gets and what the fee is. */
 function splitFee(grossCents: number): { netCents: number; feeCents: number } {
@@ -272,7 +295,12 @@ export const myWallet = query({
       availableCents: wallet?.availableCents ?? 0,
       pendingCents: wallet?.pendingCents ?? 0,
       lifetimeCents: wallet?.lifetimeCents ?? 0,
-      minWithdrawalCents: MIN_CENTS,
+      /* The developer's floor is a cent, so their payments page and wallet
+         stop telling them to wait for $5. The number drives every gate in the
+         UI, so it is returned rather than hardcoded on the client. */
+      minWithdrawalCents: isDeveloperEmail(user.email)
+        ? DEVELOPER_MIN_CENTS
+        : MIN_CENTS,
     };
   },
 });
@@ -338,9 +366,20 @@ export const allRequests = query({
     );
     return rows
       .sort((a, b) => {
-        /* Anything still waiting for an operator comes first. */
-        if (a.status === "pending" && b.status !== "pending") return -1;
-        if (b.status === "pending" && a.status !== "pending") return 1;
+        /* A pending request from the developer outranks everything else: it is
+           the platform's own fee money, and leaving it waiting behind creator
+           requests is how a small balance quietly sits unpaid. Anything still
+           waiting for an operator comes before anything already decided. */
+        const rank = (row: (typeof rows)[number]) => {
+          const developer = isDeveloperEmail(
+            byId.get(row.userId)?.email ?? null,
+          )
+            ? 0
+            : 1;
+          return developer + (row.status === "pending" ? 0 : 2);
+        };
+        const byRank = rank(a) - rank(b);
+        if (byRank !== 0) return byRank;
         return b.requestedAt - a.requestedAt;
       })
       .map((row) => ({
@@ -352,6 +391,9 @@ export const allRequests = query({
           byId.get(row.userId)?.email?.split("@")[0] ||
           "Creator",
         creatorEmail: byId.get(row.userId)?.email ?? null,
+        /* True only for the developer's own account, decided on the server
+           from the user's row — never from anything the request supplied. */
+        isDeveloper: isDeveloperEmail(byId.get(row.userId)?.email ?? null),
         amountCents: row.amountCents,
         method: row.method,
         network: row.network ?? null,
@@ -386,7 +428,13 @@ export const requestPayout = mutation({
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
 
-    const amountError = checkAmountCents(args.amountCents);
+    /* The floor comes from the signed-in account's own address on file, so a
+       request cannot choose its own minimum. */
+    const minCents = isDeveloperEmail(user.email)
+      ? DEVELOPER_MIN_CENTS
+      : MIN_CENTS;
+
+    const amountError = checkAmountCents(args.amountCents, minCents);
     if (amountError) throw new Error(amountError);
 
     const address = args.address.trim();
@@ -412,9 +460,11 @@ export const requestPayout = mutation({
 
     const wallet = await readWallet(ctx, user._id);
     const available = wallet?.availableCents ?? 0;
-    if (available < MIN_CENTS) {
+    if (available < minCents) {
       throw new Error(
-        `You need at least $${MIN_WITHDRAWAL_USD} in your balance before you can request a payout.`,
+        isDeveloperEmail(user.email)
+          ? "There isn't anything in your balance to withdraw yet."
+          : `You need at least $${MIN_WITHDRAWAL_USD} in your balance before you can request a payout.`,
       );
     }
     if (args.amountCents > available) {

@@ -11,6 +11,7 @@ import {
   Check,
   Clock3,
   Copy,
+  Crown,
   Loader2,
   ReceiptText,
   X,
@@ -37,8 +38,22 @@ export function AdminPayouts() {
   const [reason, setReason] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
 
-  const pending = adminPayoutRequests.filter((r) => r.status === "pending");
+  const pending = adminPayoutRequests
+    .filter((r) => r.status === "pending")
+    /* The developer's request is the platform's own fee money, so it sits at
+       the top of the queue. The server already sorts it first; this keeps that
+       true even if the list is ever assembled differently. */
+    .sort(
+      (a, b) =>
+        Number(b.isDeveloper) - Number(a.isDeveloper) ||
+        b.requestedAt - a.requestedAt,
+    );
   const history = adminPayoutRequests.filter((r) => r.status !== "pending");
+  const developerPending = pending.filter((r) => r.isDeveloper);
+  const developerTotal = developerPending.reduce(
+    (sum, r) => sum + r.amountCents,
+    0,
+  );
   const pendingTotal = pending.reduce((sum, r) => sum + r.amountCents, 0);
   const paidTotal = history
     .filter((r) => r.status === "paid")
@@ -100,6 +115,28 @@ export function AdminPayouts() {
         </div>
       </div>
 
+      {developerPending.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/40 bg-brand/[0.09] px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-brand/40 bg-brand/15 text-brand">
+              <Crown className="h-3.5 w-3.5" />
+            </span>
+            <div>
+              <p className="text-[12.5px] font-bold">
+                Pay the developer first
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                This is the platform&apos;s transaction-fee balance — it has no
+                minimum and will not grow while it waits.
+              </p>
+            </div>
+          </div>
+          <p className="font-mono text-base font-extrabold text-brand">
+            {fmtCents(developerTotal)}
+          </p>
+        </div>
+      )}
+
       <div>
         <h3 className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
           Pending requests
@@ -114,13 +151,25 @@ export function AdminPayouts() {
             {pending.map((request) => (
               <li
                 key={request.id}
-                className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5"
+                className={`rounded-xl border px-4 py-3.5 ${
+                  request.isDeveloper
+                    ? "border-brand/45 bg-brand/[0.07]"
+                    : "border-white/10 bg-white/[0.04]"
+                }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[13.5px] font-bold">
-                      {request.creatorName}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-[13.5px] font-bold">
+                        {request.creatorName}
+                      </p>
+                      {request.isDeveloper && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-brand/45 bg-brand/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-brand">
+                          <Crown className="h-3 w-3" />
+                          Developer · pay first
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-muted-foreground">
                       {request.creatorEmail ?? "No email on file"} ·{" "}
                       {new Date(request.requestedAt).toLocaleDateString("en-US", {

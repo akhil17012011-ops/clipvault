@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { fmtCents } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
 import { Clapperboard, Home, LogOut, Megaphone, Menu, RotateCcw, Settings2, Wallet } from "lucide-react";
@@ -29,7 +30,7 @@ export function TopBar({
   onMenu: () => void;
 }) {
   const { user, signOut } = useAuth();
-  const { profile } = useClipVault();
+  const { profile, wallet } = useClipVault();
   const navigate = useNavigate();
   const [editingProfile, setEditingProfile] = useState(false);
 
@@ -101,7 +102,11 @@ export function TopBar({
           <NotificationBell />
           <span className="glass-chip hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground md:inline-flex">
             <Wallet className="h-3.5 w-3.5" />
-            Withdraw from $5
+            {/* The minimum is the wallet's own number, so the developer's
+                exempt floor is never contradicted by a hardcoded $5. */}
+            {wallet.minWithdrawalCents <= 1
+              ? "No withdrawal minimum"
+              : `Withdraw from ${fmtCents(wallet.minWithdrawalCents)}`}
           </span>
 
           <DropdownMenu>

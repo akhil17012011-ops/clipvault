@@ -8,6 +8,7 @@ import {
 import { CampaignModeration } from "@/components/dashboard/CampaignModeration";
 import { AdminMessages } from "@/components/dashboard/AdminMessages";
 import { AdminPayouts } from "@/components/dashboard/AdminPayouts";
+import { PayoutRequestCard } from "@/components/dashboard/PayoutRequestCard";
 import { AdminCampaignRequests } from "@/components/dashboard/AdminCampaignRequests";
 import { Leaderboard } from "@/components/dashboard/Leaderboard";
 import { BrandAvatar, PlatformChip, StatusBadge } from "@/components/ClipVaultUI";
@@ -95,6 +96,7 @@ export type AdminSection =
   | "leaderboard"
   | "requests"
   | "payouts"
+  | "payments"
   | "invoices"
   | "campaigns"
   | "moderation";
@@ -210,6 +212,12 @@ export function AdminView({
       title: "Payout requests",
       description:
         "Every withdrawal a creator has asked for, and what you decided on it.",
+    },
+    payments: {
+      kicker: "My money",
+      title: "Your balance & payouts",
+      description:
+        "The transaction fee from every verified payout lands here. There is no minimum — request whatever balance is there.",
     },
     creators: {
       kicker: "Directory",
@@ -485,6 +493,39 @@ export function AdminView({
             Payouts sent over the last 7 days
           </h3>
             <PayoutChart data={payoutSeries} />
+          </div>
+        </motion.section>
+      )}
+
+      {section === "payments" && (
+        <motion.section
+          id="payments"
+          initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.6, ease: EASE }}
+          className="glass-panel rounded-2xl p-5"
+        >
+          {/* An operator is also a person on this platform: the fee money is
+              theirs to take, and the creator payout form is the only place that
+              can send it. Without this page an admin has a balance they cannot
+              withdraw at all. */}
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
+              <Wallet className="h-4 w-4" />
+            </span>
+            <div>
+              <h2 className="text-[15px] font-bold tracking-tight">
+                Your balance &amp; payouts
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                The 5% transaction fee from every verified payout lands here.
+                There is no minimum — request the whole balance whenever you
+                want it.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5">
+            <PayoutRequestCard />
           </div>
         </motion.section>
       )}

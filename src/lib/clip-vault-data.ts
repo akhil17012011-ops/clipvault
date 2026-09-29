@@ -203,6 +203,13 @@ export interface AdminPayoutRequest extends PayoutRequest {
   userId: string;
   creatorName: string;
   creatorEmail: string | null;
+  /**
+   * The developer's own account, decided on the server from the user's row.
+   * Its requests are the platform's fee money, so the queue shows them first
+   * and marks them, rather than leaving an operator to guess which one pays
+   * the operator.
+   */
+  isDeveloper: boolean;
 }
 
 /** A single movement of money, positive or negative. */
