@@ -20,7 +20,7 @@ import {
 } from "@/lib/clip-vault-data";
 import { useClipVault, useCreatorDirectory } from "@/lib/clip-vault-store";
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   BadgeCheck,
   CircleDollarSign,
@@ -29,6 +29,13 @@ import {
   Search,
   Users,
 } from "lucide-react";
+
+/**
+ * Frozen once per page load, so "days on Clip Vault" stays stable between
+ * renders — reading the clock inside render would make the table jitter on
+ * every keystroke in the search box above it.
+ */
+const APP_LOADED_AT = Date.now();
 
 /** What one clip is worth to the creator, using the campaign's live rate. */
 function clipEarnings(clip: CreatorProfile["clips"][number], campaigns: Campaign[]) {
@@ -186,7 +193,7 @@ export function CreatorsView() {
                             {Math.max(
                               0,
                               Math.round(
-                                (Date.now() - creator.connectedAt) /
+                                (APP_LOADED_AT - creator.connectedAt) /
                                   86_400_000,
                               ),
                             )}{" "}

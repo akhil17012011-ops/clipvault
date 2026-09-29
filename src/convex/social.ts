@@ -158,9 +158,19 @@ async function youtubeMetrics(
 export const inspectClip = action({
   args: { link: v.string(), platform: PLATFORM },
   handler: async (
-    _ctx,
+    ctx,
     args: InspectArgs,
   ): Promise<InspectResult> => {
+    /* Signed-in only. Without this the endpoint is a free, open proxy against
+       the platforms' oEmbed services from this deployment's IP — the same IP
+       the account-reading paths already have to defend. Every current caller
+       lives behind the dashboard's auth gate, so this refuses exactly the
+       callers who have no business being here. */
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("You must be signed in to do that.");
+    }
+
     const url = normalizeLink(args.link);
     if (!url) {
       return {

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, action, mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { api, internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { requireUser } from "./access";
@@ -57,7 +58,7 @@ export function safeEqual(a: string, b: string): boolean {
 /** The most recent live challenge for a user, or null. */
 function liveChallenge(
   rows: {
-    _id: any;
+    _id: Id<"emailVerifications">;
     codeHash: string;
     sentAt: number;
     expiresAt: number;
@@ -208,7 +209,6 @@ export const sendCode = internalAction({
   args: {},
   handler: async (
     ctx,
-    _args,
   ): Promise<{ sent: boolean; message: string }> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {

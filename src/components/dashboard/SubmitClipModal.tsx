@@ -117,7 +117,9 @@ export function SubmitClipModal({
   const [phase, setPhase] = useState<Phase>("form");
   const [scan, setScan] = useState<ScanPlan | null>(null);
   const [revealed, setRevealed] = useState(0);
-  const [fetched, setFetched] = useState(false);
+  /* The value itself is never read — only the setter, to reset the scan
+     state — so it is intentionally left out of the destructure. */
+  const [, setFetched] = useState(false);
 
   const selected = campaigns.find((c) => c.id === campaignId);
   const detected = platformFromLink(link.trim());
@@ -205,7 +207,6 @@ export function SubmitClipModal({
         ok: allowed && tagsOk && verifiedOwner,
       },
     ];
-    const metrics = null;
     return {
       checks,
       allOk: allowed && tagsOk && verifiedOwner,

@@ -64,6 +64,8 @@ interface ClipVaultContextValue {
   /** Unread messages, for the bell badge. */
   unreadCount: number;
   markAllRead: () => Promise<void>;
+  /** One notification read; the badge counts what is still unread. */
+  markRead: (messageId: string) => Promise<void>;
 
   /* ---- money ---- */
   /** My balance: available, locked in a request, and lifetime. */
@@ -353,6 +355,7 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
     isAuthenticated ? {} : SKIP,
   );
   const markAllReadMutation = useMutation(api.messages.markAllRead);
+  const markReadMutation = useMutation(api.messages.markRead);
   const requestPayoutMutation = useMutation(api.payouts.requestPayout);
   const markPayoutPaidMutation = useMutation(api.payouts.markPaid);
   const rejectPayoutMutation = useMutation(api.payouts.markRejected);
@@ -425,6 +428,13 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
   const markAllRead = useCallback(async () => {
     await markAllReadMutation();
   }, [markAllReadMutation]);
+
+  const markRead = useCallback(
+    async (messageId: string) => {
+      await markReadMutation({ messageId: messageId as never });
+    },
+    [markReadMutation],
+  );
 
   /* ---- money ---- */
 
@@ -729,6 +739,7 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       messages,
       unreadCount: rawUnread ?? 0,
       markAllRead,
+      markRead,
       wallet,
       payoutRequests,
       earnings,
@@ -767,6 +778,7 @@ export function ClipVaultProvider({ children }: { children: ReactNode }) {
       messages,
       rawUnread,
       markAllRead,
+      markRead,
       wallet,
       payoutRequests,
       earnings,

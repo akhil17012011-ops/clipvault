@@ -21,12 +21,10 @@ export type DashboardView = "creator" | "admin";
 
 export function TopBar({
   role,
-  onReset,
   onMenu,
 }: {
   /** Derived from the email used at sign-in — no manual switch. */
   role: DashboardView;
-  onReset: () => void;
   /** Opens the mobile sidebar drawer (lg and up show the fixed rail). */
   onMenu: () => void;
 }) {
@@ -50,7 +48,10 @@ export function TopBar({
       await signOut();
       navigate("/");
     } catch (error) {
+      /* A sign-out that fails silently leaves somebody believing they are
+         logged out on a shared machine — so it says so. */
       console.error("Sign out error:", error);
+      toast.error("Couldn't sign out just now — please try again.");
     }
   };
 

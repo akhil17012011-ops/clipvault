@@ -73,6 +73,29 @@ export const markAllRead = mutation({
 });
 
 /**
+ * Mark a single notification as read.
+ *
+ * The badge counts what has not been seen yet, so reading has to be per row —
+ * clearing the whole inbox on open would erase the list's own record of what
+ * was new, and the next notice would arrive with nothing to distinguish it
+ * from last week's. Only the owner can mark their copy read.
+ */
+export const markRead = mutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const message = await ctx.db.get(args.messageId);
+    if (!message) return;
+    if (message.userId !== user._id) {
+      throw new Error("You can only read your own notifications.");
+    }
+    if (message.readAt === undefined) {
+      await ctx.db.patch(message._id, { readAt: Date.now() });
+    }
+  },
+});
+
+/**
  * Removes a notification from the inbox.
  *
  * A creator deletes their own; an operator can clear any notification, which

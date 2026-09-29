@@ -90,10 +90,6 @@ export default function Dashboard() {
     if (accounts.length === 0) setOnboardingSkipped(true);
   };
 
-  const handleReset = () => {
-    /* Nothing to reset — the dashboard reads straight from the database. */
-  };
-
   return (
     <main className="relative min-h-screen bg-background">
       {/* Console backdrop: gradient blooms + a masked grid, no filter blur. */}
@@ -110,7 +106,6 @@ export default function Dashboard() {
       <div className="relative lg:pl-[264px]">
         <TopBar
           role={view}
-          onReset={handleReset}
           onMenu={() => setMenuOpen(true)}
         />
 

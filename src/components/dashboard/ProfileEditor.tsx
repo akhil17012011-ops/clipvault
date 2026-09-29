@@ -13,8 +13,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { useAction } from "convex/react";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
-import { Camera, KeyRound, Loader2, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { Camera, Eye, EyeOff, KeyRound, Loader2, ShieldCheck } from "lucide-react";
 
 /**
  * Lets a creator set the name and picture shown across Clip Vault.
@@ -40,22 +40,41 @@ export function ProfileEditor({
   const [password, setPassword] = useState("");
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  /* Same two keyboard guards as the sign-in form: the password can be
+     inspected before saving, and Caps Lock is called out before it wastes an
+     attempt. */
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsOn, setCapsOn] = useState(false);
 
   /* Re-seed from the saved profile each time the dialog opens, so a cancelled
-     edit never leaks into the next one. */
-  useEffect(() => {
-    if (!open) return;
-    setName(profile?.name ?? "");
-    setImage(profile?.avatarUrl ?? "");
-    setError(null);
-    setPassword("");
-    setPasswordError(null);
-  }, [open, profile?.name, profile?.avatarUrl]);
+     edit never leaks into the next one.
+
+     Done while rendering rather than inside an effect: React endorses
+     adjusting state during render when it guards on a prop change, it avoids
+     a cascading render pass, and the dialog never flashes stale values because
+     the seeding happens before the first paint with it open. */
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setName(profile?.name ?? "");
+      setImage(profile?.avatarUrl ?? "");
+      setError(null);
+      setPassword("");
+      setPasswordError(null);
+      setShowPassword(false);
+      setCapsOn(false);
+    }
+  }
 
   /**
    * Puts a password on the operator account so the same person can sign in
    * with their email as well as with Google. The password is hashed by Convex
    * Auth on the server; it is never sent anywhere else or stored in the browser.
+   *
+   * Failures are translated here for the same reason the sign-in form does it:
+   * a stock server string about "invalid password" reads as though saving
+   * broke, when the real problem is length or a rate limit.
    */
   const savePassword = async () => {
     setPasswordError(null);
@@ -65,10 +84,13 @@ export function ProfileEditor({
       setPassword("");
       toast.success("Password saved", { description: result.message });
     } catch (err) {
+      const raw = err instanceof Error ? err.message : "";
       setPasswordError(
-        err instanceof Error
-          ? err.message
-          : "We couldn't set that password. Try again.",
+        /rate limit|too many/i.test(raw)
+          ? "Too many attempts. Wait a moment and try again."
+          : /short|at least 8|8 char/i.test(raw)
+            ? "Passwords need to be at least 8 characters."
+            : raw.slice(0, 160) || "We couldn't set that password. Try again.",
       );
     } finally {
       setPasswordBusy(false);
@@ -213,25 +235,54 @@ export function ProfileEditor({
                   <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="operator-password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 8 characters"
-                    minLength={8}
-                    className="h-10 pl-9"
+                    onKeyUp={(e) => setCapsOn(e.getModifierState("CapsLock"))}
                     onKeyDown={(e) => {
+                      setCapsOn(e.getModifierState("CapsLock"));
                       if (e.key === "Enter" && password.length >= 8) {
                         e.preventDefault();
                         void savePassword();
                       }
                     }}
+                    onBlur={() => setCapsOn(false)}
+                    placeholder="At least 8 characters"
+                    minLength={8}
+                    className="h-10 pl-9 pr-11"
                   />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
 
+                {capsOn && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] font-medium text-amber-600 dark:text-amber-400">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    Caps Lock is on
+                  </p>
+                )}
+
                 {passwordError && (
-                  <p className="mt-2 text-[12px] text-red-500 dark:text-red-400">
-                    {passwordError}
+                  <p
+                    role="alert"
+                    className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-500/25 bg-red-500/[0.07] px-3 py-2 text-[12px] leading-relaxed text-red-600 dark:text-red-300"
+                  >
+                    <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+                    <span>{passwordError}</span>
                   </p>
                 )}
 

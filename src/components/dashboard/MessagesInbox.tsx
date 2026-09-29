@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowUpRight, MailOpen, MessageSquare, Sparkles } from "lucide-react";
 import { Link } from "react-router";
-import { fmtFull, type CreatorMessage } from "@/lib/clip-vault-data";
+import { type CreatorMessage } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 
 function when(ts: number): string {
@@ -80,6 +80,7 @@ function MessagesInboxRow({
   index: number;
 }) {
   const isAdmin = message.kind === "admin";
+  const { markRead } = useClipVault();
   return (
     <motion.li
       initial={{ opacity: 0, y: 12 }}
@@ -129,6 +130,18 @@ function MessagesInboxRow({
               {message.link}
               <ArrowUpRight className="h-3 w-3" />
             </Link>
+          ) : null}
+          {/* Read state is per row, so one notice can be dealt with without
+              sweeping the rest of the inbox under "seen". */}
+          {!message.read ? (
+            <button
+              type="button"
+              onClick={() => void markRead(message.id).catch(() => {})}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <MailOpen className="h-3 w-3" />
+              Mark as read
+            </button>
           ) : null}
         </div>
       </div>

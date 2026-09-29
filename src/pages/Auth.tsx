@@ -13,6 +13,8 @@ import {
   ArrowRight,
   BadgeCheck,
   CheckCircle2,
+  Eye,
+  EyeOff,
   KeyRound,
   Loader2,
   Mail,
@@ -95,6 +97,59 @@ function readableError(error: unknown): string {
   return raw.slice(0, 180) || "Something went wrong. Please try again.";
 }
 
+/**
+ * A failed code check, in words that fit the situation.
+ *
+ * The wrong-code path must not show the raw server string: it is often a
+ * stock credential error that talks about *passwords* on an OTP form, which
+ * reads as though the account broke. And a dropped connection must not be
+ * reported as a wrong code either — that sends people re-typing a code that
+ * was fine. So: connection failures say connection, everything else says
+ * code, and neither ever leaks a server string at somebody mid-sign-in.
+ */
+function readableOtpError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error ?? "");
+  if (/rate limit|too many/i.test(raw)) {
+    return "Too many attempts. Wait a moment and try again.";
+  }
+  if (/network|fetch|failed to|load|socket|timeout/i.test(raw)) {
+    return "We couldn't check that code — check your connection and try again.";
+  }
+  return "That code isn't right or has expired — request a new one.";
+}
+
+/**
+ * One shape for every sign-in failure.
+ *
+ * Errors are announced to screen readers, sit in a bordered panel rather than
+ * floating as bare red text, and always carry the icon — a failure mid-login
+ * should look deliberate, not like a stray string leaked out of the server.
+ */
+function ErrorNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      role="alert"
+      className="mt-3 flex items-start gap-1.5 rounded-lg border border-red-500/25 bg-red-500/[0.07] px-3 py-2 text-[13px] leading-relaxed text-red-600 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300"
+    >
+      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+/** A quiet success line, for things like "a new code is on its way". */
+function NoticeNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      role="status"
+      className="mt-3 flex items-start gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-2 text-[13px] leading-relaxed text-emerald-700 dark:text-emerald-300"
+    >
+      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
   const navigate = useNavigate();
@@ -115,6 +170,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [codeEmail, setCodeEmail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* A confirmation with nothing to correct — kept out of `error` so the two
+     never fight for the same line. */
+  const [notice, setNotice] = useState<string | null>(null);
+  /* Show the password as typed, and surface Caps Lock before it eats a
+     sign-in attempt — the two password-form failures people blame on the
+     site when they are really about the keyboard. */
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsOn, setCapsOn] = useState(false);
   /* Set when a sign-up was refused because the address is taken, so the form
      can offer the two things that actually work instead of a dead end. */
   const [takenEmail, setTakenEmail] = useState<string | null>(null);
@@ -149,6 +212,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const handleGoogle = async () => {
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       /**
        * `redirectTo` must resolve against the Convex site, because that is the
@@ -185,6 +249,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     const address = email.trim().toLowerCase();
     setBusy(true);
     setError(null);
+    setNotice(null);
     setTakenEmail(null);
     try {
       /* Convex Auth's `signUp` does not fail when an address is already
@@ -221,6 +286,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     event.preventDefault();
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       await signIn("email-otp", { email: email.trim().toLowerCase() } as never);
       setCodeEmail(email.trim().toLowerCase());
@@ -237,6 +303,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     if (!codeEmail) return;
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       await signIn("email-otp", {
         email: codeEmail,
@@ -244,7 +311,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       } as never);
     } catch (err) {
       console.error("OTP verification error:", err);
-      setError("The verification code you entered is incorrect.");
+      setError(readableOtpError(err));
       setOtp("");
       setBusy(false);
     }
@@ -357,11 +424,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
-                  {error && (
-                    <p className="mt-3 text-center text-sm text-red-500 dark:text-red-400">
-                      {error}
-                    </p>
-                  )}
+                  {error ? <ErrorNote>{error}</ErrorNote> : null}
+                  {!error && notice && <NoticeNote>{notice}</NoticeNote>}
                   <div className="mt-6 flex flex-col gap-2">
                     <Button
                       type="submit"
@@ -380,19 +444,50 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         </>
                       )}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        setCodeEmail(null);
-                        setOtp("");
-                        setError(null);
-                      }}
-                      disabled={busy}
-                      className="w-full text-muted-foreground"
-                    >
-                      Use a different email
-                    </Button>
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={async () => {
+                          if (!codeEmail) return;
+                          setBusy(true);
+                          setError(null);
+                          setNotice(null);
+                          try {
+                            await signIn("email-otp", {
+                              email: codeEmail,
+                            } as never);
+                            setOtp("");
+                            setNotice(
+                              "A new code is on its way — it can take a minute to arrive.",
+                            );
+                          } catch (err) {
+                            console.error("OTP resend error:", err);
+                            setError(readableError(err));
+                          } finally {
+                            setBusy(false);
+                          }
+                        }}
+                        disabled={busy}
+                        className="w-full text-muted-foreground"
+                      >
+                        Send a new code
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setCodeEmail(null);
+                          setOtp("");
+                          setError(null);
+                          setNotice(null);
+                        }}
+                        disabled={busy}
+                        className="w-full text-muted-foreground"
+                      >
+                        Use a different email
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </>
@@ -441,6 +536,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       onClick={() => {
                         setMode(tab.id);
                         setError(null);
+                        setNotice(null);
                       }}
                       className={`flex h-9 items-center justify-center gap-1.5 rounded-lg text-[13px] font-semibold transition-colors ${
                         mode === tab.id
@@ -474,19 +570,45 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       disabled={busy}
                       required
                     />
-                    <Input
-                      type="password"
-                      autoComplete={
-                        flow === "signUp" ? "new-password" : "current-password"
-                      }
-                      placeholder="Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="mt-2.5 h-11"
-                      disabled={busy}
-                      minLength={8}
-                      required
-                    />
+                    <div className="relative mt-2.5">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        autoComplete={
+                          flow === "signUp" ? "new-password" : "current-password"
+                        }
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onKeyUp={(e) => setCapsOn(e.getModifierState("CapsLock"))}
+                        onKeyDown={(e) => setCapsOn(e.getModifierState("CapsLock"))}
+                        onBlur={() => setCapsOn(false)}
+                        className="h-11 pr-11"
+                        disabled={busy}
+                        minLength={8}
+                        required
+                      />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={() => setShowPassword((value) => !value)}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    {capsOn && (
+                      <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] font-medium text-amber-600 dark:text-amber-400">
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                        Caps Lock is on
+                      </p>
+                    )}
 
                     {/* A live hint, before they press the button: this address is
                         already a Clip Vault account, so "create account" is the
@@ -510,11 +632,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       </p>
                     )}
 
-                    {error && (
-                      <p className="mt-3 text-sm text-red-500 dark:text-red-400">
-                        {error}
-                      </p>
-                    )}
+                    {error && <ErrorNote>{error}</ErrorNote>}
 
                     {/* After a refused sign-up, the two things that actually
                         work are offered directly rather than left as a message
@@ -582,9 +700,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       <button
                         type="button"
                         onClick={() => {
-                          setFlow(flow === "signUp" ? "signIn" : "signUp");
-                          setError(null);
-                          setTakenEmail(null);
+                        setFlow(flow === "signUp" ? "signIn" : "signUp");
+                        setError(null);
+                        setNotice(null);
+                        setTakenEmail(null);
                         }}
                         className="font-semibold text-brand underline-offset-2 hover:underline"
                       >
@@ -622,11 +741,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         )}
                       </Button>
                     </div>
-                    {error && (
-                      <p className="mt-3 text-sm text-red-500 dark:text-red-400">
-                        {error}
-                      </p>
-                    )}
+                    {error && <ErrorNote>{error}</ErrorNote>}
                   </form>
                 )}
 
