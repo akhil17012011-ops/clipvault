@@ -620,6 +620,20 @@ export async function fetchInstagramLoggedIn(
       reason: `We couldn't find an Instagram account called @${handle}.`,
     };
   }
+  if (response.status === 429) {
+    /* Worth distinguishing carefully, because it is the one refusal that says
+       nothing about the session. Instagram answers a *valid* sign-in from a
+       rate-limited address with a 429 and an HTML page marked `logged-in` —
+       the cookie was accepted, the address is simply throttled. Calling that a
+       dead session would destroy a working credential, so it is reported as
+       what it is and the session is left untouched. */
+    return {
+      ok: false,
+      transient: true,
+      reason:
+        "Instagram is rate-limiting this server right now. The saved sign-in is fine — try again in a few minutes.",
+    };
+  }
   if (!response.ok) {
     return { ok: false, reason: "Instagram didn't answer the profile read.", transient: true };
   }
