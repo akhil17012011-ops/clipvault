@@ -266,12 +266,13 @@ export function BotAccountView() {
             value={cookieHeader}
             onChange={(event) => setCookieHeader(event.target.value)}
             rows={3}
-            placeholder="sessionid=1234%3Aabc…; csrftoken=def…; ds_user_id=12345678"
+            placeholder={"sessionid=1234%3Aabc…; csrftoken=def…\n—or the whole cookie file from the extension—"}
             className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-[11.5px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/40"
             {...COOKIE}
           />
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
             Paste the lot — we pull out the three we need and ignore the rest.
+            A cookie string and a cookie file both work.
           </p>
         </div>
 
@@ -378,8 +379,10 @@ export function BotAccountView() {
           </li>
           <li>
             <span className="font-semibold text-foreground">Firefox for Android</span>{" "}
-            — add the “cookies.txt” extension from the Add-ons collection, then
-            export for instagram.com.
+            — you have this. Menu → Add-ons and themes → search “cookies” →
+            install a cookies extension → sign in to Instagram → open the
+            extension → copy or export. Paste the whole thing into the box
+            above; the file format works as well as a plain string.
           </li>
           <li>
             <span className="font-semibold text-foreground">Or just use a

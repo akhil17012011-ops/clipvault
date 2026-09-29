@@ -55,18 +55,47 @@ function parseCookieHeader(header: string): {
 } {
   const wanted = ["sessionid", "csrftoken", "ds_user_id"] as const;
   const found: Partial<Record<(typeof wanted)[number], string>> = {};
-
-  for (const pair of header.split(";")) {
-    const eq = pair.indexOf("=");
-    if (eq <= 0) continue;
-    const name = pair.slice(0, eq).trim();
-    if (!(wanted as readonly string[]).includes(name)) continue;
-    const raw = pair.slice(eq + 1).trim();
+  const take = (name: string, raw: string) => {
+    if (!(wanted as readonly string[]).includes(name)) return;
+    const key = name as (typeof wanted)[number];
+    if (found[key]) return;
     try {
-      found[name as (typeof wanted)[number]] = decodeURIComponent(raw);
+      found[key] = decodeURIComponent(raw);
     } catch {
       /* A malformed escape is not a reason to drop the whole paste. */
-      found[name as (typeof wanted)[number]] = raw;
+      found[key] = raw;
+    }
+  };
+
+  for (const line of header.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      /* A Netscape file opens with `# Netscape HTTP Cookie File` and puts a
+         `#HttpOnly_` prefix on secure cookies — which is exactly the one we
+         need, so the prefix is stripped rather than the line skipped. */
+      if (trimmed.startsWith("#HttpOnly_")) {
+        const rest = trimmed.slice("#HttpOnly_".length);
+        const cols = rest.split(/\t|\s{2,}|\s/);
+        if (cols.length >= 7) take(cols[5], cols.slice(6).join(" "));
+      }
+      continue;
+    }
+
+    /* Netscape format: seven tab-separated columns ending in name and value.
+       This is what the Android cookies extension hands back, so it is read as
+       carefully as the header form rather than being a second-class paste. */
+    const cols = trimmed.split(/\t|\s{2,}|\s/);
+    if (cols.length >= 7) {
+      take(cols[5], cols.slice(6).join(" "));
+      continue;
+    }
+
+    /* Header form: `name=value; name=value`. The split is on the *first* `=`
+       of each pair, because these values are base64 and contain `=` padding. */
+    for (const pair of trimmed.split(";")) {
+      const eq = pair.indexOf("=");
+      if (eq <= 0) continue;
+      take(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
     }
   }
   return found;
@@ -147,10 +176,12 @@ export const saveBotSession = mutation({
      *
      * This is the easier of the two ways in, and the one that works on a
      * phone: a browser extension that can see cookies on Android hands back
-     * one long string, whereas picking three individual values out of a list
-     * on a small screen is fiddly and easy to get wrong. The three named
-     * fields below still work for anybody who copied them separately, and
-     * anything passed here wins, so a partial header is still useful.
+     * either one long string or a Netscape cookie file, whereas picking three
+     * individual values out of a list on a small screen is fiddly and easy to
+     * get wrong. Both shapes are accepted, including the `#HttpOnly_` prefix
+     * that marks the very cookie we need. The three named fields below still
+     * work for anybody who copied them separately, and anything passed here
+     * wins, so a partial paste is still useful.
      */
     cookieHeader: v.optional(v.string()),
     sessionid: v.optional(v.string()),
