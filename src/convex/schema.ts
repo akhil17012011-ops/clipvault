@@ -226,6 +226,15 @@ const schema = defineSchema(
        */
       graphToken: v.optional(v.string()),
       /**
+       * When a bio verification last ran against this account.
+       *
+       * Every check is a live read of a public profile from this
+       * deployment's shared IP, so an unmetered verify button would let one
+       * person turn a click into hundreds of reads. The action refuses a second
+       * check inside a minute. Never shown to the browser.
+       */
+      lastAttemptAt: v.optional(v.number()),
+      /**
        * RETIRED: the meter for the paid fallback route, which no longer
        * exists. The field is kept in the schema — not written, not read — so
        * any row that recorded it before the route was removed stays writable.

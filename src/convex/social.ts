@@ -120,10 +120,10 @@ async function oEmbed(
 /**
  * A YouTube post's live view count.
  *
- * Exported because `submissions.refreshViews` re-reads a clip's views long
- * after the link was first pasted, and both have to agree on where the number
- * comes from. One implementation, so the count at submit time and the count on
- * a later refresh can never disagree about what YouTube said.
+ * Only YouTube publishes one we can read, and only when the deployment has a
+ * Data API key. The other platforms genuinely do not expose a per-post view
+ * count to us, so their clips are measured by an operator at review time
+ * instead of guessed.
  */
 export async function readYoutubeMetrics(
   url: URL,

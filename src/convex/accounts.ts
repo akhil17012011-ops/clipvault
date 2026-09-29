@@ -52,6 +52,15 @@ const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
  */
 const STATS_REFRESH_COOLDOWN_MS = 10 * 60_000;
 
+/**
+ * Minimum time between bio-verification attempts on one account.
+ *
+ * A verification is a live read of somebody's public profile. Sixty seconds is
+ * short enough that a real creator never notices it and long enough that a
+ * button held down cannot become a request flood.
+ */
+const VERIFY_COOLDOWN_MS = 60_000;
+
 type Platform = Infer<typeof PLATFORM>;
 
 /** Domains a profile link for each platform can legitimately come from. */
@@ -589,6 +598,20 @@ export const detachGraphToken = mutation({
  * it. "Gone" and "not yours" both return null, so this cannot be used to
  * discover which account ids exist.
  */
+/** Records that a bio check just happened, so the next one waits. */
+export const stampVerifyAttempt = internalMutation({
+  args: { accountId: v.id("connectedAccounts") },
+  handler: async (ctx, args) => {
+    const account = await ctx.db.get(args.accountId);
+    if (!account) return;
+    await ctx.db.patch(args.accountId, { lastAttemptAt: Date.now() });
+  },
+});
+
+/**
+ * Everything a stats refresh is allowed to know about an account, read on the
+ * server with the ownership check applied.
+ */
 export const getForStats = internalQuery({
   args: { accountId: v.id("connectedAccounts") },
   handler: async (ctx, args) => {
@@ -693,6 +716,9 @@ export const getForVerify = internalQuery({
       platform: account.platform,
       handle: account.handle,
       code: account.code,
+      /* Read so a repeated check can be refused before it costs a platform
+         read. Never returned to a browser. */
+      lastAttemptAt: account.lastAttemptAt ?? null,
     };
   },
 });
@@ -723,6 +749,33 @@ export const verifyBio = action({
       };
     }
 
+    /* One platform read per verification attempt, then a wait.
+     *
+     * Every check here is a live request to the platform from this
+     * deployment's shared IP. Without a floor, a signed-in user can hold down
+     * the verify button and turn one click into hundreds of reads, which is the
+     * traffic that gets the whole deployment rate-limited — so the expensive
+     * route is metered here rather than trusted to the interface. A person who
+     * has genuinely just changed their bio waits a minute, which is shorter
+     * than the time it takes to walk to the page. */
+    if (
+      account.lastAttemptAt != null &&
+      Date.now() - account.lastAttemptAt < VERIFY_COOLDOWN_MS
+    ) {
+      const wait = Math.ceil(
+        (VERIFY_COOLDOWN_MS - (Date.now() - account.lastAttemptAt)) / 1000,
+      );
+      return {
+        verified: false,
+        bio: null,
+        bioRead: false,
+        message: `Just checked. Try again in ${wait} second${wait === 1 ? "" : "s"} — each check is a real request to the platform, and checking repeatedly is what gets us rate-limited.`,
+      };
+    }
+    await ctx.runMutation(internal.accounts.stampVerifyAttempt, {
+      accountId: args.accountId,
+    });
+
     if (!CODE_PATTERN.test(account.code)) {
       return {
         verified: false,
@@ -737,7 +790,13 @@ export const verifyBio = action({
          tolerate a session sign-in happening behind it, and a bio read that
          only worked once per IP was never dependable anyway. */
       sessionReader: createInstagramSessionReader(ctx),
-      scraperToken: process.env.APIFY_TOKEN ?? null,
+      /* The hosted reader is a paid call, so a bio check does not get to make
+         one. Bio verification is a one-off, human-initiated act, and leaving
+         the paid reader off this path means the most expensive route in the
+         product cannot be driven by a user clicking "verify" repeatedly. The
+         free routes plus the saved session are what this relies on; if neither
+         can read the profile, the creator is told that plainly. */
+      scraperToken: null,
     });
 
     if (!profile.ok) {
