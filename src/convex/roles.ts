@@ -23,15 +23,17 @@ export type Role = "admin" | "member";
 /**
  * The address that owns the Clip Vault operator console.
  *
- * `OPERATOR_EMAILS` in the deployment environment can add more operators; the
- * built-in address always works too, so a typo in that variable cannot lock the
- * operator out of their own product.
+ * `OPERATOR_EMAILS` in the deployment environment can add more operators to the
+ * built-in addresses below; it never replaces them, so a typo or an empty
+ * variable there cannot lock the operator out of their own product.
  */
-const DEFAULT_OPERATOR_EMAIL = "support.clipvault.ae@gmail.com";
+const BUILT_IN_OPERATOR_EMAILS = [
+  "support.clipvault.ae@gmail.com",
+  "akhil17012011@gmail.com",
+];
 
 function operatorEmails(): string[] {
-  return (process.env.OPERATOR_EMAILS ?? DEFAULT_OPERATOR_EMAIL)
-    .split(",")
+  return [...BUILT_IN_OPERATOR_EMAILS, ...(process.env.OPERATOR_EMAILS ?? "").split(",")]
     .map((address) => address.trim().toLowerCase())
     .filter(Boolean);
 }

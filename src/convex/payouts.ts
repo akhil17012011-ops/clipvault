@@ -141,11 +141,35 @@ function splitFee(grossCents: number): { netCents: number; feeCents: number } {
 
 /** The developer's user id, or null when this deployment has no such account. */
 async function developerId(ctx: MutationCtx): Promise<UserId | null> {
-  const row = await ctx.db
+  const rows = await ctx.db
     .query("users")
     .filter((q) => q.eq(q.field("email"), DEVELOPER_EMAIL))
-    .first();
-  return row?._id ?? null;
+    .collect();
+  if (rows.length === 0) return null;
+  if (rows.length === 1) return rows[0]._id;
+
+  /* More than one row for the address means a sign-in built a second account
+     (Convex Auth stops linking Google to an address it finds twice), and the
+     fee must not land on whichever row a read happened to return first. So the
+     row that already holds money wins, then the verified one, then the newest —
+     deterministic, so the same row is chosen every time. */
+  const withWallet = await Promise.all(
+    rows.map(async (row) => ({
+      row,
+      wallet: await ctx.db
+        .query("wallets")
+        .withIndex("by_user", (q) => q.eq("userId", row._id))
+        .first(),
+    })),
+  );
+  withWallet.sort((a, b) => {
+    if (Boolean(a.wallet) !== Boolean(b.wallet)) return a.wallet ? -1 : 1;
+    const aVerified = a.row.emailVerificationTime !== undefined;
+    const bVerified = b.row.emailVerificationTime !== undefined;
+    if (aVerified !== bVerified) return aVerified ? -1 : 1;
+    return b.row._creationTime - a.row._creationTime;
+  });
+  return withWallet[0].row._id;
 }
 
 /** Adds to a wallet's available and lifetime balance, creating it if needed. */
