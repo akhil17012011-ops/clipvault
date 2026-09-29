@@ -18,7 +18,7 @@ import { auth } from "./auth";
  * "admin" is the privileged role, "member" is the default for creators.
  * Authorization is always decided on the server; the client never picks it.
  */
-export type Role = "admin" | "member";
+export type Role = "admin" | "member" | "developer";
 
 /**
  * The address that owns the Clip Vault operator console.
@@ -27,10 +27,7 @@ export type Role = "admin" | "member";
  * built-in addresses below; it never replaces them, so a typo or an empty
  * variable there cannot lock the operator out of their own product.
  */
-const BUILT_IN_OPERATOR_EMAILS = [
-  "support.clipvault.ae@gmail.com",
-  "akhil17012011@gmail.com",
-];
+const BUILT_IN_OPERATOR_EMAILS = ["support.clipvault.ae@gmail.com"];
 
 function operatorEmails(): string[] {
   return [...BUILT_IN_OPERATOR_EMAILS, ...(process.env.OPERATOR_EMAILS ?? "").split(",")]
@@ -65,7 +62,7 @@ type UserId = UserRow["_id"];
 export const setRole = internalMutation({
   args: {
     email: v.string(),
-    role: v.union(v.literal("admin"), v.literal("member")),
+    role: v.union(v.literal("admin"), v.literal("member"), v.literal("developer")),
   },
   handler: async (
     ctx,
@@ -536,6 +533,9 @@ export const assertEmailAvailable = mutation({
 /**
  * The signed-in user's role, read from the database.
  * Defaults to "member" for any user without an explicit role.
+ *
+ * A "developer" is reported as itself, so an interface can label the account
+ * without granting it anything: every admin guard still tests for "admin".
  */
 export const myRole = query({
   args: {},
@@ -544,6 +544,8 @@ export const myRole = query({
     if (!userId) return "member";
 
     const user = await ctx.db.get(userId);
-    return user?.role === "admin" ? "admin" : "member";
+    if (user?.role === "admin") return "admin";
+    if (user?.role === "developer") return "developer";
+    return "member";
   },
 });

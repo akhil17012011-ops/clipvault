@@ -13,7 +13,6 @@ import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/clip-vault-data";
 import { useClipVault } from "@/lib/clip-vault-store";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Banknote,
   Bug,
   ChevronUp,
   Clapperboard,
@@ -141,12 +140,6 @@ const NAV: Record<DashboardView, NavItem[]> = {
       to: "/dashboard/payouts",
       label: "Payouts",
       icon: Wallet,
-      group: "Manage",
-    },
-    {
-      to: "/dashboard/payments",
-      label: "My balance",
-      icon: Banknote,
       group: "Manage",
     },
     {

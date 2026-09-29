@@ -7,12 +7,25 @@ export const ROLES = {
   ADMIN: "admin",
   USER: "user",
   MEMBER: "member",
+  /**
+   * The platform's own account.
+   *
+   * It is a label and nothing else: it is not an operator, so every admin
+   * guard in `access.ts` still refuses it and the Brand console stays closed.
+   * What the developer account does have is decided by its address, not by
+   * this role — it is where the transaction fee is paid, and it may withdraw
+   * that fee balance without the $5 minimum. Keeping those two facts on the
+   * address rather than on the role means nobody can grant themselves a way
+   * to take money by being given a role.
+   */
+  DEVELOPER: "developer",
 } as const;
 
 export const roleValidator = v.union(
   v.literal(ROLES.ADMIN),
   v.literal(ROLES.USER),
   v.literal(ROLES.MEMBER),
+  v.literal(ROLES.DEVELOPER),
 );
 export type Role = Infer<typeof roleValidator>;
 

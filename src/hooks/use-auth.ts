@@ -43,6 +43,15 @@ export function useAuth() {
      * the server and cannot be influenced by anything the browser sends.
      */
     role: user?.role === "admin" ? ("admin" as const) : ("creator" as const),
+    /**
+     * The role exactly as it is stored, for interfaces that label an account —
+     * the platform's own account reads "developer".
+     *
+     * It grants nothing. Every privileged operation tests the database role
+     * against "admin" on the server, so this string can only ever change how
+     * the account is labelled, never what it is allowed to reach.
+     */
+    accountRole: user?.role ?? null,
     /** Display name, preferring the real auth record over anything guessed. */
     name:
       user?.name ?? user?.email?.split("@")[0] ?? "Creator",

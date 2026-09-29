@@ -32,7 +32,6 @@ const ADMIN_SECTIONS: AdminSection[] = [
   "leaderboard",
   "requests",
   "payouts",
-  "payments",
   "invoices",
   "campaigns",
   "moderation",

@@ -29,7 +29,7 @@ export function TopBar({
   /** Opens the mobile sidebar drawer (lg and up show the fixed rail). */
   onMenu: () => void;
 }) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, accountRole } = useAuth();
   const { profile, wallet } = useClipVault();
   const navigate = useNavigate();
   const [editingProfile, setEditingProfile] = useState(false);
@@ -138,6 +138,13 @@ export function TopBar({
                   <p className="truncate text-xs font-normal text-muted-foreground">
                     {email}
                   </p>
+                )}
+                {/* A label, not a permission: the platform's own account says
+                    so here and nothing more. */}
+                {accountRole === "developer" && (
+                  <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-brand/35 bg-brand/10 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-brand">
+                    Developer
+                  </span>
                 )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
