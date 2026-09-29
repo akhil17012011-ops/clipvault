@@ -20,7 +20,6 @@ import {
   KeyRound,
   Link2,
   Plus,
-  RefreshCw,
   ScanSearch,
   Trash2,
   TriangleAlert,
@@ -69,7 +68,12 @@ export function AccountsView({
   /* Follower counts are re-read from the platforms every couple of seconds
      while this page is open, so the numbers here are the platform's current
      ones rather than whatever was true when the bio was verified. */
-  const { reason, syncNow, syncing } = useLiveFollowers(accounts);
+  /* Background refresh only. There is deliberately no Sync button on a
+     creator's own account list: the counts re-read on their own every ten
+     minutes, and letting every creator poke Instagram on demand was the
+     traffic that got this deployment rate-limited. Operators keep a manual
+     read in the Users panel, where one person watches all the accounts. */
+  const { reason, syncNow } = useLiveFollowers(accounts);
   const { attachGraphToken } = useClipVault();
   const [tokenFor, setTokenFor] = useState<string | null>(null);
   const [tokenValue, setTokenValue] = useState("");
@@ -354,18 +358,6 @@ export function AccountsView({
                     <StatusBadge status={account.status} />
                     <button
                       type="button"
-                      onClick={() => void syncNow(account.id)}
-                      disabled={syncing.includes(account.id)}
-                      title="Re-read this account's follower count now"
-                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-brand disabled:opacity-50"
-                    >
-                      <RefreshCw
-                        className={`h-3.5 w-3.5${syncing.includes(account.id) ? " animate-spin" : ""}`}
-                      />
-                      Sync
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setConfirmId(account.id)}
                       title="Disconnect account"
                       className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-red-500"
@@ -380,6 +372,30 @@ export function AccountsView({
                         "We haven't read a follower count for this account yet."}
                     </p>
                   )}
+
+                  {/* When the numbers were really read, so a stale figure is
+                      visibly stale rather than quietly wrong. No Sync button
+                      here on purpose — the counts refresh on their own every
+                      ten minutes, and an operator who needs one now has it in
+                      the Users panel. Offering a per-account refresh to every
+                      creator was the thing generating the traffic that made
+                      Instagram throttle us. */}
+                  {account.followers != null &&
+                    account.statsRefreshedAt != null && (
+                      <p className="mt-2 text-[10.5px] text-muted-foreground">
+                        Count read{" "}
+                        {new Date(account.statsRefreshedAt).toLocaleString(
+                          undefined,
+                          {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          },
+                        )}
+                        , and refreshes every 10 minutes.
+                      </p>
+                    )}
 
                   {account.platform === "instagram" &&
                     (account.hasGraphToken ? (

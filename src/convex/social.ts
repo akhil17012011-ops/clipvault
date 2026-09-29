@@ -117,7 +117,15 @@ async function oEmbed(
  * Real YouTube statistics, when the deployment has a Data API key.
  * Returns null otherwise — the caller then reports "not available".
  */
-async function youtubeMetrics(
+/**
+ * A YouTube post's live view count.
+ *
+ * Exported because `submissions.refreshViews` re-reads a clip's views long
+ * after the link was first pasted, and both have to agree on where the number
+ * comes from. One implementation, so the count at submit time and the count on
+ * a later refresh can never disagree about what YouTube said.
+ */
+export async function readYoutubeMetrics(
   url: URL,
 ): Promise<InspectResult["metrics"]> {
   const apiKey = process.env.YOUTUBE_API_KEY;
@@ -204,7 +212,7 @@ export const inspectClip = action({
       "View counts are only available once the platform API is connected for this deployment.";
 
     if (args.platform === "youtube") {
-      metrics = await youtubeMetrics(url);
+      metrics = await readYoutubeMetrics(url);
       if (metrics) metricsNote = null;
     }
 

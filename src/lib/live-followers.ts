@@ -5,13 +5,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 /**
  * How often the page re-checks the counts of its connected accounts.
  *
- * Once a second. Each tick asks the server for a fresh read, and the
- * server's own window (`STATS_REFRESH_COOLDOWN_MS` in `convex/accounts.ts`)
- * sits just under this so the tick results in a real platform read rather
- * than a cached row — the counts come from the bot account's signed-in
- * session, which is the route built to carry exactly this cadence.
+ * Every ten minutes. This used to be once a second, which looked lively and
+ * was actively harmful: every tick is a real request from this deployment's
+ * shared IP, and a follower count does not change measurably in a second.
+ * Hammering Instagram that hard is what earns a `429` for the whole deployment,
+ * so a fast poll made the numbers *less* available, not more.
+ *
+ * Ten minutes is a deliberate trade: a count that moves meaningfully is picked
+ * up within ten minutes without the platform ever seeing enough traffic to
+ * throttle us. A person who cannot wait ten minutes has the Sync button, which
+ * asks once, on purpose, and is exempt from the cooldown.
  */
-export const LIVE_FOLLOWER_INTERVAL_MS = 1_000;
+export const LIVE_FOLLOWER_INTERVAL_MS = 10 * 60_000;
 
 /**
  * Keeps the follower and post counts of the given accounts current.

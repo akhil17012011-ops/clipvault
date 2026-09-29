@@ -41,14 +41,16 @@ const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
 /**
  * Minimum time between real platform lookups for one account.
  *
- * The dashboard ticks once a second and asks for a fresh read on each tick;
- * this window sits just under that interval so every tick that is due gets a
- * real read, while two ticks landing on the same instant cannot both fire
- * one. It is deliberately not a protective throttle any more — the second-
- * long cadence is the product now, chosen for an account whose job is to
- * carry exactly this load.
+ * This was 900ms, sized to sit just under a one-second dashboard poll so every
+ * tick produced a real read. That was a mistake: a follower count does not
+ * change in a second, and a request-per-second from one shared IP is exactly
+ * the pattern Instagram throttles — which is why the numbers went missing.
+ *
+ * The background poll now runs every ten minutes and this window matches it,
+ * so a tick that is due does a real read and a duplicate cannot. A press of
+ * Sync ignores this entirely, because a person asking is not the poller.
  */
-const STATS_REFRESH_COOLDOWN_MS = 900;
+const STATS_REFRESH_COOLDOWN_MS = 10 * 60_000;
 
 type Platform = Infer<typeof PLATFORM>;
 
