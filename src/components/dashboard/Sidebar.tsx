@@ -300,7 +300,7 @@ function SidebarBody({
             <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
               Beta
             </span>
-            <span className="block text-[15px] font-extrabold tracking-tight">
+            <span className="block text-[15px] font-extrabold tracking-tight font-display">
               Clip Vault
             </span>
           </span>

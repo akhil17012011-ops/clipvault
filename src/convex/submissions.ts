@@ -5,6 +5,16 @@ import { NotAllowedError, requireAdmin, requireUser } from "./access";
 import { MIN_WITHDRAWAL_USD } from "./schema";
 
 /**
+ * How many clips one creator may have waiting for a decision at once.
+ *
+ * The moderation queue is a list a person reads from the top; a scripted
+ * client could otherwise fill it faster than anyone can work it, which buries
+ * every other creator's clips behind theirs. The cap counts *pending* only, so
+ * an active creator is never blocked once the queue has been worked.
+ */
+const MAX_PENDING_PER_USER = 40;
+
+/**
  * What a clip is worth to its creator, in whole cents.
  *
  * A clip only earns once it has cleared its campaign's minimum view threshold —
@@ -220,6 +230,18 @@ export const submit = mutation({
       .first();
     if (duplicate) {
       throw new Error("This clip has already been submitted to this campaign.");
+    }
+
+    /* A queue, not a firehose — see MAX_PENDING_PER_USER. */
+    const waiting = await ctx.db
+      .query("submissions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .collect();
+    if (waiting.length >= MAX_PENDING_PER_USER) {
+      throw new NotAllowedError(
+        `You already have ${MAX_PENDING_PER_USER} clips waiting for review. We'll work through those first — try again once the queue has moved.`,
+      );
     }
 
     const submissionId = await ctx.db.insert("submissions", {

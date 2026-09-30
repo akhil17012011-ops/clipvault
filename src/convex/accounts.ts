@@ -39,6 +39,15 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const HANDLE_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
 
 /**
+ * How many connected accounts one creator may hold.
+ *
+ * A real clipping kit is a handful of handles; this cap exists so the table
+ * the stats poller walks cannot be filled with thousands of throwaway rows by
+ * one scripted client.
+ */
+const MAX_ACCOUNTS_PER_USER = 12;
+
+/**
  * Minimum time between real platform lookups for one account.
  *
  * This was 900ms, sized to sit just under a one-second dashboard poll so every
@@ -301,6 +310,12 @@ export const request = mutation({
        failure that looked like the platform had changed underneath them. */
     if (existing) return existing;
 
+    if (mine.length >= MAX_ACCOUNTS_PER_USER) {
+      throw new Error(
+        `You can connect up to ${MAX_ACCOUNTS_PER_USER} accounts. Remove one first to add another.`,
+      );
+    }
+
     const accountId = await ctx.db.insert("connectedAccounts", {
       userId: user._id,
       platform: args.platform,
@@ -400,6 +415,9 @@ export const refreshStats = action({
      * been refusing us, and it is deliberately one request per press: a
      * button that spammed on hold would reproduce the very rate limit the
      * backoff exists to avoid.
+     *
+     * Staff only, and the handler says so: the flag is ignored for anyone
+     * else, because it also decides whether the paid reader runs.
      */
     force: v.optional(v.boolean()),
   },
@@ -431,12 +449,21 @@ export const refreshStats = action({
       };
     }
 
+    /* `force` is honoured for staff only.
+
+       It skips the cooldown and the backoff, and it is the one flag that
+       hands the paid reader key to the platform — so it is decided here,
+       from the role on the caller's own row, and never from whatever the
+       browser sends. A creator asking for it gets the ordinary metered path
+       instead of spending this deployment's budget from their own console. */
+    const force = args.force === true && account.callerIsStaff;
+
     /* The poller asks every second. Every ask is a real request from this
        deployment's shared IP, and the platforms throttle those hard — the
        backoff is what stops a refusal from becoming permanent. A person
        pressing Sync is exempt: that is the escape hatch the backoff leaves
        open, and it is also how a fresh token is tested the moment it lands. */
-    if (!args.force) {
+    if (!force) {
       if (
         account.statsRetryAfter != null &&
         Date.now() < account.statsRetryAfter
@@ -483,7 +510,7 @@ export const refreshStats = action({
                is ~86,000 reads a day per account, which would drain a free
                plan in minutes. The free routes are what the timer uses, and
                they are free exactly because they are cheap. */
-            scraperToken: args.force
+            scraperToken: force
               ? (process.env.APIFY_TOKEN ?? null)
               : null,
           });
@@ -630,6 +657,9 @@ export const getForStats = internalQuery({
       statsRetryAfter: account.statsRetryAfter,
       /* Read by the action and never by the browser. */
       graphToken: account.graphToken,
+      /* Decided from the rows, never from the browser: only staff may take
+         the path that skips the cooldown and spends the paid reader key. */
+      callerIsStaff: user.role === "admin" || user.role === "developer",
     };
   },
 });

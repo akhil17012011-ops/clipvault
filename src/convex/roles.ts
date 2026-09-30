@@ -451,13 +451,20 @@ export const ensureOperatorRole = mutation({
     const rows = await usersWithEmail(ctx, email!.trim());
     let applied = 0;
     for (const row of rows) {
-      /* Never step on a role somebody was promoted to. An admin who happens to
-         use this address stays an admin. */
+      /* Never step on a role somebody was given. `developer` is a label the
+         address carries, not a rank: nothing outside this file treats it as
+         privileged — every admin guard reads "admin" — so patching an admin
+         down to it would take the Brand console away rather than label it.
+         Only rows still on a default role get the label. */
       if (row.role === "developer") {
         applied += 1;
         continue;
       }
-      if (row.role === "admin" || row.role === undefined) {
+      if (
+        row.role === undefined ||
+        row.role === "user" ||
+        row.role === "member"
+      ) {
         await ctx.db.patch(row._id, { role: "developer" });
       }
       applied += 1;

@@ -258,8 +258,8 @@ const toCampaign = (row: {
   title: string;
   logo?: string;
   brief?: string;
-  referenceLinks: CampaignAsset[];
-  sourceFiles: CampaignAsset[];
+  referenceLinks?: CampaignAsset[];
+  sourceFiles?: CampaignAsset[];
   ratePer1k: number;
   minViews: number;
   platforms: Platform[];
@@ -270,7 +270,7 @@ const toCampaign = (row: {
   joinCount: number;
   guidelines: string[];
   status: Campaign["status"];
-  invoice: Campaign["invoice"];
+  invoice?: Campaign["invoice"];
   joined: boolean;
   createdAt: number;
 }): Campaign => ({
@@ -291,7 +291,7 @@ const toCampaign = (row: {
   joinCount: row.joinCount,
   guidelines: row.guidelines,
   status: row.status,
-  invoice: row.invoice,
+  invoice: row.invoice ?? "draft",
   joined: row.joined,
   createdAt: row.createdAt,
 });

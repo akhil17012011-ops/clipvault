@@ -84,7 +84,7 @@ export function TopBar({
           </Link>
         </div>
 
-        <div className="glass-chip hidden items-center gap-2 rounded-full px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#C9AEFF] sm:inline-flex">
+        <div className="glass-chip hidden items-center gap-2 rounded-full px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#C9AEFF] sm:inline-flex font-display">
           {role === "admin" ? (
             <>
               <Megaphone className="h-3.5 w-3.5" />

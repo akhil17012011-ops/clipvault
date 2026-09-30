@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { NotAllowedError, requireAdmin, requireUser } from "./access";
+import type { Doc } from "./_generated/dataModel";
 
 /**
  * Campaigns, joined campaigns, and the admin-side campaign controls.
@@ -23,6 +24,47 @@ const ASSET = v.object({
   url: v.string(),
   kind: v.union(v.literal("drive"), v.literal("video"), v.literal("link")),
 });
+
+/**
+ * The public catalog: everything the landing page and the campaign cards draw.
+ *
+ * Picked field by field rather than spread, so a field added to the schema
+ * tomorrow is a deliberate decision here instead of an automatic leak. This is
+ * the one campaign result an anonymous visitor can read, so it carries no
+ * brief, no asset links, no billing state and no operator's user id.
+ */
+function catalogFields(campaign: Doc<"campaigns">) {
+  return {
+    _id: campaign._id,
+    brand: campaign.brand,
+    title: campaign.title,
+    logo: campaign.logo,
+    ratePer1k: campaign.ratePer1k,
+    minViews: campaign.minViews,
+    platforms: campaign.platforms,
+    daysLeft: campaign.daysLeft,
+    budget: campaign.budget,
+    spent: campaign.spent,
+    clippers: campaign.clippers,
+    guidelines: campaign.guidelines,
+    status: campaign.status,
+    createdAt: campaign.createdAt,
+  };
+}
+
+/**
+ * What a signed-in creator may see: the catalog plus the brief and the asset
+ * links they need to actually clip. Still no invoice state and no `createdBy`
+ * — the first is the brand's billing, the second is an operator's user id.
+ */
+function creatorFacing(campaign: Doc<"campaigns">) {
+  return {
+    ...catalogFields(campaign),
+    brief: campaign.brief,
+    referenceLinks: campaign.referenceLinks,
+    sourceFiles: campaign.sourceFiles,
+  };
+}
 
 /** Every campaign field an admin can write. */
 const CAMPAIGN_PATCH = v.object({
@@ -78,6 +120,9 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx);
+    /* Billing state is staff-facing. Creators never draw it, so it is not
+       put on their copy of the row at all. */
+    const isAdmin = user.role === "admin";
     const campaigns = await ctx.db.query("campaigns").collect();
     const joins = await ctx.db.query("campaignJoins").collect();
 
@@ -90,7 +135,8 @@ export const list = query({
 
     return campaigns
       .map((campaign) => ({
-        ...campaign,
+        ...creatorFacing(campaign),
+        ...(isAdmin ? { invoice: campaign.invoice } : {}),
         joined: joinedIds.has(campaign._id),
         joinCount: counts.get(campaign._id) ?? 0,
       }))
@@ -115,7 +161,7 @@ export const publicList = query({
 
     return campaigns
       .map((campaign) => ({
-        ...campaign,
+        ...catalogFields(campaign),
         joined: false,
         joinCount: counts.get(campaign._id) ?? 0,
       }))
@@ -126,8 +172,12 @@ export const publicList = query({
 export const get = query({
   args: { campaignId: v.id("campaigns") },
   handler: async (ctx, args) => {
-    await requireUser(ctx);
-    return await ctx.db.get(args.campaignId);
+    const user = await requireUser(ctx);
+    const campaign = await ctx.db.get(args.campaignId);
+    if (!campaign) return null;
+    /* Same split as `list`: an operator keeps the whole row, a creator gets
+       the copy that has no billing state and no operator id on it. */
+    return user.role === "admin" ? campaign : creatorFacing(campaign);
   },
 });
 
