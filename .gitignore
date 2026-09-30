@@ -1,4 +1,9 @@
-.env.local
+# secrets — never push these
+.env
+.env.*
+!.env.example
+
 node_modules
 dist
+isolate
 src/convex/_generated
